@@ -1,0 +1,573 @@
+package com.jksalcedo.crontact.ui.home
+
+import androidx.compose.foundation.background
+import androidx.compose.foundation.isSystemInDarkTheme
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.PaddingValues
+import androidx.compose.foundation.layout.Row
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.foundation.layout.width
+import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.shape.CircleShape
+import androidx.compose.foundation.shape.RoundedCornerShape
+import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Person
+import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.Button
+import androidx.compose.material3.ButtonDefaults
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.Icon
+import androidx.compose.material3.IconButton
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.getValue
+import androidx.compose.ui.Alignment
+import androidx.compose.ui.Modifier
+import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.text.font.FontWeight
+import androidx.compose.ui.tooling.preview.Preview
+import androidx.compose.ui.unit.dp
+import androidx.compose.ui.unit.sp
+import androidx.hilt.navigation.compose.hiltViewModel
+import com.jksalcedo.crontact.domain.model.Person
+import com.jksalcedo.crontact.ui.theme.CronTactPastels
+import com.jksalcedo.crontact.ui.theme.CronTactTheme
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.Locale
+import java.util.concurrent.TimeUnit
+
+@Composable
+fun HomeScreen(
+    viewModel: HomeViewModel = hiltViewModel(),
+    onAddPersonClick: () -> Unit
+) {
+    val people by viewModel.people.collectAsState()
+    HomeScreenContent(people = people, onAddPersonClick = onAddPersonClick)
+}
+
+@Composable
+private fun HomeScreenContent(
+    people: List<Person>,
+    onAddPersonClick: () -> Unit
+) {
+    val isDarkTheme = isSystemInDarkTheme()
+    val dueSoon =
+        people.filter { it.nextReminderAt <= System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3) }
+
+    // Resolve colors based on theme
+    val mintColor = if (isDarkTheme) CronTactPastels.MintDark else CronTactPastels.Mint
+    val mintAccent = if (isDarkTheme) CronTactPastels.Mint else CronTactPastels.MintDark
+
+    val yellowColor = if (isDarkTheme) CronTactPastels.YellowDark else CronTactPastels.Yellow
+    val yellowAccent = if (isDarkTheme) CronTactPastels.Yellow else CronTactPastels.YellowDark
+
+    val purpleColor = if (isDarkTheme) CronTactPastels.PurpleDark else CronTactPastels.Purple
+    val purpleAccent = if (isDarkTheme) CronTactPastels.Purple else CronTactPastels.PurpleDark
+
+    val pinkColor = if (isDarkTheme) CronTactPastels.PinkDark else CronTactPastels.Pink
+    val pinkAccent = if (isDarkTheme) CronTactPastels.Pink else CronTactPastels.PinkDark
+
+    Box(modifier = Modifier.fillMaxSize()) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .background(MaterialTheme.colorScheme.background)
+                .padding(horizontal = 20.dp)
+                .padding(top = 48.dp)
+        ) {
+            // Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    Box(
+                        modifier = Modifier
+                            .size(48.dp)
+                            .clip(CircleShape)
+                            .background(purpleColor),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Text("👤", fontSize = 24.sp)
+                    }
+                    Spacer(modifier = Modifier.width(12.dp))
+                    Column {
+                        Text(
+                            text = "Hi there! 👋",
+                            style = MaterialTheme.typography.headlineSmall,
+                            fontWeight = FontWeight.Bold,
+                            color = MaterialTheme.colorScheme.onBackground
+                        )
+                    }
+                }
+                IconButton(onClick = {}) {
+                    Icon(
+                        Icons.Outlined.Notifications,
+                        contentDescription = "Notifications",
+                        tint = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Stats Card
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(20.dp),
+                colors = CardDefaults.cardColors(containerColor = mintColor)
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(20.dp)
+                        .fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Column {
+                        Text(
+                            text = if (people.isEmpty()) "Start your journey!" else "Nice work! 🎉",
+                            style = MaterialTheme.typography.titleMedium,
+                            fontWeight = FontWeight.SemiBold,
+                            color = mintAccent
+                        )
+                        Spacer(modifier = Modifier.height(4.dp))
+                        Text(
+                            text = if (people.isEmpty()) "Add someone to tend to"
+                            else "You have ${people.size} connection${if (people.size != 1) "s" else ""}",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = mintAccent.copy(alpha = 0.8f)
+                        )
+                    }
+                    Surface(
+                        shape = RoundedCornerShape(12.dp),
+                        color = MaterialTheme.colorScheme.surface
+                    ) {
+                        Text(
+                            text = "Details",
+                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
+                            style = MaterialTheme.typography.labelLarge,
+                            color = mintAccent
+                        )
+                    }
+                }
+            }
+
+            Spacer(modifier = Modifier.height(20.dp))
+
+            // Dashboard Cards Row
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.spacedBy(12.dp)
+            ) {
+                DashboardCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Due Soon",
+                    icon = Icons.Default.DateRange,
+                    backgroundColor = yellowColor,
+                    contentColor = yellowAccent,
+                    count = dueSoon.size,
+                    label = "reminders"
+                )
+
+                DashboardCard(
+                    modifier = Modifier.weight(1f),
+                    title = "Contacts",
+                    icon = Icons.Default.Person,
+                    backgroundColor = purpleColor,
+                    contentColor = purpleAccent,
+                    count = people.size,
+                    label = "people"
+                )
+            }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Section Header
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Your Connections",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onBackground
+                )
+                TextButton(onClick = {}) {
+                    Text("See all", color = MaterialTheme.colorScheme.primary)
+                }
+            }
+
+            Spacer(modifier = Modifier.height(8.dp))
+
+            // Contacts List
+            if (people.isEmpty()) {
+                EmptyStateCard(
+                    onAddPersonClick = onAddPersonClick,
+                    pinkColor = pinkColor,
+                    pinkAccent = pinkAccent
+                )
+            } else {
+                LazyColumn(
+                    verticalArrangement = Arrangement.spacedBy(12.dp),
+                    contentPadding = PaddingValues(bottom = 100.dp)
+                ) {
+                    items(people) { person ->
+                        PersonCard(
+                            person = person,
+                            mintColor = mintColor,
+                            mintAccent = mintAccent,
+                            yellowColor = yellowColor,
+                            yellowAccent = yellowAccent,
+                            purpleColor = purpleColor,
+                            purpleAccent = purpleAccent,
+                            pinkColor = pinkColor,
+                            pinkAccent = pinkAccent
+                        )
+                    }
+                }
+            }
+        }
+
+        // FAB
+        ExtendedFloatingActionButton(
+            onClick = onAddPersonClick,
+            modifier = Modifier
+                .align(Alignment.BottomEnd)
+                .padding(bottom = 24.dp, end = 24.dp),
+            containerColor = MaterialTheme.colorScheme.primary,
+            contentColor = MaterialTheme.colorScheme.onPrimary,
+            shape = RoundedCornerShape(16.dp)
+        ) {
+            Icon(Icons.Default.Add, contentDescription = null)
+            Spacer(modifier = Modifier.width(8.dp))
+            Text("New Contact", fontWeight = FontWeight.Medium)
+        }
+    }
+}
+
+@Composable
+private fun DashboardCard(
+    modifier: Modifier = Modifier,
+    title: String,
+    icon: ImageVector,
+    backgroundColor: Color,
+    contentColor: Color,
+    count: Int,
+    label: String
+) {
+    Card(
+        modifier = modifier.height(100.dp),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = backgroundColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(16.dp),
+            verticalArrangement = Arrangement.SpaceBetween
+        ) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = title,
+                    style = MaterialTheme.typography.labelLarge,
+                    color = contentColor,
+                    fontWeight = FontWeight.Medium
+                )
+                Icon(
+                    icon,
+                    contentDescription = null,
+                    tint = contentColor,
+                    modifier = Modifier.size(20.dp)
+                )
+            }
+
+            Surface(
+                shape = RoundedCornerShape(8.dp),
+                color = contentColor
+            ) {
+                Text(
+                    text = "$count $label",
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
+                    style = MaterialTheme.typography.labelMedium,
+                    color = backgroundColor,
+                    fontWeight = FontWeight.Medium
+                )
+            }
+        }
+    }
+}
+
+@Composable
+private fun EmptyStateCard(
+    onAddPersonClick: () -> Unit,
+    pinkColor: Color,
+    pinkAccent: Color
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = pinkColor)
+    ) {
+        Column(
+            modifier = Modifier
+                .padding(24.dp)
+                .fillMaxWidth(),
+            horizontalAlignment = Alignment.CenterHorizontally
+        ) {
+            Text("🌱", fontSize = 48.sp)
+            Spacer(modifier = Modifier.height(12.dp))
+            Text(
+                text = "No connections yet",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = pinkAccent
+            )
+            Spacer(modifier = Modifier.height(4.dp))
+            Text(
+                text = "Add someone to start tending your garden",
+                style = MaterialTheme.typography.bodyMedium,
+                color = pinkAccent.copy(alpha = 0.8f)
+            )
+            Spacer(modifier = Modifier.height(16.dp))
+            Button(
+                onClick = onAddPersonClick,
+                colors = ButtonDefaults.buttonColors(containerColor = pinkAccent),
+                shape = RoundedCornerShape(12.dp)
+            ) {
+                Text("Add Person")
+            }
+        }
+    }
+}
+
+@Composable
+fun PersonCard(
+    person: Person,
+    mintColor: Color,
+    mintAccent: Color,
+    yellowColor: Color,
+    yellowAccent: Color,
+    purpleColor: Color,
+    purpleAccent: Color,
+    pinkColor: Color,
+    pinkAccent: Color
+) {
+    val now = System.currentTimeMillis()
+    val daysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
+    val isOverdue = daysUntil < 0
+    val isDueSoon = daysUntil in 0..3
+
+    val cardColor = when {
+        isOverdue -> pinkColor
+        isDueSoon -> yellowColor
+        else -> MaterialTheme.colorScheme.surface
+    }
+    val accentColor = when {
+        isOverdue -> pinkAccent
+        isDueSoon -> yellowAccent
+        else -> MaterialTheme.colorScheme.primary
+    }
+
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(20.dp),
+        colors = CardDefaults.cardColors(containerColor = cardColor),
+        elevation = CardDefaults.cardElevation(defaultElevation = if (cardColor == MaterialTheme.colorScheme.surface) 2.dp else 0.dp)
+    ) {
+        Row(
+            modifier = Modifier
+                .padding(16.dp)
+                .fillMaxWidth(),
+            verticalAlignment = Alignment.CenterVertically
+        ) {
+            // Avatar
+            Box(
+                modifier = Modifier
+                    .size(56.dp)
+                    .clip(CircleShape)
+                    .background(
+                        if (cardColor == MaterialTheme.colorScheme.surface) mintColor else MaterialTheme.colorScheme.surface.copy(
+                            alpha = 0.5f
+                        )
+                    ),
+                contentAlignment = Alignment.Center
+            ) {
+                Text(
+                    text = person.name.take(1).uppercase(),
+                    style = MaterialTheme.typography.titleLarge,
+                    fontWeight = FontWeight.Bold,
+                    color = if (cardColor == MaterialTheme.colorScheme.surface) mintAccent else accentColor
+                )
+            }
+
+            Spacer(modifier = Modifier.width(16.dp))
+
+            Column(modifier = Modifier.weight(1f)) {
+                Text(
+                    text = person.name,
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold,
+                    color = if (cardColor == MaterialTheme.colorScheme.surface) MaterialTheme.colorScheme.onSurface else accentColor
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+                Text(
+                    text = when {
+                        isOverdue -> "Overdue by ${-daysUntil} day${if (-daysUntil != 1L) "s" else ""}"
+                        daysUntil == 0L -> "Due today!"
+                        daysUntil == 1L -> "Due tomorrow"
+                        else -> "Due in $daysUntil days"
+                    },
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = if (cardColor == MaterialTheme.colorScheme.surface) MaterialTheme.colorScheme.onSurfaceVariant else accentColor.copy(
+                        alpha = 0.8f
+                    )
+                )
+            }
+
+            // Reminder badge
+            Surface(
+                shape = RoundedCornerShape(12.dp),
+                color = if (cardColor == MaterialTheme.colorScheme.surface) purpleColor else MaterialTheme.colorScheme.surface
+            ) {
+                Column(
+                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    horizontalAlignment = Alignment.CenterHorizontally
+                ) {
+                    val dateFormat = SimpleDateFormat("MMM", Locale.getDefault())
+                    val dayFormat = SimpleDateFormat("dd", Locale.getDefault())
+                    val nextDate = Date(person.nextReminderAt)
+                    Text(
+                        text = dateFormat.format(nextDate).uppercase(),
+                        style = MaterialTheme.typography.labelSmall,
+                        color = if (cardColor == MaterialTheme.colorScheme.surface) purpleAccent else accentColor,
+                        fontWeight = FontWeight.Medium
+                    )
+                    Text(
+                        text = dayFormat.format(nextDate),
+                        style = MaterialTheme.typography.titleMedium,
+                        color = if (cardColor == MaterialTheme.colorScheme.surface) purpleAccent else accentColor,
+                        fontWeight = FontWeight.Bold
+                    )
+                }
+            }
+        }
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF8F9FA, name = "Light Mode")
+@Composable
+private fun HomeScreenEmptyPreviewLight() {
+    CronTactTheme(darkTheme = false) {
+        HomeScreenContent(
+            people = emptyList(),
+            onAddPersonClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "Dark Mode")
+@Composable
+private fun HomeScreenEmptyPreviewDark() {
+    CronTactTheme(darkTheme = true) {
+        HomeScreenContent(
+            people = emptyList(),
+            onAddPersonClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFFF8F9FA, name = "Light Mode - With People")
+@Composable
+private fun HomeScreenWithPeoplePreviewLight() {
+    CronTactTheme(darkTheme = false) {
+        HomeScreenContent(
+            people = listOf(
+                Person(
+                    id = 1,
+                    name = "Aunt Denise",
+                    photoUri = null,
+                    notes = "Met at conference",
+                    cadenceDays = 14,
+                    lastContactedAt = System.currentTimeMillis(),
+                    nextReminderAt = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2)
+                ),
+                Person(
+                    id = 2,
+                    name = "Sarah",
+                    photoUri = null,
+                    notes = "College friend",
+                    cadenceDays = 30,
+                    lastContactedAt = System.currentTimeMillis(),
+                    nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)
+                ),
+                Person(
+                    id = 3,
+                    name = "Bob",
+                    photoUri = null,
+                    notes = "Work colleague",
+                    cadenceDays = 7,
+                    lastContactedAt = System.currentTimeMillis(),
+                    nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(10)
+                )
+            ),
+            onAddPersonClick = {}
+        )
+    }
+}
+
+@Preview(showBackground = true, backgroundColor = 0xFF121212, name = "Dark Mode - With People")
+@Composable
+private fun HomeScreenWithPeoplePreviewDark() {
+    CronTactTheme(darkTheme = true) {
+        HomeScreenContent(
+            people = listOf(
+                Person(
+                    id = 1,
+                    name = "Aunt Denise",
+                    photoUri = null,
+                    notes = "Met at conference",
+                    cadenceDays = 14,
+                    lastContactedAt = System.currentTimeMillis(),
+                    nextReminderAt = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2)
+                ),
+                Person(
+                    id = 2,
+                    name = "Sarah",
+                    photoUri = null,
+                    notes = "College friend",
+                    cadenceDays = 30,
+                    lastContactedAt = System.currentTimeMillis(),
+                    nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)
+                )
+            ),
+            onAddPersonClick = {}
+        )
+    }
+}
