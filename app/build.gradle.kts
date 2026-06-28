@@ -7,17 +7,28 @@ plugins {
 }
 
 android {
-    namespace = "com.jksalcedo.crontact"
+    namespace = "com.jksalcedo.tend"
     compileSdk = 36
 
     defaultConfig {
-        applicationId = "com.jksalcedo.crontact"
+        applicationId = "com.jksalcedo.tend"
         minSdk = 24
         targetSdk = 36
         versionCode = 1
         versionName = "1.0"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
+
+        //noinspection WrongGradleMethod
+//        ksp {
+//            arg("room.schemaLocation", "$projectDir/schemas")
+//        }
+    }
+
+    sourceSets {
+        getByName("main") {
+            assets.srcDirs("$projectDir/schemas")
+        }
     }
 
     buildTypes {
@@ -33,8 +44,10 @@ android {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
     }
-    kotlinOptions {
-        jvmTarget = "11"
+    kotlin {
+        compilerOptions {
+            jvmTarget.set(org.jetbrains.kotlin.gradle.dsl.JvmTarget.JVM_11)
+        }
     }
     buildFeatures {
         compose = true
@@ -67,6 +80,9 @@ dependencies {
 
     // WorkManager
     implementation(libs.androidx.work.runtime.ktx)
+
+    // Gson
+    implementation(libs.gson)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)
