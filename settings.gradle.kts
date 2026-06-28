@@ -19,5 +19,5 @@ dependencyResolutionManagement {
     }
 }
 
-rootProject.name = "CronTact"
+rootProject.name = "Tend"
 include(":app")
