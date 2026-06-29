@@ -124,7 +124,7 @@ fun PersonDetailScreen(
 
                 // Contact Methods
                 Text(
-                    text = "Contact",
+                    text = "Ways to Connect",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

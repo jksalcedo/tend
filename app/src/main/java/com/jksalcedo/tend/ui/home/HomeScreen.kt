@@ -168,25 +168,16 @@ private fun HomeScreenContent(
             Spacer(modifier = Modifier.height(24.dp))
 
             // Section Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Text(
-                    text = "Your Connections",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold,
-                    color = MaterialTheme.colorScheme.onBackground
-                )
-                TextButton(onClick = {}) {
-                    Text("See all", color = MaterialTheme.colorScheme.primary)
-                }
-            }
+            Text(
+                text = "Your Connections",
+                style = MaterialTheme.typography.titleMedium,
+                fontWeight = FontWeight.SemiBold,
+                color = MaterialTheme.colorScheme.onBackground
+            )
 
             Spacer(modifier = Modifier.height(8.dp))
 
-            // Contacts List
+            // Connections List
             if (people.isEmpty()) {
                 EmptyStateCard(
                     onAddPersonClick = onAddPersonClick,
