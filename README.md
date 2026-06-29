@@ -1,6 +1,7 @@
 # Tend
 
-A gentle Android app for tending the relationships that matter. Tend helps you remember to check in with friends, family, and loved ones.
+A gentle Android app for tending the relationships that matter. Tend helps you remember to check in
+with friends, family, and loved ones.
 
 ## Features
 
@@ -22,7 +23,7 @@ A gentle Android app for tending the relationships that matter. Tend helps you r
 
 ## Requirements
 
-- Android Studio Ladybug or newer (recommended)
+- Android Studio Panda or newer (recommended)
 - JDK 11+
 - Android SDK 36
 - minSdk 24
@@ -37,6 +38,6 @@ A gentle Android app for tending the relationships that matter. Tend helps you r
 2. Open the project in Android Studio
 3. Sync Gradle and run the app configuration on a device or emulator
 
-
 ## Status
+
 Early development.
