@@ -1,9 +1,16 @@
 package com.jksalcedo.tend
 
 import android.app.Application
-import android.os.Build
-import com.jksalcedo.tend.ui.theme.TendTheme
-import dagger.hilt.android.HiltAndroidApp
+import com.jksalcedo.tend.di.appModule
+import org.koin.android.ext.koin.androidContext
+import org.koin.core.context.startKoin
 
-@HiltAndroidApp
-class TendApp : Application()
+class TendApp : Application() {
+    override fun onCreate() {
+        super.onCreate()
+        startKoin {
+            androidContext(this@TendApp)
+            modules(appModule)
+        }
+    }
+}

@@ -47,7 +47,7 @@ import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.hilt.navigation.compose.hiltViewModel
+import org.koin.androidx.compose.koinViewModel
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
@@ -58,7 +58,7 @@ import java.util.Locale
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonDetailScreen(
-    viewModel: PersonDetailViewModel = hiltViewModel(),
+    viewModel: PersonDetailViewModel = koinViewModel(),
     onNavigateBack: () -> Unit
 ) {
     val person by viewModel.person.collectAsState()

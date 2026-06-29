@@ -6,9 +6,7 @@ import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.PersonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
-import javax.inject.Inject
-
-class PersonRepositoryImpl @Inject constructor(
+class PersonRepositoryImpl(
     private val dao: CheckInDao
 ) : PersonRepository {
 

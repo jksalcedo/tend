@@ -5,15 +5,12 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
-import dagger.hilt.android.lifecycle.HiltViewModel
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
 import kotlinx.coroutines.launch
-import javax.inject.Inject
 
-@HiltViewModel
-class PersonDetailViewModel @Inject constructor(
+class PersonDetailViewModel(
     private val getPersonUseCase: GetPersonUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
