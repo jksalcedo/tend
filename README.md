@@ -1,3 +1,7 @@
+<p align="center">
+  <img src="fastlane/metadata/android/en-US/images/icon.png" alt="Tend app icon" width="128" />
+</p>
+
 # Tend
 
 A gentle Android app for tending the relationships that matter. Tend helps you remember to check in
