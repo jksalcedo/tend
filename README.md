@@ -14,7 +14,7 @@ with friends, family, and loved ones.
 ## Features
 
 - **People** — Add contacts with phone, email, social links, and notes
-- **Check-in cadence** — Set weekly, bi-weekly, monthly, or custom reach-out intervals
+- **Check-in frequency** — Set weekly, bi-weekly, monthly, or custom reach-out intervals
 - **Important dates** — Track birthdays and other events
 - **Home dashboard** — See who is due soon and how many connections you are tending
 - **Person details** — View contact info and relationship context at a glance

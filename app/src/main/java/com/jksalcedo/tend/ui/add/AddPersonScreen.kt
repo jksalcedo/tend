@@ -59,7 +59,7 @@ fun AddPersonScreen(
     var email by remember { mutableStateOf("") }
     var socialLinks by remember { mutableStateOf(emptyList<SocialLink>()) }
     var events by remember { mutableStateOf(emptyList<PersonEvent>()) }
-    var cadence by remember { mutableStateOf("14") }
+    var frequency by remember { mutableStateOf("14") }
     var notes by remember { mutableStateOf("") }
 
     var showSocialDialog by remember { mutableStateOf(false) }
@@ -96,15 +96,15 @@ fun AddPersonScreen(
         onAddSocialLink = { showSocialDialog = true },
         events = events,
         onAddEvent = { showEventDialog = true },
-        cadence = cadence,
-        onCadenceChange = { cadence = it },
+        frequency = frequency,
+        onFrequencyChange = { frequency = it },
         notes = notes,
         onNotesChange = { notes = it },
         onSaveClick = {
-            val cadenceInt = cadence.toIntOrNull() ?: 14
+            val frequencyDays = frequency.toIntOrNull() ?: 14
             viewModel.addPerson(
                 name = name,
-                cadenceDays = cadenceInt,
+                frequencyDays = frequencyDays,
                 notes = notes,
                 phoneNumber = phoneNumber.ifBlank { null },
                 email = email.ifBlank { null },
@@ -130,8 +130,8 @@ private fun AddPersonScreenContent(
     onAddSocialLink: () -> Unit,
     events: List<PersonEvent>,
     onAddEvent: () -> Unit,
-    cadence: String,
-    onCadenceChange: (String) -> Unit,
+    frequency: String,
+    onFrequencyChange: (String) -> Unit,
     notes: String,
     onNotesChange: (String) -> Unit,
     onSaveClick: () -> Unit,
@@ -308,7 +308,7 @@ private fun AddPersonScreenContent(
             }
 
 
-            // Cadence Section
+            // Frequency Section
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(16.dp),
@@ -316,7 +316,7 @@ private fun AddPersonScreenContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Check-in Cadence",
+                        text = "Check-in frequency",
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = mintAccent
@@ -339,9 +339,9 @@ private fun AddPersonScreenContent(
                             "14" to "Bi-weekly",
                             "30" to "Monthly"
                         ).forEach { (days, label) ->
-                            val isSelected = cadence == days
+                            val isSelected = frequency == days
                             Surface(
-                                onClick = { onCadenceChange(days) },
+                                onClick = { onFrequencyChange(days) },
                                 shape = RoundedCornerShape(12.dp),
                                 color = if (isSelected) mintAccent else MaterialTheme.colorScheme.surface,
                                 modifier = Modifier.weight(1f)
@@ -374,8 +374,8 @@ private fun AddPersonScreenContent(
 
                     // Custom input
                     OutlinedTextField(
-                        value = cadence,
-                        onValueChange = onCadenceChange,
+                        value = frequency,
+                        onValueChange = onFrequencyChange,
                         label = { Text("Custom (days)") },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
@@ -459,8 +459,8 @@ private fun AddPersonScreenPreviewLight() {
             onPhoneNumberChange = {},
             email = "",
             onEmailChange = {},
-            cadence = "14",
-            onCadenceChange = {},
+            frequency = "14",
+            onFrequencyChange = {},
             notes = "",
             onNotesChange = {},
             onSaveClick = {},
@@ -484,8 +484,8 @@ private fun AddPersonScreenPreviewDark() {
             onPhoneNumberChange = {},
             email = "",
             onEmailChange = {},
-            cadence = "14",
-            onCadenceChange = {},
+            frequency = "14",
+            onFrequencyChange = {},
             notes = "",
             onNotesChange = {},
             onSaveClick = {},
@@ -509,8 +509,8 @@ private fun AddPersonScreenFilledPreviewLight() {
             onPhoneNumberChange = {},
             email = "denise@example.com",
             onEmailChange = {},
-            cadence = "14",
-            onCadenceChange = {},
+            frequency = "14",
+            onFrequencyChange = {},
             notes = "Lives in Silverton, TN. Allergic to shellfish.",
             onNotesChange = {},
             onSaveClick = {},
@@ -534,8 +534,8 @@ private fun AddPersonScreenFilledPreviewDark() {
             onPhoneNumberChange = {},
             email = "denise@example.com",
             onEmailChange = {},
-            cadence = "14",
-            onCadenceChange = {},
+            frequency = "14",
+            onFrequencyChange = {},
             notes = "Lives in Silverton, TN. Allergic to shellfish.",
             onNotesChange = {},
             onSaveClick = {},

@@ -360,7 +360,7 @@ private fun EmptyStateCard(
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Add someone to start tending your garden",
+                text = "Add someone to start keeping in touch",
                 style = MaterialTheme.typography.bodyMedium,
                 color = pinkAccent.copy(alpha = 0.8f)
             )
@@ -532,7 +532,7 @@ private fun HomeScreenWithPeoplePreviewLight() {
                     notes = listOf(Note(content = "Met at conference")),
                     events = emptyList(),
                     socialLinks = emptyList(),
-                    cadenceDays = 14,
+                    frequencyDays = 14,
                     lastContactedAt = System.currentTimeMillis(),
                     nextReminderAt = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2)
                 ),
@@ -545,7 +545,7 @@ private fun HomeScreenWithPeoplePreviewLight() {
                     notes = listOf(Note(content = "College friend")),
                     events = emptyList(),
                     socialLinks = emptyList(),
-                    cadenceDays = 30,
+                    frequencyDays = 30,
                     lastContactedAt = System.currentTimeMillis(),
                     nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)
                 ),
@@ -558,7 +558,7 @@ private fun HomeScreenWithPeoplePreviewLight() {
                     notes = listOf(Note(content = "Work colleague")),
                     events = emptyList(),
                     socialLinks = emptyList(),
-                    cadenceDays = 7,
+                    frequencyDays = 7,
                     lastContactedAt = System.currentTimeMillis(),
                     nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(10)
                 )
@@ -584,7 +584,7 @@ private fun HomeScreenWithPeoplePreviewDark() {
                     notes = listOf(Note(content = "Met at conference")),
                     events = emptyList(),
                     socialLinks = emptyList(),
-                    cadenceDays = 14,
+                    frequencyDays = 14,
                     lastContactedAt = System.currentTimeMillis(),
                     nextReminderAt = System.currentTimeMillis() - TimeUnit.DAYS.toMillis(2)
                 ),
@@ -597,7 +597,7 @@ private fun HomeScreenWithPeoplePreviewDark() {
                     notes = listOf(Note(content = "College friend")),
                     events = emptyList(),
                     socialLinks = emptyList(),
-                    cadenceDays = 30,
+                    frequencyDays = 30,
                     lastContactedAt = System.currentTimeMillis(),
                     nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)
                 )

@@ -9,7 +9,7 @@ class AddPersonUseCase @Inject constructor(
 ) {
     suspend operator fun invoke(
         name: String,
-        cadenceDays: Int,
+        frequencyDays: Int,
         initialNote: String = "",
         photoUri: String? = null,
         phoneNumber: String? = null,
@@ -18,7 +18,7 @@ class AddPersonUseCase @Inject constructor(
         events: List<com.jksalcedo.tend.domain.model.PersonEvent> = emptyList()
     ) {
         val now = System.currentTimeMillis()
-        val nextReminder = now + (cadenceDays * 24 * 60 * 60 * 1000L)
+        val nextReminder = now + (frequencyDays * 24 * 60 * 60 * 1000L)
         
         val notesList = if (initialNote.isNotBlank()) {
             listOf(com.jksalcedo.tend.domain.model.Note(content = initialNote))
@@ -34,7 +34,7 @@ class AddPersonUseCase @Inject constructor(
             notes = notesList,
             socialLinks = socialLinks,
             events = events,
-            cadenceDays = cadenceDays,
+            frequencyDays = frequencyDays,
             lastContactedAt = now,
             nextReminderAt = nextReminder
         )

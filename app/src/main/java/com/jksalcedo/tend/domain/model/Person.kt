@@ -9,7 +9,7 @@ data class Person(
     val events: List<PersonEvent> = emptyList(),
     val notes: List<Note> = emptyList(),
     val socialLinks: List<SocialLink> = emptyList(),
-    val cadenceDays: Int,
+    val frequencyDays: Int,
     val lastContactedAt: Long,
     val nextReminderAt: Long,
     val isArchived: Boolean = false

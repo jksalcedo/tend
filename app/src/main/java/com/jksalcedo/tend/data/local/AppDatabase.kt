@@ -7,7 +7,7 @@ import com.jksalcedo.tend.data.local.entity.PersonEntity
 
 @Database(
     entities = [PersonEntity::class],
-    version = 2,
+    version = 3,
     exportSchema = false
 )
 @TypeConverters(Converters::class)

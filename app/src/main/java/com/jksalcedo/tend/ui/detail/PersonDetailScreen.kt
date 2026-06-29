@@ -114,7 +114,7 @@ fun PersonDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Cadence: Every ${p.cadenceDays} days",
+                        text = "Check in every ${p.frequencyDays} days",
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

@@ -44,7 +44,7 @@ class PersonRepositoryImpl @Inject constructor(
             events = events,
             notes = notes,
             socialLinks = socialLinks,
-            cadenceDays = cadenceDays,
+            frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
             isArchived = isArchived
@@ -61,7 +61,7 @@ class PersonRepositoryImpl @Inject constructor(
             events = events,
             notes = notes,
             socialLinks = socialLinks,
-            cadenceDays = cadenceDays,
+            frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
             isArchived = isArchived

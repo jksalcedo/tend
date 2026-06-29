@@ -14,7 +14,7 @@ class AddPersonViewModel @Inject constructor(
 
     fun addPerson(
         name: String,
-        cadenceDays: Int,
+        frequencyDays: Int,
         notes: String,
         phoneNumber: String?,
         email: String?,
@@ -24,7 +24,7 @@ class AddPersonViewModel @Inject constructor(
         viewModelScope.launch {
             addPersonUseCase(
                 name = name,
-                cadenceDays = cadenceDays,
+                frequencyDays = frequencyDays,
                 initialNote = notes,
                 phoneNumber = phoneNumber,
                 email = email,
