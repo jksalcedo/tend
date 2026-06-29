@@ -139,50 +139,6 @@ private fun HomeScreenContent(
 
             Spacer(modifier = Modifier.height(24.dp))
 
-            // Stats Card
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(20.dp),
-                colors = CardDefaults.cardColors(containerColor = mintColor)
-            ) {
-                Row(
-                    modifier = Modifier
-                        .padding(20.dp)
-                        .fillMaxWidth(),
-                    horizontalArrangement = Arrangement.SpaceBetween,
-                    verticalAlignment = Alignment.CenterVertically
-                ) {
-                    Column {
-                        Text(
-                            text = if (people.isEmpty()) "Start your journey!" else "Nice work! 🎉",
-                            style = MaterialTheme.typography.titleMedium,
-                            fontWeight = FontWeight.SemiBold,
-                            color = mintAccent
-                        )
-                        Spacer(modifier = Modifier.height(4.dp))
-                        Text(
-                            text = if (people.isEmpty()) "Add someone to tend to"
-                            else "You have ${people.size} connection${if (people.size != 1) "s" else ""}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = mintAccent.copy(alpha = 0.8f)
-                        )
-                    }
-                    Surface(
-                        shape = RoundedCornerShape(12.dp),
-                        color = MaterialTheme.colorScheme.surface
-                    ) {
-                        Text(
-                            text = "Details",
-                            modifier = Modifier.padding(horizontal = 16.dp, vertical = 8.dp),
-                            style = MaterialTheme.typography.labelLarge,
-                            color = mintAccent
-                        )
-                    }
-                }
-            }
-
-            Spacer(modifier = Modifier.height(20.dp))
-
             // Dashboard Cards Row
             Row(
                 modifier = Modifier.fillMaxWidth(),
@@ -200,12 +156,12 @@ private fun HomeScreenContent(
 
                 DashboardCard(
                     modifier = Modifier.weight(1f),
-                    title = "Contacts",
+                    title = "Connections",
                     icon = Icons.Default.Person,
                     backgroundColor = purpleColor,
                     contentColor = purpleAccent,
                     count = people.size,
-                    label = "people"
+                    label = if (people.size == 1) "connection" else "connections"
                 )
             }
 
@@ -272,7 +228,7 @@ private fun HomeScreenContent(
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("New Contact", fontWeight = FontWeight.Medium)
+            Text("New Connection", fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -370,7 +326,7 @@ private fun EmptyStateCard(
                 colors = ButtonDefaults.buttonColors(containerColor = pinkAccent),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Add Person")
+                Text("Add Connection")
             }
         }
     }

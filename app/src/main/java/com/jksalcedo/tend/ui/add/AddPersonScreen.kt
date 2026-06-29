@@ -166,7 +166,7 @@ private fun AddPersonScreenContent(
                 )
             }
             Text(
-                text = "Add Person",
+                text = "Add Connection",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -437,7 +437,7 @@ private fun AddPersonScreenContent(
                 )
             ) {
                 Text(
-                    "Save Contact",
+                    "Save Connection",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
