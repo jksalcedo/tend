@@ -2,10 +2,14 @@
   <img src="fastlane/metadata/android/en-US/images/icon.png" alt="Tend app icon" width="128" />
 </p>
 
-# Tend
+<div align="center">
+  <h1>Tend</h1> 
 
 A gentle Android app for tending the relationships that matter. Tend helps you remember to check in
 with friends, family, and loved ones.
+</div>
+
+> ### Early development.
 
 ## Features
 
@@ -42,6 +46,3 @@ with friends, family, and loved ones.
 2. Open the project in Android Studio
 3. Sync Gradle and run the app configuration on a device or emulator
 
-## Status
-
-Early development.
