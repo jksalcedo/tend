@@ -23,7 +23,15 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.ui.platform.LocalContext
+import com.google.gson.Gson
+import com.jksalcedo.tend.ui.add.SharedPerson
+import io.github.g00fy2.quickie.QRResult
+import io.github.g00fy2.quickie.ScanQRCode
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -60,7 +68,7 @@ import java.util.concurrent.TimeUnit
 @Composable
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
-    onAddPersonClick: () -> Unit,
+    onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit
 ) {
     val people by viewModel.people.collectAsState()
@@ -74,12 +82,47 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenContent(
     people: List<Person>,
-    onAddPersonClick: () -> Unit,
+    onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val dueSoon =
         people.filter { it.nextReminderAt <= System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3) }
+
+    val context = LocalContext.current
+    val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
+        when (result) {
+            is QRResult.QRSuccess -> {
+                val rawValue = result.content.rawValue
+                if (!rawValue.isNullOrBlank()) {
+                    try {
+                        val shared = Gson().fromJson(rawValue, SharedPerson::class.java)
+                        if (shared != null && !shared.name.isNullOrBlank()) {
+                            val encodedData = java.net.URLEncoder.encode(rawValue, "UTF-8")
+                            onAddPersonClick(encodedData)
+                        } else {
+                            Toast.makeText(context, "Scanned QR code does not contain a valid connection", Toast.LENGTH_SHORT).show()
+                        }
+                    } catch (e: Exception) {
+                        if (rawValue.length < 100) {
+                            val fallbackJson = Gson().toJson(SharedPerson(name = rawValue))
+                            val encodedData = java.net.URLEncoder.encode(fallbackJson, "UTF-8")
+                            onAddPersonClick(encodedData)
+                        } else {
+                            Toast.makeText(context, "Scanned QR code is not a valid connection format", Toast.LENGTH_SHORT).show()
+                        }
+                    }
+                }
+            }
+            is QRResult.QRMissingPermission -> {
+                Toast.makeText(context, "Camera permission is required to scan QR codes", Toast.LENGTH_SHORT).show()
+            }
+            is QRResult.QRError -> {
+                Toast.makeText(context, "Error scanning QR code: ${result.exception.message}", Toast.LENGTH_SHORT).show()
+            }
+            else -> {}
+        }
+    }
 
     // Resolve colors based on theme
     val mintColor = if (isDarkTheme) TendPastels.MintDark else TendPastels.Mint
@@ -128,12 +171,21 @@ private fun HomeScreenContent(
                         )
                     }
                 }
-                IconButton(onClick = {}) {
-                    Icon(
-                        Icons.Outlined.Notifications,
-                        contentDescription = "Notifications",
-                        tint = MaterialTheme.colorScheme.onSurfaceVariant
-                    )
+                Row(verticalAlignment = Alignment.CenterVertically) {
+                    IconButton(onClick = { scanQrCodeLauncher.launch(null) }) {
+                        Icon(
+                            Icons.Default.QrCodeScanner,
+                            contentDescription = "Scan QR Code",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    IconButton(onClick = {}) {
+                        Icon(
+                            Icons.Outlined.Notifications,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                 }
             }
 
@@ -180,7 +232,7 @@ private fun HomeScreenContent(
             // Connections List
             if (people.isEmpty()) {
                 EmptyStateCard(
-                    onAddPersonClick = onAddPersonClick,
+                    onAddPersonClick = { onAddPersonClick(null) },
                     pinkColor = pinkColor,
                     pinkAccent = pinkAccent
                 )
@@ -209,7 +261,7 @@ private fun HomeScreenContent(
 
         // FAB
         ExtendedFloatingActionButton(
-            onClick = onAddPersonClick,
+            onClick = { onAddPersonClick(null) },
             modifier = Modifier
                 .align(Alignment.BottomEnd)
                 .padding(bottom = 24.dp, end = 24.dp),
@@ -446,7 +498,7 @@ private fun HomeScreenEmptyPreviewLight() {
     TendTheme(darkTheme = false) {
         HomeScreenContent(
             people = emptyList(),
-            onAddPersonClick = {},
+            onAddPersonClick = { _ -> },
             onPersonClick = {}
         )
     }
@@ -458,7 +510,7 @@ private fun HomeScreenEmptyPreviewDark() {
     TendTheme(darkTheme = true) {
         HomeScreenContent(
             people = emptyList(),
-            onAddPersonClick = {},
+            onAddPersonClick = { _ -> },
             onPersonClick = {}
         )
     }
@@ -510,7 +562,7 @@ private fun HomeScreenWithPeoplePreviewLight() {
                     nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(10)
                 )
             ),
-            onAddPersonClick = {},
+            onAddPersonClick = { _ -> },
             onPersonClick = {}
         )
     }
@@ -549,7 +601,7 @@ private fun HomeScreenWithPeoplePreviewDark() {
                     nextReminderAt = System.currentTimeMillis() + TimeUnit.DAYS.toMillis(1)
                 )
             ),
-            onAddPersonClick = {},
+            onAddPersonClick = { _ -> },
             onPersonClick = {}
         )
     }

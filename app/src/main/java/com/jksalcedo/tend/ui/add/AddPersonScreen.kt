@@ -42,6 +42,8 @@ import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import org.koin.androidx.compose.koinViewModel
+import com.google.gson.Gson
+import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
 import com.jksalcedo.tend.ui.theme.TendPastels
@@ -52,15 +54,47 @@ import java.util.Date
 @Composable
 fun AddPersonScreen(
     viewModel: AddPersonViewModel = koinViewModel(),
+    sharedData: String? = null,
     onNavigateBack: () -> Unit
 ) {
-    var name by remember { mutableStateOf("") }
-    var phoneNumber by remember { mutableStateOf("") }
-    var email by remember { mutableStateOf("") }
-    var socialLinks by remember { mutableStateOf(emptyList<SocialLink>()) }
-    var events by remember { mutableStateOf(emptyList<PersonEvent>()) }
-    var frequency by remember { mutableStateOf("14") }
-    var notes by remember { mutableStateOf("") }
+    val sharedPerson = remember(sharedData) {
+        if (!sharedData.isNullOrBlank()) {
+            try {
+                Gson().fromJson(sharedData, SharedPerson::class.java)
+            } catch (e: Exception) {
+                try {
+                    val decoded = java.net.URLDecoder.decode(sharedData, "UTF-8")
+                    Gson().fromJson(decoded, SharedPerson::class.java)
+                } catch (e2: Exception) {
+                    null
+                }
+            }
+        } else {
+            null
+        }
+    }
+
+    var name by remember { mutableStateOf(sharedPerson?.name ?: "") }
+    var phoneNumber by remember { mutableStateOf(sharedPerson?.phoneNumber ?: "") }
+    var email by remember { mutableStateOf(sharedPerson?.email ?: "") }
+    var socialLinks by remember {
+        mutableStateOf(
+            sharedPerson?.socialLinks?.map { SocialLink(it.platform, it.handle) } ?: emptyList()
+        )
+    }
+    var events by remember {
+        mutableStateOf(
+            sharedPerson?.events?.map {
+                PersonEvent(
+                    label = it.label,
+                    date = it.date,
+                    type = try { EventType.valueOf(it.type) } catch (ex: Exception) { EventType.OTHER }
+                )
+            } ?: emptyList()
+        )
+    }
+    var frequency by remember { mutableStateOf((sharedPerson?.frequencyDays ?: 14).toString()) }
+    var notes by remember { mutableStateOf(sharedPerson?.notes ?: "") }
 
     var showSocialDialog by remember { mutableStateOf(false) }
     var showEventDialog by remember { mutableStateOf(false) }
