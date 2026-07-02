@@ -1,0 +1,8 @@
+1: Changed empty state description from "Add someone to start tending your garden" to "Add someone to start keeping in touch".
+2: Migrated dependency injection framework from Hilt to Koin.
+3: Removed redundant top stats card from the home dashboard.
+4: Standardized home and detail screen terminology to consistently use "Connection" instead of mixed terms like "Contact" and "Person".
+5: Removed non-functional "See all" button and renamed the details screen contact section to "Ways to Connect".
+6: Added QR code generation to share connections and integrated a Quickie-based camera scanner to import connection details.
+7: Enabled R8 minification and full resource shrinking on release builds to reduce APK size.
+8: Added "Mark as contacted" button to the connection detail screen that resets the check-in timer and records the current timestamp as lastContactedAt.
