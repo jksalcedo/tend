@@ -4,6 +4,7 @@ import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jksalcedo.tend.domain.model.Person
+import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -14,6 +15,7 @@ import kotlinx.coroutines.launch
 class PersonDetailViewModel(
     private val getPersonUseCase: GetPersonUseCase,
     private val checkInUseCase: CheckInUseCase,
+    private val addNoteUseCase: AddNoteUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -36,6 +38,15 @@ class PersonDetailViewModel(
         val id = personId ?: return
         viewModelScope.launch {
             checkInUseCase(id)
+            _person.value = getPersonUseCase(id)
+        }
+    }
+
+    fun addNote(content: String) {
+        val id = personId ?: return
+        if (content.isBlank()) return
+        viewModelScope.launch {
+            addNoteUseCase(id, content)
             _person.value = getPersonUseCase(id)
         }
     }
