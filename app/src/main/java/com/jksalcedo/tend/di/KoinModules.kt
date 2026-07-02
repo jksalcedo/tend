@@ -4,6 +4,7 @@ import androidx.room.Room
 import com.jksalcedo.tend.data.local.AppDatabase
 import com.jksalcedo.tend.data.repository.PersonRepositoryImpl
 import com.jksalcedo.tend.domain.repository.PersonRepository
+import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.AddPersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
@@ -33,6 +34,7 @@ val appModule = module {
     factory { GetPersonUseCase(get()) }
     factory { AddPersonUseCase(get()) }
     factory { CheckInUseCase(get()) }
+    factory { AddNoteUseCase(get()) }
     
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)
