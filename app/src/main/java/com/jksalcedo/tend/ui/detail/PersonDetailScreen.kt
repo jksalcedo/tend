@@ -38,6 +38,10 @@ import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
+import com.jksalcedo.tend.ui.add.ShareScanSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -63,6 +67,7 @@ fun PersonDetailScreen(
 ) {
     val person by viewModel.person.collectAsState()
     val context = LocalContext.current
+    var showShareSheet by remember { mutableStateOf(false) }
 
     Scaffold(
         topBar = {
@@ -73,12 +78,27 @@ fun PersonDetailScreen(
                         Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                     }
                 },
+                actions = {
+                    person?.let {
+                        IconButton(onClick = { showShareSheet = true }) {
+                            Icon(Icons.Default.Share, contentDescription = "Share connection")
+                        }
+                    }
+                },
                 colors = TopAppBarDefaults.topAppBarColors(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
         }
     ) { padding ->
+        if (showShareSheet) {
+            person?.let { p ->
+                ShareScanSheet(
+                    person = p,
+                    onDismissRequest = { showShareSheet = false }
+                )
+            }
+        }
         person?.let { p ->
             Column(
                 modifier = Modifier

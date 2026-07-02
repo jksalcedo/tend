@@ -1,6 +1,5 @@
 plugins {
     alias(libs.plugins.android.application)
-    alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
 }
@@ -83,6 +82,10 @@ dependencies {
 
     // Gson
     implementation(libs.gson)
+
+    // Qr
+    implementation(libs.core)
+    implementation(libs.quickie.bundled)
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

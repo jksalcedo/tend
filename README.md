@@ -24,7 +24,7 @@ with friends, family, and loved ones.
 
 - Kotlin
 - Jetpack Compose & Material 3
-- Hilt
+- Koin
 - Room
 - Navigation Compose
 - MVVM with a clean architecture layout (`data` / `domain` / `ui`)
