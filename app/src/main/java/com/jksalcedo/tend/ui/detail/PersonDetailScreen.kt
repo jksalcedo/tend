@@ -1,7 +1,6 @@
 package com.jksalcedo.tend.ui.detail
 
 import android.content.Intent
-import android.net.Uri
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -21,11 +20,11 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Email
-import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,23 +46,21 @@ import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
-import com.jksalcedo.tend.ui.add.ShareScanSheet
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
-import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.androidx.compose.koinViewModel
-import com.jksalcedo.tend.domain.model.Person
+import androidx.core.net.toUri
 import com.jksalcedo.tend.domain.model.PersonEvent
-import com.jksalcedo.tend.domain.model.SocialLink
+import com.jksalcedo.tend.ui.add.ShareScanSheet
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -177,7 +174,7 @@ fun PersonDetailScreen(
                         value = p.phoneNumber,
                         onClick = {
                             val intent = Intent(Intent.ACTION_DIAL).apply {
-                                data = Uri.parse("tel:${p.phoneNumber}")
+                                data = "tel:${p.phoneNumber}".toUri()
                             }
                             context.startActivity(intent)
                         }
@@ -192,7 +189,7 @@ fun PersonDetailScreen(
                         value = p.email,
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
-                                data = Uri.parse("mailto:${p.email}")
+                                data = "mailto:${p.email}".toUri()
                             }
                             context.startActivity(intent)
                         }
@@ -213,7 +210,7 @@ fun PersonDetailScreen(
                                 "github" -> "https://github.com/${link.handle}"
                                 else -> "https://google.com/search?q=${link.platform}+${link.handle}" // Fallback
                             }
-                            val intent = Intent(Intent.ACTION_VIEW, Uri.parse(url))
+                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
                             context.startActivity(intent)
                         }
                     )
@@ -238,63 +235,65 @@ fun PersonDetailScreen(
                 }
 
                 Text(
-                        text = "History & Notes",
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
+                    text = "History & Notes",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
 
-                    var noteInput by remember { mutableStateOf("") }
-                    Row(
-                        modifier = Modifier.fillMaxWidth(),
-                        verticalAlignment = Alignment.CenterVertically,
-                        horizontalArrangement = Arrangement.spacedBy(8.dp)
-                    ) {
-                        OutlinedTextField(
-                            value = noteInput,
-                            onValueChange = { noteInput = it },
-                            placeholder = { Text("Add a note…") },
-                            modifier = Modifier.weight(1f),
-                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
-                            colors = OutlinedTextFieldDefaults.colors(
-                                focusedBorderColor = MaterialTheme.colorScheme.primary,
-                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
-                            ),
-                            maxLines = 3
-                        )
-                        IconButton(
-                            onClick = {
-                                viewModel.addNote(noteInput)
-                                noteInput = ""
-                            },
-                            enabled = noteInput.isNotBlank()
-                        ) {
-                            Icon(
-                                Icons.Default.Send,
-                                contentDescription = "Save note",
-                                tint = if (noteInput.isNotBlank())
-                                    MaterialTheme.colorScheme.primary
-                                else
-                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                var noteInput by remember { mutableStateOf("") }
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically,
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = noteInput,
+                        onValueChange = { noteInput = it },
+                        placeholder = { Text("Add a note…") },
+                        modifier = Modifier.weight(1f),
+                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = MaterialTheme.colorScheme.primary,
+                            unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
+                                alpha = 0.3f
                             )
-                        }
-                    }
-
-                    Spacer(modifier = Modifier.height(8.dp))
-
-                    if (p.notes.isEmpty()) {
-                        Text(
-                            text = "No notes yet",
-                            style = MaterialTheme.typography.bodyMedium,
-                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        ),
+                        maxLines = 3
+                    )
+                    IconButton(
+                        onClick = {
+                            viewModel.addNote(noteInput)
+                            noteInput = ""
+                        },
+                        enabled = noteInput.isNotBlank()
+                    ) {
+                        Icon(
+                            Icons.AutoMirrored.Filled.Send,
+                            contentDescription = "Save note",
+                            tint = if (noteInput.isNotBlank())
+                                MaterialTheme.colorScheme.primary
+                            else
+                                MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
                         )
-                    } else {
-                        p.notes.reversed().forEach { note ->
-                            NoteItem(note = note.content, date = note.createdAt)
-                            Spacer(modifier = Modifier.height(8.dp))
-                        }
                     }
-                
+                }
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                if (p.notes.isEmpty()) {
+                    Text(
+                        text = "No notes yet",
+                        style = MaterialTheme.typography.bodyMedium,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                    )
+                } else {
+                    p.notes.reversed().forEach { note ->
+                        NoteItem(note = note.content, date = note.createdAt)
+                        Spacer(modifier = Modifier.height(8.dp))
+                    }
+                }
+
                 Spacer(modifier = Modifier.height(24.dp))
 
                 Button(
@@ -395,7 +394,11 @@ fun EventItem(event: PersonEvent) {
                 )
             }
             Text(
-                text = SimpleDateFormat("MMM dd", Locale.getDefault()).format(Date(event.date)),
+                text = SimpleDateFormat("MMM dd", LocalLocale.current.platformLocale).format(
+                    Date(
+                        event.date
+                    )
+                ),
                 style = MaterialTheme.typography.bodyLarge,
                 fontWeight = FontWeight.Bold
             )
@@ -412,7 +415,9 @@ fun NoteItem(note: String, date: Long) {
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
             Text(
-                text = SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()).format(Date(date)),
+                text = SimpleDateFormat("MMM dd, yyyy", LocalLocale.current.platformLocale).format(
+                    Date(date)
+                ),
                 style = MaterialTheme.typography.labelSmall,
                 color = MaterialTheme.colorScheme.onSurfaceVariant
             )
