@@ -25,6 +25,7 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Email
+import androidx.compose.material.icons.filled.Send
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -34,6 +35,8 @@ import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Scaffold
 import androidx.compose.material3.Text
 import androidx.compose.material3.TopAppBar
@@ -234,20 +237,63 @@ fun PersonDetailScreen(
                     Spacer(modifier = Modifier.height(24.dp))
                 }
 
-                // Notes / History
                 Text(
-                    text = "History & Notes",
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.SemiBold
-                )
-                Spacer(modifier = Modifier.height(8.dp))
-                
-                // Display initial notes as first entry if exists (legacy support or simple view)
-                // In future, this will be a list of Note objects
-                p.notes.forEach { note ->
-                    NoteItem(note = note.content, date = note.createdAt)
+                        text = "History & Notes",
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
                     Spacer(modifier = Modifier.height(8.dp))
-                }
+
+                    var noteInput by remember { mutableStateOf("") }
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        verticalAlignment = Alignment.CenterVertically,
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        OutlinedTextField(
+                            value = noteInput,
+                            onValueChange = { noteInput = it },
+                            placeholder = { Text("Add a note…") },
+                            modifier = Modifier.weight(1f),
+                            shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = MaterialTheme.colorScheme.primary,
+                                unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.3f)
+                            ),
+                            maxLines = 3
+                        )
+                        IconButton(
+                            onClick = {
+                                viewModel.addNote(noteInput)
+                                noteInput = ""
+                            },
+                            enabled = noteInput.isNotBlank()
+                        ) {
+                            Icon(
+                                Icons.Default.Send,
+                                contentDescription = "Save note",
+                                tint = if (noteInput.isNotBlank())
+                                    MaterialTheme.colorScheme.primary
+                                else
+                                    MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.4f)
+                            )
+                        }
+                    }
+
+                    Spacer(modifier = Modifier.height(8.dp))
+
+                    if (p.notes.isEmpty()) {
+                        Text(
+                            text = "No notes yet",
+                            style = MaterialTheme.typography.bodyMedium,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+                        )
+                    } else {
+                        p.notes.reversed().forEach { note ->
+                            NoteItem(note = note.content, date = note.createdAt)
+                            Spacer(modifier = Modifier.height(8.dp))
+                        }
+                    }
                 
                 Spacer(modifier = Modifier.height(24.dp))
 
