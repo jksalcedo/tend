@@ -69,13 +69,15 @@ import java.util.concurrent.TimeUnit
 fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onAddPersonClick: (String?) -> Unit,
-    onPersonClick: (Long) -> Unit
+    onPersonClick: (Long) -> Unit,
+    onOpenNotificationSettings: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     HomeScreenContent(
         people = people,
         onAddPersonClick = onAddPersonClick,
-        onPersonClick = onPersonClick
+        onPersonClick = onPersonClick,
+        onOpenNotificationSettings = onOpenNotificationSettings
     )
 }
 
@@ -83,7 +85,8 @@ fun HomeScreen(
 private fun HomeScreenContent(
     people: List<Person>,
     onAddPersonClick: (String?) -> Unit,
-    onPersonClick: (Long) -> Unit
+    onPersonClick: (Long) -> Unit,
+    onOpenNotificationSettings: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val dueSoon =
@@ -179,7 +182,7 @@ private fun HomeScreenContent(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = {}) {
+                    IconButton(onClick = onOpenNotificationSettings) {
                         Icon(
                             Icons.Outlined.Notifications,
                             contentDescription = "Notifications",
