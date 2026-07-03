@@ -1,10 +1,12 @@
 package com.jksalcedo.tend.notification
 
+import android.Manifest
 import android.app.NotificationChannel
 import android.app.NotificationManager
 import android.app.PendingIntent
 import android.content.Context
 import android.content.Intent
+import androidx.annotation.RequiresPermission
 import androidx.core.app.NotificationCompat
 import androidx.core.app.NotificationManagerCompat
 import com.jksalcedo.tend.MainActivity
@@ -27,6 +29,7 @@ object NotificationHelper {
         manager.createNotificationChannel(channel)
     }
 
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     fun showReminders(context: Context, names: List<String>) {
         if (names.isEmpty()) return
 
@@ -39,13 +42,13 @@ object NotificationHelper {
         )
 
         val (title, body) = when (names.size) {
-            1 -> "Time to reach out 🌱" to "Check in with ${names[0]}"
-            2 -> "Time to reach out 🌱" to "Check in with ${names[0]} and ${names[1]}"
-            else -> "Time to reach out 🌱" to "Check in with ${names[0]}, ${names[1]}, and ${names.size - 2} more"
+            1 -> "Time to reach out " to "Check in with ${names[0]}"
+            2 -> "Time to reach out " to "Check in with ${names[0]} and ${names[1]}"
+            else -> "Time to reach out " to "Check in with ${names[0]}, ${names[1]}, and ${names.size - 2} more"
         }
 
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
-            .setSmallIcon(R.drawable.ic_launcher_foreground)
+            .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(title)
             .setContentText(body)
             .setStyle(NotificationCompat.BigTextStyle().bigText(body))
