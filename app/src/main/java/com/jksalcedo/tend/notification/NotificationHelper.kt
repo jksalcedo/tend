@@ -18,6 +18,8 @@ object NotificationHelper {
     private const val CHANNEL_NAME = "Check-in Reminders"
     private const val CHANNEL_DESC = "Reminds you when it's time to reach out to someone"
 
+    private const val NOTIF_ID_CHECKINS = 1001
+
     fun createChannel(context: Context) {
         val channel = NotificationChannel(
             CHANNEL_ID,
@@ -32,21 +34,64 @@ object NotificationHelper {
     @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
     fun showReminders(context: Context, names: List<String>) {
         if (names.isEmpty()) return
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
+        val pendingIntent = mainPendingIntent(context, requestCode = 0)
+
+        val (title, body) = when (names.size) {
+            1 -> "Time to reach out 🌱" to "Check in with ${names[0]}"
+            2 -> "Time to reach out 🌱" to "Check in with ${names[0]} and ${names[1]}"
+            else -> "Time to reach out 🌱" to "Check in with ${names[0]}, ${names[1]}, and ${names.size - 2} more"
+        }
+
+        notify(context, NOTIF_ID_CHECKINS, title, body, pendingIntent)
+    }
+
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    fun showEventReminder(
+        context: Context,
+        personName: String,
+        eventLabel: String,
+        daysUntil: Int,
+        notifId: Int
+    ) {
+        if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
+
+        val pendingIntent = mainPendingIntent(context, requestCode = notifId)
+
+        val title = when {
+            eventLabel.contains("birthday", ignoreCase = true) -> "🎂 Upcoming birthday"
+            eventLabel.contains("anniversary", ignoreCase = true) -> "💍 Upcoming anniversary"
+            else -> "📅 Upcoming date"
+        }
+
+        val body = when (daysUntil) {
+            0 -> "$personName's $eventLabel is today!"
+            1 -> "$personName's $eventLabel is tomorrow"
+            else -> "$personName's $eventLabel is in $daysUntil days"
+        }
+
+        notify(context, notifId, title, body, pendingIntent)
+    }
+
+    private fun mainPendingIntent(context: Context, requestCode: Int): PendingIntent {
         val intent = Intent(context, MainActivity::class.java).apply {
             flags = Intent.FLAG_ACTIVITY_NEW_TASK or Intent.FLAG_ACTIVITY_CLEAR_TASK
         }
-        val pendingIntent = PendingIntent.getActivity(
-            context, 0, intent,
+        return PendingIntent.getActivity(
+            context, requestCode, intent,
             PendingIntent.FLAG_UPDATE_CURRENT or PendingIntent.FLAG_IMMUTABLE
         )
+    }
 
-        val (title, body) = when (names.size) {
-            1 -> "Time to reach out " to "Check in with ${names[0]}"
-            2 -> "Time to reach out " to "Check in with ${names[0]} and ${names[1]}"
-            else -> "Time to reach out " to "Check in with ${names[0]}, ${names[1]}, and ${names.size - 2} more"
-        }
-
+    @RequiresPermission(Manifest.permission.POST_NOTIFICATIONS)
+    private fun notify(
+        context: Context,
+        id: Int,
+        title: String,
+        body: String,
+        pendingIntent: PendingIntent
+    ) {
         val notification = NotificationCompat.Builder(context, CHANNEL_ID)
             .setSmallIcon(R.mipmap.ic_launcher_foreground)
             .setContentTitle(title)
@@ -57,6 +102,6 @@ object NotificationHelper {
             .setPriority(NotificationCompat.PRIORITY_DEFAULT)
             .build()
 
-        NotificationManagerCompat.from(context).notify(1001, notification)
+        NotificationManagerCompat.from(context).notify(id, notification)
     }
 }
