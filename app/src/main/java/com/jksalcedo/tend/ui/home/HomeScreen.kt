@@ -1,5 +1,7 @@
 package com.jksalcedo.tend.ui.home
 
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,15 +25,8 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Person
-import android.widget.Toast
-import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Notifications
-import androidx.compose.ui.platform.LocalContext
-import com.google.gson.Gson
-import com.jksalcedo.tend.ui.add.SharedPerson
-import io.github.g00fy2.quickie.QRResult
-import io.github.g00fy2.quickie.ScanQRCode
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -42,25 +37,33 @@ import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
-import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
+import androidx.compose.runtime.rememberCoroutineScope
+import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import org.koin.androidx.compose.koinViewModel
+
+import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
+import com.jksalcedo.tend.notification.NotificationHelper
+import com.jksalcedo.tend.ui.add.SharedPerson
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
+import io.github.g00fy2.quickie.QRResult
+import io.github.g00fy2.quickie.ScanQRCode
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -104,7 +107,11 @@ private fun HomeScreenContent(
                             val encodedData = java.net.URLEncoder.encode(rawValue, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
-                            Toast.makeText(context, "Scanned QR code does not contain a valid connection", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Scanned QR code does not contain a valid connection",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     } catch (e: Exception) {
                         if (rawValue.length < 100) {
@@ -112,17 +119,32 @@ private fun HomeScreenContent(
                             val encodedData = java.net.URLEncoder.encode(fallbackJson, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
-                            Toast.makeText(context, "Scanned QR code is not a valid connection format", Toast.LENGTH_SHORT).show()
+                            Toast.makeText(
+                                context,
+                                "Scanned QR code is not a valid connection format",
+                                Toast.LENGTH_SHORT
+                            ).show()
                         }
                     }
                 }
             }
+
             is QRResult.QRMissingPermission -> {
-                Toast.makeText(context, "Camera permission is required to scan QR codes", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Camera permission is required to scan QR codes",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+
             is QRResult.QRError -> {
-                Toast.makeText(context, "Error scanning QR code: ${result.exception.message}", Toast.LENGTH_SHORT).show()
+                Toast.makeText(
+                    context,
+                    "Error scanning QR code: ${result.exception.message}",
+                    Toast.LENGTH_SHORT
+                ).show()
             }
+
             else -> {}
         }
     }
@@ -260,6 +282,21 @@ private fun HomeScreenContent(
                     }
                 }
             }
+        }
+
+        val context = LocalContext.current
+        val scope = rememberCoroutineScope()
+        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+            Button(onClick = {
+                scope.launch {
+                    val now = System.currentTimeMillis()
+                    val due = people.filter { it.nextReminderAt <= now }.map { it.name }
+                    NotificationHelper.showReminders(context, due)
+                }
+            }) { Text("Notify overdue") }
+            Button(onClick = {
+                NotificationHelper.showReminders(context, people.map { it.name })
+            }) { Text("Notify all") }
         }
 
         // FAB
