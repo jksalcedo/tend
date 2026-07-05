@@ -39,8 +39,6 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
-import androidx.compose.runtime.rememberCoroutineScope
-import kotlinx.coroutines.launch
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -53,11 +51,9 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-
 import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
-import com.jksalcedo.tend.notification.NotificationHelper
 import com.jksalcedo.tend.ui.add.SharedPerson
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
@@ -282,21 +278,6 @@ private fun HomeScreenContent(
                     }
                 }
             }
-        }
-
-        val context = LocalContext.current
-        val scope = rememberCoroutineScope()
-        Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
-            Button(onClick = {
-                scope.launch {
-                    val now = System.currentTimeMillis()
-                    val due = people.filter { it.nextReminderAt <= now }.map { it.name }
-                    NotificationHelper.showReminders(context, due)
-                }
-            }) { Text("Notify overdue") }
-            Button(onClick = {
-                NotificationHelper.showReminders(context, people.map { it.name })
-            }) { Text("Notify all") }
         }
 
         // FAB
