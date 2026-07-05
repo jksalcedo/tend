@@ -32,14 +32,17 @@ with friends, family, and loved ones.
 - Koin
 - Room
 - Navigation Compose
-- MVVM with a clean architecture layout (`data` / `domain` / `ui`)
+- MVVM
+
+## Community
+**Telegram**: https://t.me/tend_community
 
 ## Requirements
 
 - Android Studio Panda or newer (recommended)
 - JDK 11+
 - Android SDK 36
-- minSdk 24
+- minSdk 26
 
 ## Getting started
 
