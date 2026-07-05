@@ -5,6 +5,11 @@
 <div align="center">
   <h1>Tend</h1> 
 
+<img alt="GitHub Downloads (all assets, all releases)" src="https://img.shields.io/github/downloads/jksalcedo/tend/total">
+
+<img alt="GitHub Release" src="https://img.shields.io/github/v/release/jksalcedo/tend?include_prereleases&display_name=release&logo=GitHub&color=green">
+
+
 A gentle Android app for tending the relationships that matter. Tend helps you remember to check in
 with friends, family, and loved ones.
 </div>
