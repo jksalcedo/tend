@@ -9,6 +9,7 @@ import com.jksalcedo.tend.domain.usecase.AddPersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
+import com.jksalcedo.tend.domain.usecase.UpdatePersonUseCase
 import com.jksalcedo.tend.ui.add.AddPersonViewModel
 import com.jksalcedo.tend.ui.detail.PersonDetailViewModel
 import com.jksalcedo.tend.ui.home.HomeViewModel
@@ -35,6 +36,7 @@ val appModule = module {
     factory { AddPersonUseCase(get()) }
     factory { CheckInUseCase(get()) }
     factory { AddNoteUseCase(get()) }
+    factory { UpdatePersonUseCase(get()) }
     
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)

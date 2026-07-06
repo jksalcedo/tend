@@ -6,7 +6,7 @@
 6: Added QR code generation to share connections and integrated a Quickie-based camera scanner to import connection details.
 7: Enabled R8 minification and full resource shrinking on release builds to reduce APK size.
 8: Added "Mark as contacted" button to the connection detail screen that resets the check-in timer and records the current timestamp as lastContactedAt.
-9: Added inline note input to the connection detail screen; notes are displayed newest-first and show an empty state when none exist.
+9: Added inline note input and connection editing capabilities to the connection detail screen; notes are displayed newest-first and show an empty state when none exist.
 10: Added WorkManager daily reminder notifications for overdue check-ins; bell button now opens app notification settings; POST_NOTIFICATIONS permission requested on Android 13+.
 11: Raised minimum supported Android version from 7.0 (API 24) to 8.0 Oreo (API 26).
 12: Extended reminder notifications to also fire for upcoming important dates (birthdays, anniversaries) within 7 days, with year-agnostic recurring logic.

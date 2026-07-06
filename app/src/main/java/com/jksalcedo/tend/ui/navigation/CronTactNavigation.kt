@@ -15,6 +15,7 @@ object Routes {
     const val HOME = "home"
     const val ADD_PERSON = "add_person?sharedData={sharedData}"
     const val DETAIL = "detail/{personId}"
+    const val EDIT = "edit/{personId}"
 }
 
 @Composable
@@ -61,6 +62,19 @@ fun TendNavGraph(
             })
         ) {
             PersonDetailScreen(
+                onNavigateBack = { navController.popBackStack() },
+                onEditClick = { personId -> navController.navigate("edit/$personId") }
+            )
+        }
+        composable(
+            route = Routes.EDIT,
+            arguments = listOf(navArgument("personId") {
+                type = NavType.LongType
+            })
+        ) { backStackEntry ->
+            val personId = backStackEntry.arguments?.getLong("personId")
+            AddPersonScreen(
+                personId = personId,
                 onNavigateBack = { navController.popBackStack() }
             )
         }
