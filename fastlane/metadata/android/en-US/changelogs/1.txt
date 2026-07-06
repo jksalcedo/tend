@@ -4,3 +4,4 @@
 - Edit a connection's name, contact info, social links, and important dates
 - Daily reminders for overdue check-ins and upcoming birthdays/anniversaries
 - Archive, delete, view, and unarchive connections from the new Archived screen
+- Added platform-specific icons and custom profile URL routing for social links
