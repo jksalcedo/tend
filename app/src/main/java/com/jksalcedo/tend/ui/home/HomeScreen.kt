@@ -180,7 +180,12 @@ private fun HomeScreenContent(
                             .background(purpleColor),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text("👤", fontSize = 24.sp)
+                        Icon(
+                            imageVector = Icons.Default.Person,
+                            contentDescription = null,
+                            tint = purpleAccent,
+                            modifier = Modifier.size(28.dp)
+                        )
                     }
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
