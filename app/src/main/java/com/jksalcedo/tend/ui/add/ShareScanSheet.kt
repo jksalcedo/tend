@@ -1,7 +1,6 @@
 package com.jksalcedo.tend.ui.add
 
 import android.graphics.Bitmap
-import android.graphics.Color as AndroidColor
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.layout.Box
@@ -27,10 +26,13 @@ import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
+import androidx.core.graphics.createBitmap
+import androidx.core.graphics.set
 import com.google.gson.Gson
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
 import com.jksalcedo.tend.domain.model.Person
+import android.graphics.Color as AndroidColor
 
 data class SharedPerson(
     val name: String,
@@ -172,10 +174,10 @@ private fun generateQRCode(text: String, size: Int): Bitmap? {
         )
         val width = bitMatrix.width
         val height = bitMatrix.height
-        val bitmap = Bitmap.createBitmap(width, height, Bitmap.Config.ARGB_8888)
+        val bitmap = createBitmap(width, height)
         for (x in 0 until width) {
             for (y in 0 until height) {
-                bitmap.setPixel(x, y, if (bitMatrix[x, y]) AndroidColor.BLACK else AndroidColor.WHITE)
+                bitmap[x, y] = if (bitMatrix[x, y]) AndroidColor.BLACK else AndroidColor.WHITE
             }
         }
         bitmap
