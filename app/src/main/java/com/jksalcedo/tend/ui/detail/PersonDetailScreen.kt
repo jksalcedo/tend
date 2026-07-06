@@ -64,6 +64,8 @@ import androidx.compose.ui.unit.sp
 import androidx.core.net.toUri
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.ui.add.ShareScanSheet
+import com.jksalcedo.tend.utils.SocialIconUtils
+import com.jksalcedo.tend.utils.SocialLinkUtils
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
@@ -171,7 +173,12 @@ fun PersonDetailScreen(
                                     )
                                 }
                                 DropdownMenuItem(
-                                    text = { Text("Delete connection", color = MaterialTheme.colorScheme.error) },
+                                    text = {
+                                        Text(
+                                            "Delete connection",
+                                            color = MaterialTheme.colorScheme.error
+                                        )
+                                    },
                                     onClick = {
                                         showMenu = false
                                         showDeleteDialog = true
@@ -292,19 +299,11 @@ fun PersonDetailScreen(
 
                 p.socialLinks.forEach { link ->
                     ContactActionItem(
-                        icon = Icons.Default.Share, // Placeholder icon
+                        icon = SocialIconUtils.getIcon(link.platform),
                         label = link.platform,
                         value = link.handle,
                         onClick = {
-                            // Simple URL construction logic - can be improved
-                            val url = when (link.platform.lowercase()) {
-                                "twitter", "x" -> "https://twitter.com/${link.handle}"
-                                "instagram" -> "https://instagram.com/${link.handle}"
-                                "github" -> "https://github.com/${link.handle}"
-                                else -> "https://google.com/search?q=${link.platform}+${link.handle}" // Fallback
-                            }
-                            val intent = Intent(Intent.ACTION_VIEW, url.toUri())
-                            context.startActivity(intent)
+                            SocialLinkUtils.openProfile(context, link.platform, link.handle)
                         }
                     )
                     Spacer(modifier = Modifier.height(8.dp))
