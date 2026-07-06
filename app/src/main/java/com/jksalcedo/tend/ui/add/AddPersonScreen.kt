@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,13 +44,13 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -71,11 +72,11 @@ fun AddPersonScreen(
         if (!sharedData.isNullOrBlank()) {
             try {
                 Gson().fromJson(sharedData, SharedPerson::class.java)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 try {
                     val decoded = java.net.URLDecoder.decode(sharedData, "UTF-8")
                     Gson().fromJson(decoded, SharedPerson::class.java)
-                } catch (e2: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }
@@ -96,7 +97,11 @@ fun AddPersonScreen(
                 PersonEvent(
                     label = it.label,
                     date = it.date,
-                    type = try { EventType.valueOf(it.type) } catch (ex: Exception) { EventType.OTHER }
+                    type = try {
+                        EventType.valueOf(it.type)
+                    } catch (_: Exception) {
+                        EventType.OTHER
+                    }
                 )
             } ?: emptyList()
         )
@@ -159,7 +164,7 @@ fun AddPersonScreen(
         onNotesChange = { notes = it },
         onSaveClick = {
             val frequencyDays = frequency.toIntOrNull() ?: 14
-            if (isEditMode && personId != null) {
+            if (isEditMode) {
                 viewModel.updatePerson(
                     personId = personId,
                     name = name,
@@ -342,7 +347,7 @@ private fun AddPersonScreenContent(
                             )
                             IconButton(onClick = { onRemoveSocialLink(link) }) {
                                 Icon(
-                                    androidx.compose.material.icons.Icons.Default.Close,
+                                    Icons.Default.Close,
                                     contentDescription = "Remove",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
@@ -395,7 +400,7 @@ private fun AddPersonScreenContent(
                             )
                             IconButton(onClick = { onRemoveEvent(event) }) {
                                 Icon(
-                                    androidx.compose.material.icons.Icons.Default.Close,
+                                    Icons.Default.Close,
                                     contentDescription = "Remove",
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
