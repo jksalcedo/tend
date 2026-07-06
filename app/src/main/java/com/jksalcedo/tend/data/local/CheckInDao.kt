@@ -13,6 +13,9 @@ interface CheckInDao {
     @Query("SELECT * FROM people WHERE isArchived = 0 ORDER BY nextReminderAt ASC")
     fun getAllPeople(): Flow<List<PersonEntity>>
 
+    @Query("SELECT * FROM people WHERE isArchived = 1 ORDER BY nextReminderAt ASC")
+    fun getArchivedPeople(): Flow<List<PersonEntity>>
+
     @Query("SELECT * FROM people WHERE id = :id")
     suspend fun getPersonById(id: Long): PersonEntity?
 
