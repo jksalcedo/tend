@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Notifications
@@ -31,6 +32,8 @@ import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.DropdownMenu
+import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
@@ -40,6 +43,9 @@ import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
@@ -69,14 +75,16 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onOpenNotificationSettings: () -> Unit = {}
+    onOpenNotificationSettings: () -> Unit = {},
+    onArchivedClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     HomeScreenContent(
         people = people,
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
-        onOpenNotificationSettings = onOpenNotificationSettings
+        onOpenNotificationSettings = onOpenNotificationSettings,
+        onArchivedClick = onArchivedClick
     )
 }
 
@@ -85,7 +93,8 @@ private fun HomeScreenContent(
     people: List<Person>,
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onOpenNotificationSettings: () -> Unit = {}
+    onOpenNotificationSettings: () -> Unit = {},
+    onArchivedClick: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val dueSoon =
@@ -211,6 +220,28 @@ private fun HomeScreenContent(
                             contentDescription = "Notifications",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
+                    }
+                    var showHomeMenu by remember { mutableStateOf(false) }
+                    Box {
+                        IconButton(onClick = { showHomeMenu = true }) {
+                            Icon(
+                                Icons.Default.MoreVert,
+                                contentDescription = "More options",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        DropdownMenu(
+                            expanded = showHomeMenu,
+                            onDismissRequest = { showHomeMenu = false }
+                        ) {
+                            DropdownMenuItem(
+                                text = { Text("Archived connections") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    onArchivedClick()
+                                }
+                            )
+                        }
                     }
                 }
             }

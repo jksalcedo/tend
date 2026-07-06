@@ -9,6 +9,7 @@ import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
+import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -20,6 +21,7 @@ class PersonDetailViewModel(
     private val addNoteUseCase: AddNoteUseCase,
     private val archivePersonUseCase: ArchivePersonUseCase,
     private val deletePersonUseCase: DeletePersonUseCase,
+    private val unarchivePersonUseCase: UnarchivePersonUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -59,6 +61,14 @@ class PersonDetailViewModel(
         val id = personId ?: return
         viewModelScope.launch {
             archivePersonUseCase(id)
+            onComplete()
+        }
+    }
+
+    fun unarchive(onComplete: () -> Unit) {
+        val id = personId ?: return
+        viewModelScope.launch {
+            unarchivePersonUseCase(id)
             onComplete()
         }
     }

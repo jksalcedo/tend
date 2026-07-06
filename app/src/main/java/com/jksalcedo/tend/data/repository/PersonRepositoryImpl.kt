@@ -16,6 +16,12 @@ class PersonRepositoryImpl(
         }
     }
 
+    override fun getArchivedPeople(): Flow<List<Person>> {
+        return dao.getArchivedPeople().map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     override suspend fun getPersonById(id: Long): Person? {
         return dao.getPersonById(id)?.toDomain()
     }
