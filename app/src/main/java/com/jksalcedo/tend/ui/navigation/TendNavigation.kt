@@ -8,6 +8,7 @@ import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
 import com.jksalcedo.tend.ui.add.AddPersonScreen
+import com.jksalcedo.tend.ui.archived.ArchivedScreen
 import com.jksalcedo.tend.ui.detail.PersonDetailScreen
 import com.jksalcedo.tend.ui.home.HomeScreen
 
@@ -16,6 +17,7 @@ object Routes {
     const val ADD_PERSON = "add_person?sharedData={sharedData}"
     const val DETAIL = "detail/{personId}"
     const val EDIT = "edit/{personId}"
+    const val ARCHIVED = "archived"
 }
 
 @Composable
@@ -38,7 +40,8 @@ fun TendNavGraph(
                     }
                 },
                 onPersonClick = { personId -> navController.navigate("detail/$personId") },
-                onOpenNotificationSettings = onOpenNotificationSettings
+                onOpenNotificationSettings = onOpenNotificationSettings,
+                onArchivedClick = { navController.navigate(Routes.ARCHIVED) }
             )
         }
         composable(
@@ -75,6 +78,12 @@ fun TendNavGraph(
             val personId = backStackEntry.arguments?.getLong("personId")
             AddPersonScreen(
                 personId = personId,
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.ARCHIVED) {
+            ArchivedScreen(
+                onPersonClick = { personId -> navController.navigate("detail/$personId") },
                 onNavigateBack = { navController.popBackStack() }
             )
         }

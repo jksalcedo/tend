@@ -3,4 +3,4 @@
 - Add notes directly from a connection's detail screen
 - Edit a connection's name, contact info, social links, and important dates
 - Daily reminders for overdue check-ins and upcoming birthdays/anniversaries
-- Archive or delete connections from the detail screen
+- Archive, delete, view, and unarchive connections from the new Archived screen

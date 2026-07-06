@@ -9,10 +9,13 @@ import com.jksalcedo.tend.domain.usecase.AddPersonUseCase
 import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
+import com.jksalcedo.tend.domain.usecase.GetArchivedPeopleUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
+import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.UpdatePersonUseCase
 import com.jksalcedo.tend.ui.add.AddPersonViewModel
+import com.jksalcedo.tend.ui.archived.ArchivedViewModel
 import com.jksalcedo.tend.ui.detail.PersonDetailViewModel
 import com.jksalcedo.tend.ui.home.HomeViewModel
 import org.koin.android.ext.koin.androidContext
@@ -41,8 +44,11 @@ val appModule = module {
     factory { UpdatePersonUseCase(get()) }
     factory { ArchivePersonUseCase(get()) }
     factory { DeletePersonUseCase(get()) }
+    factory { GetArchivedPeopleUseCase(get()) }
+    factory { UnarchivePersonUseCase(get()) }
     
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)
     viewModelOf(::PersonDetailViewModel)
+    viewModelOf(::ArchivedViewModel)
 }

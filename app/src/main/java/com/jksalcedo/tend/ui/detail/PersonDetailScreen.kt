@@ -153,13 +153,23 @@ fun PersonDetailScreen(
                                 expanded = showMenu,
                                 onDismissRequest = { showMenu = false }
                             ) {
-                                DropdownMenuItem(
-                                    text = { Text("Archive connection") },
-                                    onClick = {
-                                        showMenu = false
-                                        showArchiveDialog = true
-                                    }
-                                )
+                                if (p.isArchived) {
+                                    DropdownMenuItem(
+                                        text = { Text("Unarchive connection") },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.unarchive(onComplete = onNavigateBack)
+                                        }
+                                    )
+                                } else {
+                                    DropdownMenuItem(
+                                        text = { Text("Archive connection") },
+                                        onClick = {
+                                            showMenu = false
+                                            showArchiveDialog = true
+                                        }
+                                    )
+                                }
                                 DropdownMenuItem(
                                     text = { Text("Delete connection", color = MaterialTheme.colorScheme.error) },
                                     onClick = {
