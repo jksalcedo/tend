@@ -5,17 +5,17 @@ import androidx.compose.ui.graphics.Color
 // --- BRAND COLORS ---
 val TendPrimary = Color(0xFF6B4EE6)
 val TendOnPrimary = Color(0xFFFFFFFF)
-val TendPrimaryContainer = Color(0xFFEADDFF) // M3 usually needs a container
+val TendPrimaryContainer = Color(0xFFEADDFF)
 val TendOnPrimaryContainer = Color(0xFF21005D)
 
 // --- BACKGROUNDS & SURFACE ---
 val BackgroundLight = Color(0xFFF8F9FA)
 val SurfaceLight = Color(0xFFFFFFFF)
-val SurfaceVariantLight = Color(0xFFE7E0EC) // Standard M3 TextField background color
+val SurfaceVariantLight = Color(0xFFE7E0EC)
 
 val BackgroundDark = Color(0xFF121212)
 val SurfaceDark = Color(0xFF1E1E1E)
-val SurfaceVariantDark = Color(0xFF49454F) // Standard M3 Dark TextField background
+val SurfaceVariantDark = Color(0xFF49454F)
 
 // --- TEXT ---
 val TextPrimaryLight = Color(0xFF1A1A2E)
