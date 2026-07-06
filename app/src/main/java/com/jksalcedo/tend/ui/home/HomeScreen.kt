@@ -99,7 +99,7 @@ private fun HomeScreenContent(
                 if (!rawValue.isNullOrBlank()) {
                     try {
                         val shared = Gson().fromJson(rawValue, SharedPerson::class.java)
-                        if (shared != null && !shared.name.isNullOrBlank()) {
+                        if (shared != null && shared.name.isNotBlank()) {
                             val encodedData = java.net.URLEncoder.encode(rawValue, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
@@ -109,7 +109,7 @@ private fun HomeScreenContent(
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
-                    } catch (e: Exception) {
+                    } catch (_: Exception) {
                         if (rawValue.length < 100) {
                             val fallbackJson = Gson().toJson(SharedPerson(name = rawValue))
                             val encodedData = java.net.URLEncoder.encode(fallbackJson, "UTF-8")
