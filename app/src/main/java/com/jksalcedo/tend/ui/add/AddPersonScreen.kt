@@ -16,6 +16,7 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.ArrowBack
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -30,6 +31,8 @@ import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
@@ -41,37 +44,43 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
-import org.koin.androidx.compose.koinViewModel
 import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
+import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
 
 @Composable
 fun AddPersonScreen(
     viewModel: AddPersonViewModel = koinViewModel(),
+    personId: Long? = null,
     sharedData: String? = null,
     onNavigateBack: () -> Unit
 ) {
+    val isEditMode = personId != null
+    val existingPerson by viewModel.existingPerson.collectAsState()
+
+    LaunchedEffect(personId) {
+        if (personId != null) viewModel.loadPerson(personId)
+    }
+
     val sharedPerson = remember(sharedData) {
         if (!sharedData.isNullOrBlank()) {
             try {
                 Gson().fromJson(sharedData, SharedPerson::class.java)
-            } catch (e: Exception) {
+            } catch (_: Exception) {
                 try {
                     val decoded = java.net.URLDecoder.decode(sharedData, "UTF-8")
                     Gson().fromJson(decoded, SharedPerson::class.java)
-                } catch (e2: Exception) {
+                } catch (_: Exception) {
                     null
                 }
             }
-        } else {
-            null
-        }
+        } else null
     }
 
     var name by remember { mutableStateOf(sharedPerson?.name ?: "") }
@@ -88,13 +97,29 @@ fun AddPersonScreen(
                 PersonEvent(
                     label = it.label,
                     date = it.date,
-                    type = try { EventType.valueOf(it.type) } catch (ex: Exception) { EventType.OTHER }
+                    type = try {
+                        EventType.valueOf(it.type)
+                    } catch (_: Exception) {
+                        EventType.OTHER
+                    }
                 )
             } ?: emptyList()
         )
     }
     var frequency by remember { mutableStateOf((sharedPerson?.frequencyDays ?: 14).toString()) }
     var notes by remember { mutableStateOf(sharedPerson?.notes ?: "") }
+
+    // Pre-fill from loaded person when in edit mode
+    LaunchedEffect(existingPerson) {
+        existingPerson?.let { p ->
+            name = p.name
+            phoneNumber = p.phoneNumber ?: ""
+            email = p.email ?: ""
+            socialLinks = p.socialLinks
+            events = p.events
+            frequency = p.frequencyDays.toString()
+        }
+    }
 
     var showSocialDialog by remember { mutableStateOf(false) }
     var showEventDialog by remember { mutableStateOf(false) }
@@ -120,6 +145,7 @@ fun AddPersonScreen(
     }
 
     AddPersonScreenContent(
+        isEditMode = isEditMode,
         name = name,
         onNameChange = { name = it },
         phoneNumber = phoneNumber,
@@ -128,23 +154,37 @@ fun AddPersonScreen(
         onEmailChange = { email = it },
         socialLinks = socialLinks,
         onAddSocialLink = { showSocialDialog = true },
+        onRemoveSocialLink = { link -> socialLinks = socialLinks - link },
         events = events,
         onAddEvent = { showEventDialog = true },
+        onRemoveEvent = { event -> events = events - event },
         frequency = frequency,
         onFrequencyChange = { frequency = it },
         notes = notes,
         onNotesChange = { notes = it },
         onSaveClick = {
             val frequencyDays = frequency.toIntOrNull() ?: 14
-            viewModel.addPerson(
-                name = name,
-                frequencyDays = frequencyDays,
-                notes = notes,
-                phoneNumber = phoneNumber.ifBlank { null },
-                email = email.ifBlank { null },
-                socialLinks = socialLinks,
-                events = events
-            )
+            if (isEditMode) {
+                viewModel.updatePerson(
+                    personId = personId,
+                    name = name,
+                    frequencyDays = frequencyDays,
+                    phoneNumber = phoneNumber.ifBlank { null },
+                    email = email.ifBlank { null },
+                    socialLinks = socialLinks,
+                    events = events
+                )
+            } else {
+                viewModel.addPerson(
+                    name = name,
+                    frequencyDays = frequencyDays,
+                    notes = notes,
+                    phoneNumber = phoneNumber.ifBlank { null },
+                    email = email.ifBlank { null },
+                    socialLinks = socialLinks,
+                    events = events
+                )
+            }
             onNavigateBack()
         },
         onNavigateBack = onNavigateBack
@@ -154,6 +194,7 @@ fun AddPersonScreen(
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 private fun AddPersonScreenContent(
+    isEditMode: Boolean = false,
     name: String,
     onNameChange: (String) -> Unit,
     phoneNumber: String,
@@ -162,8 +203,10 @@ private fun AddPersonScreenContent(
     onEmailChange: (String) -> Unit,
     socialLinks: List<SocialLink>,
     onAddSocialLink: () -> Unit,
+    onRemoveSocialLink: (SocialLink) -> Unit = {},
     events: List<PersonEvent>,
     onAddEvent: () -> Unit,
+    onRemoveEvent: (PersonEvent) -> Unit = {},
     frequency: String,
     onFrequencyChange: (String) -> Unit,
     notes: String,
@@ -200,7 +243,7 @@ private fun AddPersonScreenContent(
                 )
             }
             Text(
-                text = "Add Connection",
+                text = if (isEditMode) "Edit Connection" else "Add Connection",
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -292,11 +335,24 @@ private fun AddPersonScreenContent(
                         }
                     }
                     socialLinks.forEach { link ->
-                        Text(
-                            text = "${link.platform}: ${link.handle}",
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = "${link.platform}: ${link.handle}",
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 4.dp).weight(1f)
+                            )
+                            IconButton(onClick = { onRemoveSocialLink(link) }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                        }
                     }
                 }
             }
@@ -323,20 +379,33 @@ private fun AddPersonScreenContent(
                         }
                     }
                     events.forEach { event ->
-                        Text(
-                            text = buildString {
-                                append(event.label)
-                                append(": ")
-                                append(
-                                    SimpleDateFormat(
-                                        "MMM dd",
-                                        LocalLocale.current.platformLocale
-                                    ).format(Date(event.date))
+                        Row(
+                            modifier = Modifier.fillMaxWidth(),
+                            horizontalArrangement = Arrangement.SpaceBetween,
+                            verticalAlignment = Alignment.CenterVertically
+                        ) {
+                            Text(
+                                text = buildString {
+                                    append(event.label)
+                                    append(": ")
+                                    append(
+                                        SimpleDateFormat(
+                                            "MMM dd",
+                                            LocalLocale.current.platformLocale
+                                        ).format(Date(event.date))
+                                    )
+                                },
+                                style = MaterialTheme.typography.bodyMedium,
+                                modifier = Modifier.padding(vertical = 4.dp).weight(1f)
+                            )
+                            IconButton(onClick = { onRemoveEvent(event) }) {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
-                            },
-                            style = MaterialTheme.typography.bodyMedium,
-                            modifier = Modifier.padding(vertical = 4.dp)
-                        )
+                            }
+                        }
                     }
                 }
             }
@@ -471,7 +540,7 @@ private fun AddPersonScreenContent(
                 )
             ) {
                 Text(
-                    "Save Connection",
+                    if (isEditMode) "Save Changes" else "Save Connection",
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

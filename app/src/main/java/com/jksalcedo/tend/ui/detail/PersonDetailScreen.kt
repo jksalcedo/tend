@@ -24,6 +24,7 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.Button
@@ -66,7 +67,8 @@ import java.util.Date
 @Composable
 fun PersonDetailScreen(
     viewModel: PersonDetailViewModel = koinViewModel(),
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onEditClick: (Long) -> Unit = {}
 ) {
     val person by viewModel.person.collectAsState()
     val context = LocalContext.current
@@ -82,7 +84,10 @@ fun PersonDetailScreen(
                     }
                 },
                 actions = {
-                    person?.let {
+                    person?.let { p ->
+                        IconButton(onClick = { onEditClick(p.id) }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Edit connection")
+                        }
                         IconButton(onClick = { showShareSheet = true }) {
                             Icon(Icons.Default.Share, contentDescription = "Share connection")
                         }
