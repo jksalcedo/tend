@@ -6,7 +6,9 @@ import com.jksalcedo.tend.data.repository.PersonRepositoryImpl
 import com.jksalcedo.tend.domain.repository.PersonRepository
 import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.AddPersonUseCase
+import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
+import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.UpdatePersonUseCase
@@ -37,6 +39,8 @@ val appModule = module {
     factory { CheckInUseCase(get()) }
     factory { AddNoteUseCase(get()) }
     factory { UpdatePersonUseCase(get()) }
+    factory { ArchivePersonUseCase(get()) }
+    factory { DeletePersonUseCase(get()) }
     
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)
