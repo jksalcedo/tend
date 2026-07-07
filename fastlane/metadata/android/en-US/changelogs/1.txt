@@ -1,6 +1,6 @@
 - Share connections via QR code; scan to import
 - Mark a connection as contacted to reset the check-in timer
-- Add notes directly from a connection's detail screen
+- Add, edit, and delete notes directly from a connection's detail screen
 - Edit a connection's name, contact info, social links, and important dates
 - Daily reminders for overdue check-ins and upcoming birthdays/anniversaries
 - Archive, delete, view, and unarchive connections from the new Archived screen

@@ -538,34 +538,36 @@ private fun AddPersonScreenContent(
             }
 
             // Notes Field
-            Card(
-                modifier = Modifier.fillMaxWidth(),
-                shape = RoundedCornerShape(16.dp),
-                colors = CardDefaults.cardColors(containerColor = purpleColor)
-            ) {
-                Column(modifier = Modifier.padding(16.dp)) {
-                    Text(
-                        text = "Notes",
-                        style = MaterialTheme.typography.titleSmall,
-                        fontWeight = FontWeight.SemiBold,
-                        color = purpleAccent
-                    )
-                    Spacer(modifier = Modifier.height(8.dp))
-                    OutlinedTextField(
-                        value = notes,
-                        onValueChange = onNotesChange,
-                        placeholder = { Text("How did you meet? What do they like?") },
-                        modifier = Modifier.fillMaxWidth(),
-                        shape = RoundedCornerShape(12.dp),
-                        colors = OutlinedTextFieldDefaults.colors(
-                            focusedBorderColor = purpleAccent,
-                            unfocusedBorderColor = purpleAccent.copy(alpha = 0.3f),
-                            focusedContainerColor = MaterialTheme.colorScheme.surface,
-                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
-                        ),
-                        minLines = 4,
-                        maxLines = 6
-                    )
+            if (!isEditMode) {
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = purpleColor)
+                ) {
+                    Column(modifier = Modifier.padding(16.dp)) {
+                        Text(
+                            text = "Notes",
+                            style = MaterialTheme.typography.titleSmall,
+                            fontWeight = FontWeight.SemiBold,
+                            color = purpleAccent
+                        )
+                        Spacer(modifier = Modifier.height(8.dp))
+                        OutlinedTextField(
+                            value = notes,
+                            onValueChange = onNotesChange,
+                            placeholder = { Text("How did you meet? What do they like?") },
+                            modifier = Modifier.fillMaxWidth(),
+                            shape = RoundedCornerShape(12.dp),
+                            colors = OutlinedTextFieldDefaults.colors(
+                                focusedBorderColor = purpleAccent,
+                                unfocusedBorderColor = purpleAccent.copy(alpha = 0.3f),
+                                focusedContainerColor = MaterialTheme.colorScheme.surface,
+                                unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                            ),
+                            minLines = 4,
+                            maxLines = 6
+                        )
+                    }
                 }
             }
 
