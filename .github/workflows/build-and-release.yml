@@ -39,15 +39,16 @@ jobs:
           keyStorePassword: ${{ secrets.KEY_STORE_PASSWORD }}
           keyPassword: ${{ secrets.KEY_PASSWORD }}
 
-      # Rename the SIGNED output file. 
       - name: Rename Signed APK
         run: mv ${{ steps.sign_app.outputs.signedReleaseFile }} Tend-${{ github.ref_name }}.apk
 
-      - name: Create GitHub Release
+      # Create the GitHub Release
+      - name: 🚀 Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: Tend-${{ github.ref_name }}.apk
           generate_release_notes: true
+          prerelease: ${{ contains(github.ref_name, '-') }}
 
       - name: Install Codeberg CLI (Tea)
         run: |
@@ -55,11 +56,19 @@ jobs:
           chmod +x tea
           sudo mv tea /usr/local/bin/
 
-      - name: Mirror Release to Codeberg
+      # Mirror the Release to Codeberg
+      - name:  Mirror Release to Codeberg
         env:
           CODEBERG_TOKEN: ${{ secrets.CODEBERG_TOKEN }}
         run: |
           tea login add --name codeberg --url https://codeberg.org --token $CODEBERG_TOKEN
+          
+          # Check if the tag contains a hyphen to mark it as a pre-release for Codeberg
+          PRERELEASE_FLAG=""
+          if [[ "${{ github.ref_name }}" == *"-"* ]]; then
+            PRERELEASE_FLAG="--prerelease"
+            echo "Pre-release tag detected. Adding pre-release flag for Codeberg."
+          fi
           
           # Replace with your actual Codeberg repo info
           tea release create \
@@ -67,4 +76,5 @@ jobs:
             --tag ${{ github.ref_name }} \
             --title "Release ${{ github.ref_name }}" \
             --note "Automated release mirrored from GitHub." \
+            $PRERELEASE_FLAG \
             --asset Tend-${{ github.ref_name }}.apk
