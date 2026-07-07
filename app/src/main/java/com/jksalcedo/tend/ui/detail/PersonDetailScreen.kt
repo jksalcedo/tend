@@ -24,10 +24,12 @@ import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import com.jksalcedo.tend.domain.model.Note
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -129,6 +131,65 @@ fun PersonDetailScreen(
             }
         )
     }
+
+    var noteToEdit by remember { mutableStateOf<Note?>(null) }
+    var noteToDelete by remember { mutableStateOf<Note?>(null) }
+
+    if (noteToEdit != null) {
+        var editContent by remember { mutableStateOf(noteToEdit!!.content) }
+        AlertDialog(
+            onDismissRequest = { noteToEdit = null },
+            title = { Text("Edit Note") },
+            text = {
+                OutlinedTextField(
+                    value = editContent,
+                    onValueChange = { editContent = it },
+                    modifier = Modifier.fillMaxWidth(),
+                    minLines = 3
+                )
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.updateNote(noteToEdit!!.id, editContent)
+                        noteToEdit = null
+                    },
+                    enabled = editContent.isNotBlank()
+                ) {
+                    Text("Save")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noteToEdit = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (noteToDelete != null) {
+        AlertDialog(
+            onDismissRequest = { noteToDelete = null },
+            title = { Text("Delete Note") },
+            text = { Text("Are you sure you want to delete this note? This action cannot be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteNote(noteToDelete!!.id)
+                        noteToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { noteToDelete = null }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
 
     Scaffold(
         topBar = {
@@ -381,7 +442,11 @@ fun PersonDetailScreen(
                     )
                 } else {
                     p.notes.reversed().forEach { note ->
-                        NoteItem(note = note.content, date = note.createdAt)
+                        NoteItem(
+                            note = note,
+                            onEditClick = { noteToEdit = note },
+                            onDeleteClick = { noteToDelete = note }
+                        )
                         Spacer(modifier = Modifier.height(8.dp))
                     }
                 }
@@ -499,23 +564,66 @@ fun EventItem(event: PersonEvent) {
 }
 
 @Composable
-fun NoteItem(note: String, date: Long) {
+fun NoteItem(
+    note: Note,
+    onEditClick: () -> Unit,
+    onDeleteClick: () -> Unit
+) {
     Card(
         modifier = Modifier.fillMaxWidth(),
         shape = RoundedCornerShape(12.dp),
         colors = CardDefaults.cardColors(containerColor = MaterialTheme.colorScheme.surface)
     ) {
         Column(modifier = Modifier.padding(16.dp)) {
-            Text(
-                text = SimpleDateFormat("MMM dd, yyyy", LocalLocale.current.platformLocale).format(
-                    Date(date)
-                ),
-                style = MaterialTheme.typography.labelSmall,
-                color = MaterialTheme.colorScheme.onSurfaceVariant
-            )
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = SimpleDateFormat("MMM dd, yyyy", LocalLocale.current.platformLocale).format(
+                        Date(note.createdAt)
+                    ),
+                    style = MaterialTheme.typography.labelSmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                var showNoteMenu by remember { mutableStateOf(false) }
+                Box {
+                    IconButton(
+                        onClick = { showNoteMenu = true },
+                        modifier = Modifier.size(24.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.MoreVert,
+                            contentDescription = "Note Options",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                    DropdownMenu(
+                        expanded = showNoteMenu,
+                        onDismissRequest = { showNoteMenu = false }
+                    ) {
+                        DropdownMenuItem(
+                            text = { Text("Edit note") },
+                            onClick = {
+                                showNoteMenu = false
+                                onEditClick()
+                            }
+                        )
+                        DropdownMenuItem(
+                            text = { Text("Delete note", color = MaterialTheme.colorScheme.error) },
+                            onClick = {
+                                showNoteMenu = false
+                                onDeleteClick()
+                            }
+                        )
+                    }
+                }
+            }
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = note,
+                text = note.content,
                 style = MaterialTheme.typography.bodyMedium
             )
         }
