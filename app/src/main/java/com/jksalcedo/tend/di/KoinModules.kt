@@ -8,11 +8,13 @@ import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.AddPersonUseCase
 import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
+import com.jksalcedo.tend.domain.usecase.DeleteNoteUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetArchivedPeopleUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
+import com.jksalcedo.tend.domain.usecase.UpdateNoteUseCase
 import com.jksalcedo.tend.domain.usecase.UpdatePersonUseCase
 import com.jksalcedo.tend.ui.add.AddPersonViewModel
 import com.jksalcedo.tend.ui.archived.ArchivedViewModel
@@ -46,6 +48,8 @@ val appModule = module {
     factory { DeletePersonUseCase(get()) }
     factory { GetArchivedPeopleUseCase(get()) }
     factory { UnarchivePersonUseCase(get()) }
+    factory { DeleteNoteUseCase(get()) }
+    factory { UpdateNoteUseCase(get()) }
     
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)

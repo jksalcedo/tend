@@ -7,9 +7,11 @@ import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
+import com.jksalcedo.tend.domain.usecase.DeleteNoteUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
+import com.jksalcedo.tend.domain.usecase.UpdateNoteUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
@@ -22,6 +24,8 @@ class PersonDetailViewModel(
     private val archivePersonUseCase: ArchivePersonUseCase,
     private val deletePersonUseCase: DeletePersonUseCase,
     private val unarchivePersonUseCase: UnarchivePersonUseCase,
+    private val deleteNoteUseCase: DeleteNoteUseCase,
+    private val updateNoteUseCase: UpdateNoteUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -78,6 +82,23 @@ class PersonDetailViewModel(
         viewModelScope.launch {
             deletePersonUseCase(id)
             onComplete()
+        }
+    }
+
+    fun deleteNote(noteId: String) {
+        val id = personId ?: return
+        viewModelScope.launch {
+            deleteNoteUseCase(id, noteId)
+            _person.value = getPersonUseCase(id)
+        }
+    }
+
+    fun updateNote(noteId: String, newContent: String) {
+        val id = personId ?: return
+        if (newContent.isBlank()) return
+        viewModelScope.launch {
+            updateNoteUseCase(id, noteId, newContent)
+            _person.value = getPersonUseCase(id)
         }
     }
 }
