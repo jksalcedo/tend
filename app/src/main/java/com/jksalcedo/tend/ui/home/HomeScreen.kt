@@ -76,7 +76,8 @@ fun HomeScreen(
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onOpenNotificationSettings: () -> Unit = {},
-    onArchivedClick: () -> Unit = {}
+    onArchivedClick: () -> Unit = {},
+    onImportContactsClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     HomeScreenContent(
@@ -84,7 +85,8 @@ fun HomeScreen(
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
         onOpenNotificationSettings = onOpenNotificationSettings,
-        onArchivedClick = onArchivedClick
+        onArchivedClick = onArchivedClick,
+        onImportContactsClick = onImportContactsClick
     )
 }
 
@@ -94,7 +96,8 @@ private fun HomeScreenContent(
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onOpenNotificationSettings: () -> Unit = {},
-    onArchivedClick: () -> Unit = {}
+    onArchivedClick: () -> Unit = {},
+    onImportContactsClick: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val dueSoon =
@@ -239,6 +242,13 @@ private fun HomeScreenContent(
                                 onClick = {
                                     showHomeMenu = false
                                     onArchivedClick()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Import contacts") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    onImportContactsClick()
                                 }
                             )
                         }

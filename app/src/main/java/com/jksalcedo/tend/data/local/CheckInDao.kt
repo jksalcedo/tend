@@ -27,4 +27,7 @@ interface CheckInDao {
 
     @Query("DELETE FROM people WHERE id = :id")
     suspend fun deletePerson(id: Long)
+
+    @Query("SELECT nativeLookupKey FROM people WHERE nativeLookupKey IS NOT NULL")
+    suspend fun getLinkedLookupKeys(): List<String>
 }

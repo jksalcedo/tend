@@ -51,7 +51,9 @@ class PersonRepositoryImpl(
             frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
-            isArchived = isArchived
+            isArchived = isArchived,
+            nativeLookupKey = nativeLookupKey,
+            nativeContactId = nativeContactId
         )
     }
 
@@ -68,7 +70,9 @@ class PersonRepositoryImpl(
             frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
-            isArchived = isArchived
+            isArchived = isArchived,
+            nativeLookupKey = nativeLookupKey,
+            nativeContactId = nativeContactId
         )
     }
 }

@@ -9,6 +9,15 @@ Treat these as acceptance criteria to implement against and/or convert to
 instrumented tests; adding Cucumber-JVM + Android is a separate, later
 decision.
 
+Automated coverage lives in the app module as usual: JVM unit tests under
+`app/src/test/` for use cases/ViewModels, instrumented Compose UI tests
+under `app/src/androidTest/` for on-device flows. Alongside each
+`NN_name.feature` file is a **Manual Test Plan**
+(`NN_name.manual-tests.md`) — step-by-step procedures for a human to run by
+hand on a device/emulator, covering the parts that can't be driven by an
+in-process test (OS permission dialogs, the native Contacts app). Add one
+per feature file as each is implemented.
+
 ## Definitions: Case 1 / Case 2 / Case 3
 
 These labels are used throughout this README and the `.feature` files to
@@ -135,6 +144,54 @@ when a lookup-key collision is detected; `null` otherwise.
 | Syncing an archived device-linked contact                 | Sync keeps running as normal while archived — archiving only affects visibility in Tend's lists, not data freshness.                                                                                                                                                |
 | Permission permanently denied ("don't ask again")         | Detected and handled distinctly from a one-off denial: no repeated OS dialog: the user is guided to the app's system settings page instead. Applies to both `READ_CONTACTS` (import/refresh) and `WRITE_CONTACTS` (Sync to Device).                                 |
 | Two Tend people linked to the same native contact          | Flag only for v1 (`duplicateOfPersonId`), detected during the existing foreground poll. No dedicated merge/resolution UI — user resolves manually via existing edit/unlink/delete actions.                                                                          |
+
+## Non-Goals (v1)
+
+Things considered and deliberately **not** built, at least for now — if
+you're wondering "why doesn't this handle X," check here before assuming
+it's an oversight. (See the decision table above for the reasoning behind
+each.)
+
+- **No fuzzy-matching an existing native contact on "Sync to Device."** A
+  Case 2 → Case 1 promotion always creates a brand-new native contact,
+  never searches for a possible existing match.
+- **No memory of "declined" Case 3 contacts.** The import picker always
+  shows the live, current set of unlinked native contacts — skipping a
+  contact once doesn't hide it from future picker sessions.
+- **No dedicated merge-review UI for duplicate Tend people.** When two
+  Tend people end up linked to the same native contact, they're flagged
+  and left for the user to resolve manually (edit/unlink/delete) — no
+  side-by-side merge screen.
+- **No account-type / sync-adapter integration.** Tend never registers
+  itself as an `AccountManager` account or owns `RawContacts` rows; it only
+  reads and creates plain local contacts via `ContactsContract`.
+- **No `ContentObserver`-based live sync.** Case 1 refresh is a poll on app
+  foreground, not a push-based live update while Tend is backgrounded.
+
+## Future Implementation
+
+Known gaps that are out of scope for the current contact-sync work, not
+because they were rejected, but because nobody's built them yet. Each has
+an inline `TODO` comment at the referenced file(s).
+
+- **Multiple phone numbers/emails per person.** `Person.phoneNumber` and
+  `Person.email` are singular fields, not lists — this predates
+  contact-sync entirely, it's how Tend already stored these before this
+  feature existed. Native contacts allow arbitrarily many typed phone
+  numbers/emails (Home/Work/Mobile/Other), optionally with one marked as
+  the contact's own default (`IS_SUPER_PRIMARY`). `NativeContactsDataSource`
+  picks that designated default when one exists, falling back to an
+  arbitrary row otherwise — any additional numbers/emails on the native
+  contact are silently dropped on import, and there's no way to add a
+  second phone/email to a Tend person at all today, imported or not.
+  Supporting this would need `phoneNumber`/`email` to become lists (a Room
+  migration) plus UI changes to `AddPersonScreen`/`PersonDetailScreen` for
+  multi-value entry. `TODO` comments: `Person.kt`, `PersonEntity.kt`,
+  `NativeContactsDataSource.kt`.
+- **A real merge-review UI for duplicate Tend people**, as an upgrade from
+  the flag-only v1 behavior above — letting the user pick which fields
+  survive from each of the two records instead of manually editing/deleting
+  one themselves.
 
 ## Why cache identity fields locally at all instead of just querying live? (duplication justification)
 

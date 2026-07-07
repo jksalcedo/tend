@@ -11,6 +11,8 @@ data class PersonEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val photoUri: String?,
+    // TODO: single-valued — see matching TODO on domain/model/Person.kt for why, and what
+    // changing this would involve.
     val phoneNumber: String? = null,
     val email: String? = null,
     val events: List<PersonEvent> = emptyList(),
@@ -19,5 +21,7 @@ data class PersonEntity(
     val frequencyDays: Int,
     val lastContactedAt: Long,
     val nextReminderAt: Long,
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val nativeLookupKey: String? = null,
+    val nativeContactId: Long? = null
 )

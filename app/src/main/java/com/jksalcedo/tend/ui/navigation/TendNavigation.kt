@@ -11,6 +11,7 @@ import com.jksalcedo.tend.ui.add.AddPersonScreen
 import com.jksalcedo.tend.ui.archived.ArchivedScreen
 import com.jksalcedo.tend.ui.detail.PersonDetailScreen
 import com.jksalcedo.tend.ui.home.HomeScreen
+import com.jksalcedo.tend.ui.importcontacts.ImportContactsScreen
 
 object Routes {
     const val HOME = "home"
@@ -18,6 +19,7 @@ object Routes {
     const val DETAIL = "detail/{personId}"
     const val EDIT = "edit/{personId}"
     const val ARCHIVED = "archived"
+    const val IMPORT_CONTACTS = "import_contacts"
 }
 
 @Composable
@@ -41,7 +43,8 @@ fun TendNavGraph(
                 },
                 onPersonClick = { personId -> navController.navigate("detail/$personId") },
                 onOpenNotificationSettings = onOpenNotificationSettings,
-                onArchivedClick = { navController.navigate(Routes.ARCHIVED) }
+                onArchivedClick = { navController.navigate(Routes.ARCHIVED) },
+                onImportContactsClick = { navController.navigate(Routes.IMPORT_CONTACTS) }
             )
         }
         composable(
@@ -84,6 +87,11 @@ fun TendNavGraph(
         composable(Routes.ARCHIVED) {
             ArchivedScreen(
                 onPersonClick = { personId -> navController.navigate("detail/$personId") },
+                onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.IMPORT_CONTACTS) {
+            ImportContactsScreen(
                 onNavigateBack = { navController.popBackStack() }
             )
         }
