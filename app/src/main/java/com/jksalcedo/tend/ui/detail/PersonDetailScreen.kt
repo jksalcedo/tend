@@ -1,6 +1,13 @@
 package com.jksalcedo.tend.ui.detail
 
+import android.Manifest
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.provider.ContactsContract
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -28,6 +35,7 @@ import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -47,6 +55,7 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -55,18 +64,26 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.ui.add.ShareScanSheet
+import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.utils.SocialIconUtils
 import com.jksalcedo.tend.utils.SocialLinkUtils
 import org.koin.androidx.compose.koinViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -75,14 +92,42 @@ import java.util.Date
 fun PersonDetailScreen(
     viewModel: PersonDetailViewModel = koinViewModel(),
     onNavigateBack: () -> Unit,
-    onEditClick: (Long) -> Unit = {}
+    onEditClick: (Long) -> Unit = {},
+    onNavigateToPerson: (Long) -> Unit = {}
 ) {
     val person by viewModel.person.collectAsState()
+    val duplicatePerson by viewModel.duplicatePerson.collectAsState()
     val context = LocalContext.current
     var showShareSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
+
+    var hasContactsPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted -> hasContactsPermission = granted }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasContactsPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_CONTACTS
+                ) == PackageManager.PERMISSION_GRANTED
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -172,6 +217,15 @@ fun PersonDetailScreen(
                                         }
                                     )
                                 }
+                                if (p.isDeviceLinkBroken) {
+                                    DropdownMenuItem(
+                                        text = { Text("Unlink from device contact") },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.unlink()
+                                        }
+                                    )
+                                }
                                 DropdownMenuItem(
                                     text = {
                                         Text(
@@ -215,6 +269,12 @@ fun PersonDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    val cachedPhoto = remember(p.localPhotoPath) {
+                        p.localPhotoPath?.let { path ->
+                            File(path).takeIf { it.exists() }
+                                ?.let { BitmapFactory.decodeFile(it.absolutePath) }
+                        }
+                    }
                     Box(
                         modifier = Modifier
                             .size(100.dp)
@@ -222,12 +282,20 @@ fun PersonDetailScreen(
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = p.name.take(1).uppercase(),
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        if (cachedPhoto != null) {
+                            Image(
+                                bitmap = cachedPhoto.asImageBitmap(),
+                                contentDescription = "${p.name}'s photo",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = p.name.take(1).uppercase(),
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -257,7 +325,26 @@ fun PersonDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                DeviceSyncStatusSection(
+                    person = p,
+                    duplicatePerson = duplicatePerson,
+                    hasContactsPermission = hasContactsPermission,
+                    onRequestPermission = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
+                    onEditInContacts = {
+                        val lookupKey = p.nativeLookupKey
+                        val contactId = p.nativeContactId
+                        if (lookupKey != null && contactId != null) {
+                            val lookupUri = ContactsContract.Contacts.getLookupUri(contactId, lookupKey)
+                            context.startActivity(Intent(Intent.ACTION_EDIT).apply { data = lookupUri })
+                        }
+                    },
+                    onNavigateToDuplicate = { duplicatePerson?.let { onNavigateToPerson(it.id) } },
+                    onUnlink = { viewModel.unlink() }
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Contact Methods
                 Text(
@@ -414,6 +501,116 @@ fun PersonDetailScreen(
                 Spacer(modifier = Modifier.height(48.dp))
             }
         }
+    }
+}
+
+@Composable
+private fun DeviceSyncStatusSection(
+    person: Person,
+    duplicatePerson: Person?,
+    hasContactsPermission: Boolean,
+    onRequestPermission: () -> Unit,
+    onEditInContacts: () -> Unit,
+    onNavigateToDuplicate: () -> Unit,
+    onUnlink: () -> Unit
+) {
+    val isLinked = person.nativeLookupKey != null
+
+    if (duplicatePerson != null) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onNavigateToDuplicate),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = TendPastels.Yellow)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Warning, contentDescription = null, tint = TendPastels.YellowDark)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = "Possibly a duplicate of \"${duplicatePerson.name}\" — tap to review",
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TendPastels.YellowDark
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+
+    if (!isLinked) {
+        StatusCard(
+            text = "Not synced to your device contacts",
+            containerColor = MaterialTheme.colorScheme.surfaceVariant,
+            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+        )
+        return
+    }
+
+    if (person.isDeviceLinkBroken) {
+        Column {
+            StatusCard(
+                text = "This device contact was removed or is no longer found",
+                containerColor = TendPastels.Pink,
+                contentColor = TendPastels.PinkDark
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onUnlink) { Text("Unlink") }
+            }
+        }
+        return
+    }
+
+    if (!hasContactsPermission) {
+        Column {
+            StatusCard(
+                text = "Sync paused — contacts permission needed",
+                containerColor = TendPastels.Yellow,
+                contentColor = TendPastels.YellowDark
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                TextButton(onClick = onRequestPermission) { Text("Grant permission") }
+                TextButton(onClick = onEditInContacts) { Text("Edit in Contacts") }
+            }
+        }
+        return
+    }
+
+    Column {
+        StatusCard(
+            text = "Managed by your device contacts",
+            containerColor = TendPastels.Mint,
+            contentColor = TendPastels.MintDark
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = onEditInContacts) { Text("Edit in Contacts") }
+    }
+}
+
+@Composable
+private fun StatusCard(
+    text: String,
+    containerColor: androidx.compose.ui.graphics.Color,
+    contentColor: androidx.compose.ui.graphics.Color
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = contentColor
+        )
     }
 }
 

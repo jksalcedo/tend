@@ -17,7 +17,10 @@ import com.jksalcedo.tend.domain.usecase.GetImportableContactsUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.ImportContactsUseCase
+import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
+import com.jksalcedo.tend.domain.usecase.RefreshLinkedContactsUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
+import com.jksalcedo.tend.domain.usecase.UnlinkPersonUseCase
 import com.jksalcedo.tend.domain.usecase.UpdatePersonUseCase
 import com.jksalcedo.tend.ui.add.AddPersonViewModel
 import com.jksalcedo.tend.ui.archived.ArchivedViewModel
@@ -47,6 +50,7 @@ val appModule = module {
 
     factory { GetUpcomingCheckInsUseCase(get()) }
     factory { GetPersonUseCase(get()) }
+    factory { ObservePersonUseCase(get()) }
     factory { AddPersonUseCase(get()) }
     factory { CheckInUseCase(get()) }
     factory { AddNoteUseCase(get()) }
@@ -57,6 +61,8 @@ val appModule = module {
     factory { UnarchivePersonUseCase(get()) }
     factory { GetImportableContactsUseCase(get()) }
     factory { ImportContactsUseCase(get()) }
+    factory { RefreshLinkedContactsUseCase(get(), get()) }
+    factory { UnlinkPersonUseCase(get()) }
 
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)

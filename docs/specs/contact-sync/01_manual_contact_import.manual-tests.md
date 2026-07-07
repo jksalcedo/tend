@@ -59,7 +59,7 @@ expected behavior.
 
 **Expected:** An "Import contacts" menu item is visible and tappable.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 2. Import feature is available with existing contacts
 
@@ -70,7 +70,7 @@ expected behavior.
 
 **Expected:** "Import contacts" is still visible and tappable.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 3. Opening Import requests permission if not already granted
 
@@ -84,7 +84,7 @@ or reset via the Permissions screen per Prerequisites).
 **Expected:** No contact picker appears; a short message explains contacts
 access is needed, with a "Grant Access" button, no crash.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 **Do not grant here** — leave permission denied and continue directly to
 the next test to reach the permanently-denied state without resetting
@@ -104,7 +104,7 @@ at all anymore. A message explains that contacts access must be enabled
 from system settings, with a button that opens the app's system settings
 page. Tapping it navigates to Tend's app info screen.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 5. Opening Import with permission already granted goes straight to the picker
 
@@ -117,7 +117,7 @@ no further permission changes needed below.
 
 **Expected:** The picker appears immediately, no permission dialog.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 6. Importing selected contacts creates linked Tend people
 
@@ -133,7 +133,7 @@ has only an email — each matching what you set on the device. Default
 check-in frequency and empty notes/events match what a manually-added
 connection starts with.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 7. Picker excludes contacts already linked to a Tend person
 
@@ -146,7 +146,7 @@ now all linked to Tend people.
 appear in the list. Only the bulk "Test Contact N" contacts (still
 unlinked) appear.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 8. Confirming the picker with no selections makes no changes
 
@@ -157,7 +157,7 @@ unlinked) appear.
 
 **Expected:** Returns to Home with no new connections created.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 9. Canceling the picker makes no changes
 
@@ -170,7 +170,7 @@ unlinked) appear.
 selection you made is discarded, and "Test Contact 1" remains unlinked and
 available for later tests.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 10. A contact skipped in one import session can still be imported later
 
@@ -184,7 +184,7 @@ available for later tests.
 connection. In step 3, "Test Contact 3" still appears in the picker,
 selectable as normal — it wasn't remembered as "declined."
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 11. Import feature is available regardless of the first-run prompt's outcome
 

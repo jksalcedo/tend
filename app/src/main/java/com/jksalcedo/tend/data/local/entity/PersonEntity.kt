@@ -23,5 +23,8 @@ data class PersonEntity(
     val nextReminderAt: Long,
     val isArchived: Boolean = false,
     val nativeLookupKey: String? = null,
-    val nativeContactId: Long? = null
+    val nativeContactId: Long? = null,
+    val isDeviceLinkBroken: Boolean = false,
+    val localPhotoPath: String? = null,
+    val duplicateOfPersonId: Long? = null
 )

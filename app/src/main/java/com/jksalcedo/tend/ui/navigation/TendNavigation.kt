@@ -12,6 +12,7 @@ import com.jksalcedo.tend.ui.archived.ArchivedScreen
 import com.jksalcedo.tend.ui.detail.PersonDetailScreen
 import com.jksalcedo.tend.ui.home.HomeScreen
 import com.jksalcedo.tend.ui.importcontacts.ImportContactsScreen
+import com.jksalcedo.tend.ui.sync.ForegroundSyncEffect
 
 object Routes {
     const val HOME = "home"
@@ -28,6 +29,8 @@ fun TendNavGraph(
     startDestination: String = Routes.HOME,
     onOpenNotificationSettings: () -> Unit = {}
 ) {
+    ForegroundSyncEffect()
+
     NavHost(
         navController = navController,
         startDestination = startDestination
@@ -69,7 +72,12 @@ fun TendNavGraph(
         ) {
             PersonDetailScreen(
                 onNavigateBack = { navController.popBackStack() },
-                onEditClick = { personId -> navController.navigate("edit/$personId") }
+                onEditClick = { personId -> navController.navigate("edit/$personId") },
+                onNavigateToPerson = { personId ->
+                    navController.navigate("detail/$personId") {
+                        popUpTo(Routes.HOME)
+                    }
+                }
             )
         }
         composable(

@@ -19,6 +19,9 @@ interface CheckInDao {
     @Query("SELECT * FROM people WHERE id = :id")
     suspend fun getPersonById(id: Long): PersonEntity?
 
+    @Query("SELECT * FROM people WHERE id = :id")
+    fun observePersonById(id: Long): Flow<PersonEntity?>
+
     @Insert(onConflict = OnConflictStrategy.REPLACE)
     suspend fun insertPerson(person: PersonEntity)
 
@@ -30,4 +33,7 @@ interface CheckInDao {
 
     @Query("SELECT nativeLookupKey FROM people WHERE nativeLookupKey IS NOT NULL")
     suspend fun getLinkedLookupKeys(): List<String>
+
+    @Query("SELECT * FROM people WHERE nativeLookupKey IS NOT NULL")
+    suspend fun getLinkedPeople(): List<PersonEntity>
 }

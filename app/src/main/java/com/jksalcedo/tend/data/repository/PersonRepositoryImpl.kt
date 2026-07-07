@@ -26,6 +26,10 @@ class PersonRepositoryImpl(
         return dao.getPersonById(id)?.toDomain()
     }
 
+    override fun observePersonById(id: Long): Flow<Person?> {
+        return dao.observePersonById(id).map { it?.toDomain() }
+    }
+
     override suspend fun insertPerson(person: Person) {
         dao.insertPerson(person.toEntity())
     }
@@ -36,6 +40,10 @@ class PersonRepositoryImpl(
 
     override suspend fun deletePerson(id: Long) {
         dao.deletePerson(id)
+    }
+
+    override suspend fun getLinkedPeople(): List<Person> {
+        return dao.getLinkedPeople().map { it.toDomain() }
     }
 
     private fun PersonEntity.toDomain(): Person {
@@ -53,7 +61,10 @@ class PersonRepositoryImpl(
             nextReminderAt = nextReminderAt,
             isArchived = isArchived,
             nativeLookupKey = nativeLookupKey,
-            nativeContactId = nativeContactId
+            nativeContactId = nativeContactId,
+            isDeviceLinkBroken = isDeviceLinkBroken,
+            localPhotoPath = localPhotoPath,
+            duplicateOfPersonId = duplicateOfPersonId
         )
     }
 
@@ -72,7 +83,10 @@ class PersonRepositoryImpl(
             nextReminderAt = nextReminderAt,
             isArchived = isArchived,
             nativeLookupKey = nativeLookupKey,
-            nativeContactId = nativeContactId
+            nativeContactId = nativeContactId,
+            isDeviceLinkBroken = isDeviceLinkBroken,
+            localPhotoPath = localPhotoPath,
+            duplicateOfPersonId = duplicateOfPersonId
         )
     }
 }

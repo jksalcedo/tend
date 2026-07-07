@@ -15,4 +15,12 @@ class ContactsRepositoryImpl(
         return nativeContactsDataSource.queryContacts()
             .filter { it.lookupKey !in linkedLookupKeys }
     }
+
+    override suspend fun resolveContact(lookupKey: String, cachedContactId: Long?): NativeContact? {
+        return nativeContactsDataSource.resolveContact(lookupKey, cachedContactId)
+    }
+
+    override suspend fun cachePhoto(contactId: Long): String? {
+        return nativeContactsDataSource.cachePhoto(contactId)
+    }
 }
