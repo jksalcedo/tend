@@ -144,6 +144,10 @@ when a lookup-key collision is detected; `null` otherwise.
 | Syncing an archived device-linked contact                 | Sync keeps running as normal while archived — archiving only affects visibility in Tend's lists, not data freshness.                                                                                                                                                |
 | Permission permanently denied ("don't ask again")         | Detected and handled distinctly from a one-off denial: no repeated OS dialog: the user is guided to the app's system settings page instead. Applies to both `READ_CONTACTS` (import/refresh) and `WRITE_CONTACTS` (Sync to Device).                                 |
 | Two Tend people linked to the same native contact          | Flag only for v1 (`duplicateOfPersonId`), detected during the existing foreground poll. No dedicated merge/resolution UI — user resolves manually via existing edit/unlink/delete actions.                                                                          |
+| Multi-value phone/email shape                              | Full metadata per entry — `(value, type, isPrimary)` — not a bare list of strings, so it round-trips losslessly with native contacts' own shape.                                                                                                                    |
+| Sync to Device with multiple phone numbers/emails           | All entries are written to the new native contact, not just the primary one — full fidelity, consistent with the 1:1 sync goal.                                                                                                                                    |
+| Category/tag structure                                     | Multiple tags per person (not a single mutually-exclusive category), stored as a plain string list — no separate `Tag` entity/table.                                                                                                                                |
+| Category/tag catalog                                       | Free-form, user-typed — no fixed enum. Seeded with a small built-in set of common suggestions (Family/Friend/Work/Acquaintance) plus every tag already used elsewhere, both offered as quick-select chips alongside free typing.                                    |
 
 ## Non-Goals (v1)
 
@@ -168,30 +172,71 @@ each.)
 - **No `ContentObserver`-based live sync.** Case 1 refresh is a poll on app
   foreground, not a push-based live update while Tend is backgrounded.
 
-## Future Implementation
+## Multiple phone numbers and emails (`05`)
 
-Known gaps that are out of scope for the current contact-sync work, not
-because they were rejected, but because nobody's built them yet. Each has
-an inline `TODO` comment at the referenced file(s).
+`Person.phoneNumber`/`Person.email` were singular fields (a pre-existing
+constraint predating contact-sync), silently dropping every number/email on
+a native contact beyond the one `NativeContactsDataSource` picked as
+default. `05_multiple_contact_methods.feature` replaces this:
 
-- **Multiple phone numbers/emails per person.** `Person.phoneNumber` and
-  `Person.email` are singular fields, not lists — this predates
-  contact-sync entirely, it's how Tend already stored these before this
-  feature existed. Native contacts allow arbitrarily many typed phone
-  numbers/emails (Home/Work/Mobile/Other), optionally with one marked as
-  the contact's own default (`IS_SUPER_PRIMARY`). `NativeContactsDataSource`
-  picks that designated default when one exists, falling back to an
-  arbitrary row otherwise — any additional numbers/emails on the native
-  contact are silently dropped on import, and there's no way to add a
-  second phone/email to a Tend person at all today, imported or not.
-  Supporting this would need `phoneNumber`/`email` to become lists (a Room
-  migration) plus UI changes to `AddPersonScreen`/`PersonDetailScreen` for
-  multi-value entry. `TODO` comments: `Person.kt`, `PersonEntity.kt`,
-  `NativeContactsDataSource.kt`.
+- `Person.phoneNumbers: List<PhoneNumber>` / `Person.emails: List<Email>`,
+  where `PhoneNumber`/`Email` are `(value, type, isPrimary)` — matching
+  native contacts' own shape (type + a default flag), not a bare
+  `List<String>`, so re-syncing later doesn't lose which was Home vs Work
+  or which was the default. Stored the same way `socialLinks`/`events`
+  already are: a Room `TypeConverter`-backed JSON column, no new entity
+  table needed.
+- **Case 1 (linked):** still fully read-only in Tend, same as today —
+  `NativeContactsDataSource` now reads every phone/email row instead of
+  just the default one; "Edit in Contacts" remains the only way to change
+  them.
+- **Case 2 (Tend-only):** freely add/remove/edit entries and mark one
+  primary, the same add/remove-list UI pattern `AddPersonScreen` already
+  uses for social links and events.
+- **Sync to Device** writes every entry as its own native data row (not
+  just the primary one) — full fidelity in both directions, matching the
+  "synced back and forth 1:1" goal.
+- **QR sharing** is the one place this is intentionally *not* 1:1: only the
+  primary phone/email go into the shared payload, to keep the QR code from
+  growing with every extra number/email a contact has. If nothing is marked
+  primary, the first entry in the list is the effective default for both
+  QR sharing and Sync to Device.
+
+## Contact categorization / tags (`06`)
+
+Free-form tags (e.g. "Family", "Book Club"), specified in
+`06_categorization.feature`:
+
+- **Deliberately not synced with native Contacts Groups.** Android Groups
+  are heterogeneous and often account-driven (a work directory's org unit,
+  Google's auto-populated "Starred", a SIM import group) — frequently not
+  even user-editable, and inconsistent device to device. That's a poor
+  match for "how I want to organize the relationships I'm tending," which
+  is what this feature is actually for. Tags are a relationship field, like
+  frequency/notes/events — Tend-owned regardless of Case 1/2 status, never
+  read from or written to `ContactsContract.Groups`.
+- **Multiple tags per person**, stored as `Person.tags: List<String>` —
+  same lightweight pattern as phone numbers/emails above, no separate `Tag`
+  entity/table. A tag is just a string; there's no rename-everywhere or
+  color/icon management screen for v1 (removing a tag from a person doesn't
+  affect anyone else tagged the same thing).
+- **Free-form creation, seeded with starter suggestions.** The user can
+  type any new tag; a small built-in list (e.g. Family, Friend, Work,
+  Acquaintance) plus every tag already used across other people appear as
+  quick-select chips, so you're rarely typing the same tag twice by hand.
+- **Home screen filtering by tag** is in scope for `06` — without it, tags
+  are purely decorative, which undercuts the point of a relationship-tending
+  app being able to answer "who's overdue, among family?"
+
+## Further future work
+
+Still just an idea, no spec written yet — unlike `05`/`06` above, which
+have full Gherkin coverage:
+
 - **A real merge-review UI for duplicate Tend people**, as an upgrade from
-  the flag-only v1 behavior above — letting the user pick which fields
-  survive from each of the two records instead of manually editing/deleting
-  one themselves.
+  the flag-only v1 behavior described under "Post-hoc native merges" —
+  letting the user pick which fields survive from each of the two records
+  instead of manually editing/deleting one themselves.
 
 ## Why cache identity fields locally at all instead of just querying live? (duplication justification)
 
@@ -247,3 +292,14 @@ it assumes the field exists. Implementing all four in parallel isn't
 recommended: steps 2–4 all build on data-model and picker code introduced in
 step 1, so parallel work would mean guessing at that plumbing's shape (or
 redoing it) rather than reusing what step 1 actually produces.
+
+5. **`05_multiple_contact_methods.feature`** and
+   **`06_categorization.feature`** — added after `01`/`02` shipped. Neither
+   depends on `03`/`04` (Sync to Device and the first-run prompt), so they
+   don't have to wait in line behind those — `05`/`06` could ship before,
+   after, or interleaved with `03`/`04` without rework. `05` does touch the
+   same `Person`/`PersonEntity` model `01`/`02` already extended, and
+   `ShareScanSheet`'s `SharedPerson` QR payload shape, so it's a moderate
+   migration regardless of when it lands. `06` is fully additive (one new
+   list field, no changes to existing fields) and is the lowest-risk of the
+   six to build in isolation.
