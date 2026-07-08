@@ -22,7 +22,7 @@ class ImportContactsUseCaseTest {
     @Test
     fun `creates a linked person per selected native contact`() = runBlocking {
         val personRepository = FakePersonRepository()
-        val useCase = ImportContactsUseCase(personRepository)
+        val useCase = ImportContactsUseCase(personRepository, FakeContactsRepository())
 
         useCase(listOf(contact))
 
@@ -37,9 +37,24 @@ class ImportContactsUseCaseTest {
     }
 
     @Test
+    fun `caches the contact's photo immediately so it doesn't wait for the next foreground refresh`() = runBlocking {
+        val personRepository = FakePersonRepository()
+        val contactsRepository = FakeContactsRepository(
+            photosToCache = mapOf(contact.contactId to "/cache/contact_photos/42.jpg")
+        )
+        val useCase = ImportContactsUseCase(personRepository, contactsRepository)
+
+        useCase(listOf(contact))
+
+        assertEquals(listOf(contact.contactId), contactsRepository.cachePhotoCalls)
+        val person = personRepository.insertedPeople.first()
+        assertEquals("/cache/contact_photos/42.jpg", person.localPhotoPath)
+    }
+
+    @Test
     fun `relationship fields start at their defaults`() = runBlocking {
         val personRepository = FakePersonRepository()
-        val useCase = ImportContactsUseCase(personRepository)
+        val useCase = ImportContactsUseCase(personRepository, FakeContactsRepository())
 
         useCase(listOf(contact), frequencyDays = 14)
 
@@ -56,7 +71,7 @@ class ImportContactsUseCaseTest {
     @Test
     fun `creates one person per contact when multiple are selected`() = runBlocking {
         val personRepository = FakePersonRepository()
-        val useCase = ImportContactsUseCase(personRepository)
+        val useCase = ImportContactsUseCase(personRepository, FakeContactsRepository())
         val secondContact = contact.copy(lookupKey = "key-2", contactId = 43L, name = "Jordan")
 
         useCase(listOf(contact, secondContact))
@@ -67,7 +82,7 @@ class ImportContactsUseCaseTest {
     @Test
     fun `does nothing when no contacts are selected`() = runBlocking {
         val personRepository = FakePersonRepository()
-        val useCase = ImportContactsUseCase(personRepository)
+        val useCase = ImportContactsUseCase(personRepository, FakeContactsRepository())
 
         useCase(emptyList())
 

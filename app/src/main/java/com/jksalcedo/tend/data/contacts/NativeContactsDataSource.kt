@@ -1,5 +1,6 @@
 package com.jksalcedo.tend.data.contacts
 
+import android.content.ContentProviderOperation
 import android.content.ContentUris
 import android.content.ContentValues
 import android.content.Context
@@ -110,7 +111,16 @@ class NativeContactsDataSource(private val context: Context) {
 
     // Always creates a brand-new raw contact — no fuzzy-matching against existing native
     // contacts (see the README's "Non-Goals"). No account is set, so this becomes a local,
-    // unsynced contact exactly like ones created directly in the device's Contacts app.
+    // unsynced contact exactly like ones created directly in the device's Contacts app (see
+    // the README's "Design decisions" for why this doesn't attach to the user's existing
+    // Google/cloud account either).
+    //
+    // All rows (raw contact, name, phone, email, photo) are built as one batch of
+    // ContentProviderOperations and committed via a single applyBatch call — the documented
+    // Android pattern for multi-row contact creation, and the only way to make this atomic:
+    // without it, a failure partway through would leave an orphaned partial contact (e.g.
+    // name-only, no phone/email) permanently in the user's device Contacts app with no
+    // way for Tend to clean it up, since it never gets linked to a Person.
     suspend fun createContact(
         name: String,
         phoneNumber: String?,
@@ -119,64 +129,67 @@ class NativeContactsDataSource(private val context: Context) {
     ): NativeContact = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
 
-        val rawContactUri = resolver.insert(
-            ContactsContract.RawContacts.CONTENT_URI,
-            ContentValues().apply {
-                putNull(ContactsContract.RawContacts.ACCOUNT_NAME)
-                putNull(ContactsContract.RawContacts.ACCOUNT_TYPE)
-            }
-        ) ?: error("Failed to create raw contact")
-        val rawContactId = ContentUris.parseId(rawContactUri)
+        // Photo bytes are read outside the batch (it's plain file I/O, not a provider
+        // write) and best-effort: a failure here shouldn't fail contact creation, just
+        // leave it without a photo.
+        val photoBytes = if (!photoUri.isNullOrBlank()) {
+            runCatching { resolver.openInputStream(photoUri.toUri())?.use { it.readBytes() } }.getOrNull()
+        } else null
 
-        resolver.insert(
-            ContactsContract.Data.CONTENT_URI,
-            ContentValues().apply {
-                put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
-                put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
-            }
+        val ops = ArrayList<ContentProviderOperation>()
+
+        ops.add(
+            ContentProviderOperation.newInsert(ContactsContract.RawContacts.CONTENT_URI)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_NAME, null)
+                .withValue(ContactsContract.RawContacts.ACCOUNT_TYPE, null)
+                .build()
+        )
+
+        ops.add(
+            ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                .withValue(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+                .build()
         )
 
         if (!phoneNumber.isNullOrBlank()) {
-            resolver.insert(
-                ContactsContract.Data.CONTENT_URI,
-                ContentValues().apply {
-                    put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                    put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
-                    put(ContactsContract.CommonDataKinds.Phone.NUMBER, phoneNumber)
-                    put(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
-                    put(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, 1)
-                }
+            ops.add(
+                ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Phone.NUMBER, phoneNumber)
+                    .withValue(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
+                    .withValue(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, 1)
+                    .build()
             )
         }
 
         if (!email.isNullOrBlank()) {
-            resolver.insert(
-                ContactsContract.Data.CONTENT_URI,
-                ContentValues().apply {
-                    put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                    put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
-                    put(ContactsContract.CommonDataKinds.Email.ADDRESS, email)
-                    put(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME)
-                    put(ContactsContract.CommonDataKinds.Email.IS_PRIMARY, 1)
-                }
+            ops.add(
+                ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Email.ADDRESS, email)
+                    .withValue(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME)
+                    .withValue(ContactsContract.CommonDataKinds.Email.IS_PRIMARY, 1)
+                    .build()
             )
         }
 
-        if (!photoUri.isNullOrBlank()) {
-            runCatching {
-                resolver.openInputStream(photoUri.toUri())?.use { input ->
-                    resolver.insert(
-                        ContactsContract.Data.CONTENT_URI,
-                        ContentValues().apply {
-                            put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
-                            put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
-                            put(ContactsContract.CommonDataKinds.Photo.PHOTO, input.readBytes())
-                        }
-                    )
-                }
-            }
+        if (photoBytes != null) {
+            ops.add(
+                ContentProviderOperation.newInsert(ContactsContract.Data.CONTENT_URI)
+                    .withValueBackReference(ContactsContract.Data.RAW_CONTACT_ID, 0)
+                    .withValue(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                    .withValue(ContactsContract.CommonDataKinds.Photo.PHOTO, photoBytes)
+                    .build()
+            )
         }
+
+        val results = resolver.applyBatch(ContactsContract.AUTHORITY, ops)
+        val rawContactUri = results.firstOrNull()?.uri ?: error("Failed to create raw contact")
+        val rawContactId = ContentUris.parseId(rawContactUri)
 
         val contactId = resolver.query(
             ContactsContract.RawContacts.CONTENT_URI,
@@ -184,7 +197,11 @@ class NativeContactsDataSource(private val context: Context) {
             "${ContactsContract.RawContacts._ID} = ?",
             arrayOf(rawContactId.toString()),
             null
-        )?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null } ?: rawContactId
+        )?.use { cursor ->
+            // Cursor.getLong() on a SQL-NULL column returns 0, not null — check isNull
+            // explicitly so an aggregation lag doesn't silently resolve to contact id 0.
+            if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else null
+        } ?: rawContactId
 
         val lookupKey = resolver.query(
             ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId),

@@ -46,6 +46,12 @@ class PersonRepositoryImpl(
         return dao.getLinkedPeople().map { it.toDomain() }
     }
 
+    override fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>> {
+        return dao.observeDuplicatesOf(lookupKey, excludeId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
     private fun PersonEntity.toDomain(): Person {
         return Person(
             id = id,
@@ -63,8 +69,7 @@ class PersonRepositoryImpl(
             nativeLookupKey = nativeLookupKey,
             nativeContactId = nativeContactId,
             isDeviceLinkBroken = isDeviceLinkBroken,
-            localPhotoPath = localPhotoPath,
-            duplicateOfPersonId = duplicateOfPersonId
+            localPhotoPath = localPhotoPath
         )
     }
 
@@ -85,8 +90,7 @@ class PersonRepositoryImpl(
             nativeLookupKey = nativeLookupKey,
             nativeContactId = nativeContactId,
             isDeviceLinkBroken = isDeviceLinkBroken,
-            localPhotoPath = localPhotoPath,
-            duplicateOfPersonId = duplicateOfPersonId
+            localPhotoPath = localPhotoPath
         )
     }
 }

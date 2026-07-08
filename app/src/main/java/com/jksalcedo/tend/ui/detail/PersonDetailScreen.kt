@@ -104,7 +104,8 @@ fun PersonDetailScreen(
     onNavigateToPerson: (Long) -> Unit = {}
 ) {
     val person by viewModel.person.collectAsState()
-    val duplicatePerson by viewModel.duplicatePerson.collectAsState()
+    val duplicates by viewModel.duplicates.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
     var showShareSheet by remember { mutableStateOf(false) }
@@ -431,8 +432,9 @@ fun PersonDetailScreen(
 
                 DeviceSyncStatusSection(
                     person = p,
-                    duplicatePerson = duplicatePerson,
+                    duplicates = duplicates,
                     hasContactsPermission = hasContactsPermission,
+                    isSyncing = isSyncing,
                     onRequestPermission = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
                     onEditInContacts = {
                         val lookupKey = p.nativeLookupKey
@@ -442,7 +444,7 @@ fun PersonDetailScreen(
                             context.startActivity(Intent(Intent.ACTION_EDIT).apply { data = lookupUri })
                         }
                     },
-                    onNavigateToDuplicate = { duplicatePerson?.let { onNavigateToPerson(it.id) } },
+                    onNavigateToDuplicate = { duplicates.firstOrNull()?.let { onNavigateToPerson(it.id) } },
                     onUnlink = { viewModel.unlink() },
                     onSyncToDevice = onSyncToDevice,
                     syncToDeviceMessage = syncToDeviceMessage,
@@ -621,8 +623,9 @@ fun PersonDetailScreen(
 @Composable
 private fun DeviceSyncStatusSection(
     person: Person,
-    duplicatePerson: Person?,
+    duplicates: List<Person>,
     hasContactsPermission: Boolean,
+    isSyncing: Boolean,
     onRequestPermission: () -> Unit,
     onEditInContacts: () -> Unit,
     onNavigateToDuplicate: () -> Unit,
@@ -633,7 +636,13 @@ private fun DeviceSyncStatusSection(
 ) {
     val isLinked = person.nativeLookupKey != null
 
-    if (duplicatePerson != null) {
+    if (duplicates.isNotEmpty()) {
+        val bannerText = if (duplicates.size == 1) {
+            "Possibly a duplicate of \"${duplicates.first().name}\" — tap to review"
+        } else {
+            "Possibly a duplicate of \"${duplicates.first().name}\" and ${duplicates.size - 1} " +
+                "other${if (duplicates.size > 2) "s" else ""} — tap to review"
+        }
         Card(
             modifier = Modifier
                 .fillMaxWidth()
@@ -648,7 +657,7 @@ private fun DeviceSyncStatusSection(
                 Icon(Icons.Default.Warning, contentDescription = null, tint = TendPastels.YellowDark)
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
-                    text = "Possibly a duplicate of \"${duplicatePerson.name}\" — tap to review",
+                    text = bannerText,
                     style = MaterialTheme.typography.bodyMedium,
                     color = TendPastels.YellowDark
                 )
@@ -665,7 +674,14 @@ private fun DeviceSyncStatusSection(
                 contentColor = MaterialTheme.colorScheme.onSurfaceVariant
             )
             Spacer(modifier = Modifier.height(8.dp))
-            TextButton(onClick = onSyncToDevice) { Text("Sync to Device") }
+            TextButton(onClick = onSyncToDevice, enabled = !isSyncing) {
+                Text(if (isSyncing) "Syncing…" else "Sync to Device")
+            }
+            Text(
+                text = "Creates a local contact on this device only — it won't back up to your Google account.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
             when (syncToDeviceMessage) {
                 SyncToDeviceMessage.DENIED -> Text(
                     text = "Contacts access is needed to sync this connection to your device.",

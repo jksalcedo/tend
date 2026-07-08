@@ -12,6 +12,9 @@ class SyncToDeviceUseCase(
 ) {
     suspend operator fun invoke(id: Long) {
         val person = personRepository.getPersonById(id) ?: return
+        // Defends against a double-invocation (e.g. a rapid double-tap before the UI's own
+        // guard reacts) creating two native contacts and orphaning the first one.
+        if (person.nativeLookupKey != null) return
         val created = contactsRepository.createContact(
             name = person.name,
             phoneNumber = person.phoneNumber,

@@ -112,21 +112,25 @@ out to be the same real person under two different raw contacts, an
 aggregation merge could leave two `PersonEntity` rows resolving to the same
 `LOOKUP_KEY`.
 
-Resolution: **flag only, no dedicated merge/resolution flow for v1.** During
-the existing foreground poll, when resolving a person's `nativeLookupKey`,
-check whether that lookup key is already claimed by another Tend person. If
-so, set `duplicateOfPersonId: Long?` on both rows (referencing each other)
-and show a duplicate indicator on each. The indicator links to the other
-person's detail screen so the user can resolve it manually using Tend's
-existing person management (edit, unlink, or delete one of them) — no new
-merge UI is built. The flag is recomputed on every poll, so it clears itself
-once the underlying collision goes away (e.g. the user unlinks or deletes
-one of the two). This mirrors how broken-link detection already works
-(flag + let the user act, never auto-resolve silently) while avoiding the
-much larger scope of a real merge-review UI.
+Resolution: **flag only, no dedicated merge/resolution flow for v1** — and
+derived live rather than stored. `PersonDetailViewModel` reactively queries
+for other linked people sharing the current person's `nativeLookupKey`
+whenever it changes, and shows a duplicate indicator if any are found. The
+indicator links to the first other person's detail screen so the user can
+resolve it manually using Tend's existing person management (edit, unlink,
+or delete one of them) — no new merge UI is built. This mirrors how
+broken-link detection already works (flag + let the user act, never
+auto-resolve silently) while avoiding the much larger scope of a real
+merge-review UI.
 
-New `PersonEntity` field: `duplicateOfPersonId: Long?` — set on both sides
-when a lookup-key collision is detected; `null` otherwise.
+Deliberately **not** a stored `duplicateOfPersonId`-style pairwise FK: an
+earlier version tried that and it broke down for 3+-way collisions (three
+people merged into one native contact can't be represented by a single
+"points at one other person" field without picking an arbitrary pair) and
+needed an explicit recompute step that could go stale between polls.
+Querying live for "who else currently shares my lookup key" is correct for
+any group size and can never be stale, at the cost of one extra query per
+detail-screen view instead of a pre-computed column.
 
 ## Design decisions (from stakeholder interview)
 
@@ -143,7 +147,8 @@ when a lookup-key collision is detected; `null` otherwise.
 | Photo caching for Case 1                                  | A local byte copy is cached (`localPhotoPath`), not just a URI reference — the one field where extra duplication is justified, so photos survive a permission-revoked "sync paused" state the same way text fields already do.                                      |
 | Syncing an archived device-linked contact                 | Sync keeps running as normal while archived — archiving only affects visibility in Tend's lists, not data freshness.                                                                                                                                                |
 | Permission permanently denied ("don't ask again")         | Detected and handled distinctly from a one-off denial: no repeated OS dialog: the user is guided to the app's system settings page instead. Applies to both `READ_CONTACTS` (import/refresh) and `WRITE_CONTACTS` (Sync to Device).                                 |
-| Two Tend people linked to the same native contact          | Flag only for v1 (`duplicateOfPersonId`), detected during the existing foreground poll. No dedicated merge/resolution UI — user resolves manually via existing edit/unlink/delete actions.                                                                          |
+| Two Tend people linked to the same native contact          | Detected live by querying for other linked people sharing the same `nativeLookupKey` (not a stored pairwise flag) — correct for any group size and never goes stale. No dedicated merge/resolution UI — user resolves manually via existing edit/unlink/delete actions. |
+| Account for natively-created contacts (Sync to Device)     | Accountless (no `ACCOUNT_NAME`/`ACCOUNT_TYPE`) — matches the existing "no sync-adapter" design (see Non-Goals) but means these contacts are local-only: they don't back up to or appear in the user's Google/cloud account. Documented, not hidden — see the note under "Sync to Device" in the app and the Non-Goals entry below. |
 | Multi-value phone/email shape                              | Full metadata per entry — `(value, type, isPrimary)` — not a bare list of strings, so it round-trips losslessly with native contacts' own shape.                                                                                                                    |
 | Sync to Device with multiple phone numbers/emails           | All entries are written to the new native contact, not just the primary one — full fidelity, consistent with the 1:1 sync goal.                                                                                                                                    |
 | Category/tag structure                                     | Multiple tags per person (not a single mutually-exclusive category), stored as a plain string list — no separate `Tag` entity/table.                                                                                                                                |
@@ -168,7 +173,17 @@ each.)
   side-by-side merge screen.
 - **No account-type / sync-adapter integration.** Tend never registers
   itself as an `AccountManager` account or owns `RawContacts` rows; it only
-  reads and creates plain local contacts via `ContactsContract`.
+  reads and creates plain local contacts via `ContactsContract`. This is a
+  narrower claim than "contacts Tend creates are never associated with an
+  account" — see the next bullet.
+- **Contacts created via "Sync to Device" are accountless, not attached to
+  the user's existing Google/cloud account.** A deliberate simplification,
+  not an oversight: attaching to the user's default account would need
+  `AccountManager` permission handling and a way to pick an account when
+  multiple exist, which is out of scope for v1. The real consequence: these
+  contacts are local-only — they don't back up and won't appear on the
+  user's other devices. Surfaced to the user via a caption under the "Sync
+  to Device" button, not just buried in this doc.
 - **No `ContentObserver`-based live sync.** Case 1 refresh is a poll on app
   foreground, not a push-based live update while Tend is backgrounded.
 

@@ -134,6 +134,13 @@ check-in frequency and empty notes/events match what a manually-added
 connection starts with.
 
 - [x] Pass / [ ] Fail
+- **Retested (2026-07-08) after a code-review fix:** `ImportContactsUseCase`
+  now caches the contact's photo at import time (previously only happened
+  on the next foreground refresh, so a freshly imported contact with a
+  photo briefly showed initials). Verified by importing "Test Contact 3"
+  (has a photo) and opening its detail screen immediately, with no
+  backgrounding in between — the real photo rendered right away, not a
+  placeholder.
 
 ## 7. Picker excludes contacts already linked to a Tend person
 

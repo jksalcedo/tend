@@ -156,6 +156,16 @@ reused; this is always a brand-new entry.
   phone (5550200), and one email (marco@example.com) row — no duplicate
   or matched-existing contact. No photo, as expected — Case 2 has no
   photo picker.)
+- **Retested (2026-07-08) after code-review fixes:** `createContact()` was
+  rewritten to use `ContentResolver.applyBatch` (atomic, was previously
+  unbatched sequential inserts). Re-verified end-to-end with a fresh
+  person ("TestSync") — synced successfully, exactly one native contact
+  created with correct name/phone/email. Also specifically tested the
+  double-tap guard added to `SyncToDeviceUseCase`: rapidly tapped "Sync to
+  Device" twice in quick succession (before the button could visually
+  disable) and confirmed via `content query` that the native contact
+  count increased by exactly 1, not 2 — no orphaned duplicate contact
+  created.
 
 ## 9. After syncing to device, the contact behaves as device-linked
 

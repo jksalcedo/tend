@@ -61,6 +61,23 @@ class SyncToDeviceUseCaseTest {
     }
 
     @Test
+    fun `does nothing when the person is already linked`() = runBlocking {
+        // Guards against a double-invocation (e.g. a rapid double-tap before the UI
+        // disables the button) creating a second, orphaned native contact.
+        val personRepository = FakePersonRepository()
+        val seeded = personRepository.seed(
+            tendOnlyPerson().copy(nativeLookupKey = "existing-key", nativeContactId = 5L)
+        )
+        val contactsRepository = FakeContactsRepository()
+        val useCase = SyncToDeviceUseCase(personRepository, contactsRepository)
+
+        useCase(seeded.id)
+
+        assertEquals(0, contactsRepository.createContactCalls.size)
+        assertEquals("existing-key", personRepository.getPersonById(seeded.id)?.nativeLookupKey)
+    }
+
+    @Test
     fun `does nothing when the person does not exist`() = runBlocking {
         val personRepository = FakePersonRepository()
         val contactsRepository = FakeContactsRepository()

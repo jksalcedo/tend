@@ -84,6 +84,9 @@ class FakePersonRepository : PersonRepository {
     override suspend fun getLinkedPeople(): List<Person> =
         people.value.filter { it.nativeLookupKey != null }
 
+    override fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>> =
+        people.map { list -> list.filter { it.nativeLookupKey == lookupKey && it.id != excludeId } }
+
     fun seed(person: Person): Person {
         val assignedId = (people.value.maxOfOrNull { it.id } ?: 0L) + 1
         val seeded = person.copy(id = assignedId)

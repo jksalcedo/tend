@@ -3,6 +3,8 @@ package com.jksalcedo.tend.di
 import androidx.room.Room
 import com.jksalcedo.tend.data.contacts.NativeContactsDataSource
 import com.jksalcedo.tend.data.local.AppDatabase
+import com.jksalcedo.tend.data.local.MIGRATION_3_5
+import com.jksalcedo.tend.data.local.MIGRATION_5_6
 import com.jksalcedo.tend.data.repository.ContactsRepositoryImpl
 import com.jksalcedo.tend.data.repository.PersonRepositoryImpl
 import com.jksalcedo.tend.domain.repository.ContactsRepository
@@ -18,6 +20,7 @@ import com.jksalcedo.tend.domain.usecase.GetImportableContactsUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.ImportContactsUseCase
+import com.jksalcedo.tend.domain.usecase.ObserveDuplicatePeopleUseCase
 import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
 import com.jksalcedo.tend.domain.usecase.RefreshLinkedContactsUseCase
 import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
@@ -40,7 +43,11 @@ val appModule = module {
             androidContext(),
             AppDatabase::class.java,
             "tend_database"
-        ).fallbackToDestructiveMigration()
+        ).addMigrations(MIGRATION_3_5, MIGRATION_5_6)
+            // Last-resort fallback only for installs older than version 3 (predating
+            // any migration path this app has ever shipped) — everything from 3 onward
+            // goes through a real Migration so upgrading never silently wipes data.
+            .fallbackToDestructiveMigration()
             .build()
     }
     
@@ -54,6 +61,7 @@ val appModule = module {
     factory { GetUpcomingCheckInsUseCase(get()) }
     factory { GetPersonUseCase(get()) }
     factory { ObservePersonUseCase(get()) }
+    factory { ObserveDuplicatePeopleUseCase(get()) }
     factory { AddPersonUseCase(get()) }
     factory { CheckInUseCase(get()) }
     factory { AddNoteUseCase(get()) }
@@ -63,7 +71,7 @@ val appModule = module {
     factory { GetArchivedPeopleUseCase(get()) }
     factory { UnarchivePersonUseCase(get()) }
     factory { GetImportableContactsUseCase(get()) }
-    factory { ImportContactsUseCase(get()) }
+    factory { ImportContactsUseCase(get(), get()) }
     factory { RefreshLinkedContactsUseCase(get(), get()) }
     factory { UnlinkPersonUseCase(get()) }
     factory { SyncToDeviceUseCase(get(), get()) }

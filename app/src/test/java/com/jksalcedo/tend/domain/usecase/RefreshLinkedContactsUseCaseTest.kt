@@ -4,7 +4,6 @@ import com.jksalcedo.tend.domain.model.NativeContact
 import com.jksalcedo.tend.domain.model.Person
 import kotlinx.coroutines.runBlocking
 import org.junit.Assert.assertEquals
-import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
 
@@ -75,49 +74,49 @@ class RefreshLinkedContactsUseCaseTest {
     }
 
     @Test
-    fun `flags two people as duplicates when they resolve to the same lookup key`() = runBlocking {
+    fun `does not overwrite a person who was unlinked while their refresh was in flight`() = runBlocking {
+        // Regression test: the loop reads a Person snapshot, then awaits resolveContact/
+        // cachePhoto (real I/O in production). If something else — e.g. UnlinkPersonUseCase —
+        // changes this exact person's link in that window, the refresh must not clobber it
+        // with a stale .copy() once its own await resolves.
         val personRepository = FakePersonRepository()
-        val first = personRepository.seed(person("Priya A", nativeLookupKey = "shared-key", nativeContactId = 1L))
-        val second = personRepository.seed(person("Priya B", nativeLookupKey = "shared-key", nativeContactId = 1L))
-        val resolved = NativeContact(
-            lookupKey = "shared-key",
-            contactId = 1L,
-            name = "Priya",
-            phoneNumber = null,
-            email = null,
-            photoUri = null
-        )
-        val contactsRepository = FakeContactsRepository(resolvedContacts = mapOf("shared-key" to resolved))
-        val useCase = RefreshLinkedContactsUseCase(contactsRepository, personRepository)
-
-        useCase()
-
-        val updatedFirst = personRepository.getPersonById(first.id)
-        val updatedSecond = personRepository.getPersonById(second.id)
-        assertEquals(second.id, updatedFirst?.duplicateOfPersonId)
-        assertEquals(first.id, updatedSecond?.duplicateOfPersonId)
-    }
-
-    @Test
-    fun `clears a stale duplicate flag once the collision is gone`() = runBlocking {
-        val personRepository = FakePersonRepository()
-        val seeded = personRepository.seed(
-            person("Priya", nativeLookupKey = "key-1", nativeContactId = 1L).copy(duplicateOfPersonId = 42L)
-        )
+        val seeded = personRepository.seed(person("Priya", nativeLookupKey = "key-1", nativeContactId = 1L))
         val resolved = NativeContact(
             lookupKey = "key-1",
             contactId = 1L,
-            name = "Priya",
+            name = "Priya Updated",
             phoneNumber = null,
             email = null,
             photoUri = null
         )
-        val contactsRepository = FakeContactsRepository(resolvedContacts = mapOf("key-1" to resolved))
+        val contactsRepository = object : ContactsRepositoryForRaceTest(resolved) {
+            override suspend fun resolveContact(lookupKey: String, cachedContactId: Long?): NativeContact? {
+                // Simulate a concurrent unlink happening between the initial read and this
+                // (slow, real-world) resolve call completing.
+                personRepository.updatePerson(seeded.copy(nativeLookupKey = null, nativeContactId = null))
+                return super.resolveContact(lookupKey, cachedContactId)
+            }
+        }
         val useCase = RefreshLinkedContactsUseCase(contactsRepository, personRepository)
 
         useCase()
 
-        val updated = personRepository.getPersonById(seeded.id)
-        assertNull(updated?.duplicateOfPersonId)
+        val current = personRepository.getPersonById(seeded.id)
+        assertEquals(null, current?.nativeLookupKey)
+        assertEquals("Priya", current?.name)
     }
+}
+
+private open class ContactsRepositoryForRaceTest(
+    private val resolved: NativeContact
+) : com.jksalcedo.tend.domain.repository.ContactsRepository {
+    override suspend fun getImportableContacts(): List<NativeContact> = emptyList()
+    override suspend fun resolveContact(lookupKey: String, cachedContactId: Long?): NativeContact? = resolved
+    override suspend fun cachePhoto(contactId: Long): String? = null
+    override suspend fun createContact(
+        name: String,
+        phoneNumber: String?,
+        email: String?,
+        photoUri: String?
+    ): NativeContact = error("not used in this test")
 }

@@ -9,7 +9,7 @@ import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.DeleteNoteUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
-import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
+import com.jksalcedo.tend.domain.usecase.ObserveDuplicatePeopleUseCase
 import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
 import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
@@ -19,13 +19,14 @@ import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.asStateFlow
+import kotlinx.coroutines.flow.flatMapLatest
 import kotlinx.coroutines.flow.flowOf
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
 class PersonDetailViewModel(
     observePersonUseCase: ObservePersonUseCase,
-    private val getPersonUseCase: GetPersonUseCase,
+    observeDuplicatePeopleUseCase: ObserveDuplicatePeopleUseCase,
     private val checkInUseCase: CheckInUseCase,
     private val addNoteUseCase: AddNoteUseCase,
     private val archivePersonUseCase: ArchivePersonUseCase,
@@ -47,16 +48,19 @@ class PersonDetailViewModel(
     val person: StateFlow<Person?> = (personId?.let { observePersonUseCase(it) } ?: flowOf(null))
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), null)
 
-    private val _duplicatePerson = MutableStateFlow<Person?>(null)
-    val duplicatePerson: StateFlow<Person?> = _duplicatePerson.asStateFlow()
-
-    init {
-        viewModelScope.launch {
-            person.collect { p ->
-                _duplicatePerson.value = p?.duplicateOfPersonId?.let { getPersonUseCase(it) }
-            }
+    // Other people currently sharing this person's native lookup key. Derived live from
+    // the current person's own lookup key (re-subscribing whenever it changes) rather than
+    // a one-shot fetch off a stored pointer, so it can never go stale and naturally covers
+    // groups of any size.
+    val duplicates: StateFlow<List<Person>> = person
+        .flatMapLatest { p ->
+            val lookupKey = p?.nativeLookupKey
+            if (lookupKey != null) observeDuplicatePeopleUseCase(lookupKey, p.id) else flowOf(emptyList())
         }
-    }
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    private val _isSyncing = MutableStateFlow(false)
+    val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
     fun checkIn() {
         val id = personId ?: return
@@ -100,7 +104,15 @@ class PersonDetailViewModel(
 
     fun syncToDevice() {
         val id = personId ?: return
-        viewModelScope.launch { syncToDeviceUseCase(id) }
+        if (_isSyncing.value) return
+        viewModelScope.launch {
+            _isSyncing.value = true
+            try {
+                syncToDeviceUseCase(id)
+            } finally {
+                _isSyncing.value = false
+            }
+        }
     }
 
     fun deleteNote(noteId: String) {

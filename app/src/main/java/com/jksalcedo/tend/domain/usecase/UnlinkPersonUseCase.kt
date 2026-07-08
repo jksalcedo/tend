@@ -11,8 +11,7 @@ class UnlinkPersonUseCase(
             person.copy(
                 nativeLookupKey = null,
                 nativeContactId = null,
-                isDeviceLinkBroken = false,
-                duplicateOfPersonId = null
+                isDeviceLinkBroken = false
             )
         )
     }

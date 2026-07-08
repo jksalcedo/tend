@@ -1,6 +1,5 @@
 package com.jksalcedo.tend.domain.usecase
 
-import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.ContactsRepository
 import com.jksalcedo.tend.domain.repository.PersonRepository
 
@@ -15,16 +14,24 @@ class RefreshLinkedContactsUseCase(
             val lookupKey = person.nativeLookupKey ?: continue
             val resolved = contactsRepository.resolveContact(lookupKey, person.nativeContactId)
 
+            // Re-fetch right before writing rather than reusing the pre-await snapshot,
+            // and bail if the person's link changed while we were awaiting the (slow)
+            // ContentResolver round-trip above — e.g. the user unlinked this exact person
+            // mid-refresh. Without this, a stale .copy() would silently overwrite whatever
+            // they just did (Room's @Update replaces the whole row).
+            val current = personRepository.getPersonById(person.id) ?: continue
+            if (current.nativeLookupKey != lookupKey) continue
+
             if (resolved == null) {
-                if (!person.isDeviceLinkBroken) {
-                    personRepository.updatePerson(person.copy(isDeviceLinkBroken = true))
+                if (!current.isDeviceLinkBroken) {
+                    personRepository.updatePerson(current.copy(isDeviceLinkBroken = true))
                 }
                 continue
             }
 
-            val localPhotoPath = contactsRepository.cachePhoto(resolved.contactId) ?: person.localPhotoPath
+            val localPhotoPath = contactsRepository.cachePhoto(resolved.contactId) ?: current.localPhotoPath
             personRepository.updatePerson(
-                person.copy(
+                current.copy(
                     name = resolved.name,
                     phoneNumber = resolved.phoneNumber,
                     email = resolved.email,
@@ -35,29 +42,6 @@ class RefreshLinkedContactsUseCase(
                     isDeviceLinkBroken = false
                 )
             )
-        }
-
-        updateDuplicateFlags()
-    }
-
-    private suspend fun updateDuplicateFlags() {
-        val refreshed = personRepository.getLinkedPeople()
-        val byLookupKey: Map<String?, List<Person>> = refreshed.groupBy { it.nativeLookupKey }
-
-        for (group in byLookupKey.values) {
-            if (group.size > 1) {
-                for (person in group) {
-                    val otherId = group.first { it.id != person.id }.id
-                    if (person.duplicateOfPersonId != otherId) {
-                        personRepository.updatePerson(person.copy(duplicateOfPersonId = otherId))
-                    }
-                }
-            } else {
-                val person = group.first()
-                if (person.duplicateOfPersonId != null) {
-                    personRepository.updatePerson(person.copy(duplicateOfPersonId = null))
-                }
-            }
         }
     }
 }
