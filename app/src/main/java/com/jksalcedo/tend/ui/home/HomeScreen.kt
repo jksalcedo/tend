@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -37,6 +38,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -86,6 +88,8 @@ fun HomeScreen(
     val people by viewModel.people.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val showImportPrompt by viewModel.showImportPrompt.collectAsState()
+    val allTags by viewModel.allTags.collectAsState()
+    val selectedTag by viewModel.selectedTag.collectAsState()
 
     if (showImportPrompt) {
         AlertDialog(
@@ -116,6 +120,9 @@ fun HomeScreen(
         people = people,
         searchQuery = searchQuery,
         onSearchQueryChange = viewModel::updateSearchQuery,
+        allTags = allTags,
+        selectedTag = selectedTag,
+        onSelectedTagChange = viewModel::updateSelectedTag,
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
         onArchivedClick = onArchivedClick,
@@ -128,6 +135,9 @@ private fun HomeScreenContent(
     people: List<Person>,
     searchQuery: String = "",
     onSearchQueryChange: (String) -> Unit = {},
+    allTags: List<String> = emptyList(),
+    selectedTag: String? = null,
+    onSelectedTagChange: (String?) -> Unit = {},
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onArchivedClick: () -> Unit = {},
@@ -334,6 +344,28 @@ private fun HomeScreenContent(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 )
             )
+
+            if (allTags.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = selectedTag == null,
+                            onClick = { onSelectedTagChange(null) },
+                            label = { Text("All") }
+                        )
+                    }
+                    items(allTags) { tag ->
+                        FilterChip(
+                            selected = selectedTag == tag,
+                            onClick = {
+                                onSelectedTagChange(if (selectedTag == tag) null else tag)
+                            },
+                            label = { Text(tag) }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 

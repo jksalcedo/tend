@@ -22,5 +22,6 @@ data class Person(
     val nativeLookupKey: String? = null,
     val nativeContactId: Long? = null,
     val isDeviceLinkBroken: Boolean = false,
-    val localPhotoPath: String? = null
+    val localPhotoPath: String? = null,
+    val tags: List<String> = emptyList()
 )

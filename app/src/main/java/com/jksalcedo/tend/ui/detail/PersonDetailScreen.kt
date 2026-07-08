@@ -11,12 +11,16 @@ import android.provider.Settings
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
 import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -34,6 +38,7 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
@@ -42,6 +47,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -51,6 +57,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -98,7 +105,7 @@ import java.util.Date
 private enum class SyncToDeviceMessage { DENIED, PERMANENTLY_DENIED }
 private enum class ReadContactsMessage { DENIED, PERMANENTLY_DENIED }
 
-@OptIn(ExperimentalMaterial3Api::class)
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PersonDetailScreen(
     viewModel: PersonDetailViewModel = koinViewModel(),
@@ -110,12 +117,15 @@ fun PersonDetailScreen(
     val duplicates by viewModel.duplicates.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
     val syncFailed by viewModel.syncFailed.collectAsState()
+    val allTags by viewModel.allTags.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
     var showShareSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
+    var showTagPicker by remember { mutableStateOf(false) }
+    var tagToDelete by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(syncFailed) {
         if (syncFailed) {
@@ -265,6 +275,45 @@ fun PersonDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showTagPicker) {
+        person?.let { p ->
+            TagPickerDialog(
+                allTags = allTags,
+                personTags = p.tags,
+                onToggle = { tag ->
+                    if (tag in p.tags) viewModel.removeTag(tag) else viewModel.addTag(tag)
+                },
+                onCreate = { tag -> viewModel.addTag(tag) },
+                onLongPressTag = { tag -> tagToDelete = tag },
+                onDismiss = { showTagPicker = false }
+            )
+        }
+    }
+
+    if (tagToDelete != null) {
+        val tag = tagToDelete!!
+        AlertDialog(
+            onDismissRequest = { tagToDelete = null },
+            title = { Text("Delete tag \"$tag\"?") },
+            text = { Text("This removes \"$tag\" from every connection that has it and takes it out of the tag list everywhere — this can't be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteTag(tag)
+                        tagToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { tagToDelete = null }) {
                     Text("Cancel")
                 }
             }
@@ -510,6 +559,41 @@ fun PersonDetailScreen(
                     syncToDeviceMessage = syncToDeviceMessage,
                     onOpenSettings = onOpenSettings
                 )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Tags
+                Text(
+                    text = "Tags",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    p.tags.forEach { tag ->
+                        InputChip(
+                            selected = false,
+                            onClick = {},
+                            label = { Text(tag) },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove tag $tag",
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clickable { viewModel.removeTag(tag) }
+                                )
+                            }
+                        )
+                    }
+                    AssistChip(
+                        onClick = { showTagPicker = true },
+                        label = { Text("+ Add tag") }
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(24.dp))
 
@@ -914,6 +998,104 @@ fun EventItem(event: PersonEvent) {
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun TagPickerDialog(
+    allTags: List<String>,
+    personTags: List<String>,
+    onToggle: (String) -> Unit,
+    onCreate: (String) -> Unit,
+    onLongPressTag: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var newTag by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tags") },
+        text = {
+            Column {
+                if (allTags.isNotEmpty()) {
+                    Text(
+                        text = "Tap to add or remove, hold to delete a tag everywhere",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        allTags.forEach { tag ->
+                            val isSelected = tag in personTags
+                            // A single combinedClickable rather than FilterChip's own onClick
+                            // plus a modifier on top — stacking two separate click handlers
+                            // on one component risks double-registered gestures.
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.combinedClickable(
+                                    onClick = { onToggle(tag) },
+                                    onLongClick = { onLongPressTag(tag) }
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
+                                    Text(
+                                        text = tag,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = if (isSelected) {
+                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                OutlinedTextField(
+                    value = newTag,
+                    onValueChange = { newTag = it },
+                    label = { Text("New tag") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onCreate(newTag)
+                    newTag = ""
+                },
+                enabled = newTag.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Done") }
+        }
+    )
 }
 
 @Composable

@@ -52,6 +52,10 @@ class PersonRepositoryImpl(
         }
     }
 
+    override suspend fun getEveryPerson(): List<Person> {
+        return dao.getEveryPerson().map { it.toDomain() }
+    }
+
     private fun PersonEntity.toDomain(): Person {
         return Person(
             id = id,
@@ -69,7 +73,8 @@ class PersonRepositoryImpl(
             nativeLookupKey = nativeLookupKey,
             nativeContactId = nativeContactId,
             isDeviceLinkBroken = isDeviceLinkBroken,
-            localPhotoPath = localPhotoPath
+            localPhotoPath = localPhotoPath,
+            tags = tags
         )
     }
 
@@ -90,7 +95,8 @@ class PersonRepositoryImpl(
             nativeLookupKey = nativeLookupKey,
             nativeContactId = nativeContactId,
             isDeviceLinkBroken = isDeviceLinkBroken,
-            localPhotoPath = localPhotoPath
+            localPhotoPath = localPhotoPath,
+            tags = tags
         )
     }
 }

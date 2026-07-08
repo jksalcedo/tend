@@ -5,12 +5,16 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
+import com.jksalcedo.tend.domain.usecase.AddTagToPersonUseCase
 import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.CheckInUseCase
 import com.jksalcedo.tend.domain.usecase.DeleteNoteUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
+import com.jksalcedo.tend.domain.usecase.DeleteTagUseCase
+import com.jksalcedo.tend.domain.usecase.ObserveAllTagsUseCase
 import com.jksalcedo.tend.domain.usecase.ObserveDuplicatePeopleUseCase
 import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
+import com.jksalcedo.tend.domain.usecase.RemoveTagFromPersonUseCase
 import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.UnlinkPersonUseCase
@@ -27,6 +31,7 @@ import kotlinx.coroutines.launch
 class PersonDetailViewModel(
     observePersonUseCase: ObservePersonUseCase,
     observeDuplicatePeopleUseCase: ObserveDuplicatePeopleUseCase,
+    observeAllTagsUseCase: ObserveAllTagsUseCase,
     private val checkInUseCase: CheckInUseCase,
     private val addNoteUseCase: AddNoteUseCase,
     private val archivePersonUseCase: ArchivePersonUseCase,
@@ -36,6 +41,9 @@ class PersonDetailViewModel(
     private val syncToDeviceUseCase: SyncToDeviceUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val updateNoteUseCase: UpdateNoteUseCase,
+    private val addTagToPersonUseCase: AddTagToPersonUseCase,
+    private val removeTagFromPersonUseCase: RemoveTagFromPersonUseCase,
+    private val deleteTagUseCase: DeleteTagUseCase,
     savedStateHandle: SavedStateHandle
 ) : ViewModel() {
 
@@ -68,6 +76,11 @@ class PersonDetailViewModel(
     fun consumeSyncFailed() {
         _syncFailed.value = false
     }
+
+    // The tag pool for this person's tag picker — every known tag, not just ones already
+    // in use, so a tag that's been unassigned from everyone is still offered.
+    val allTags: StateFlow<List<String>> = observeAllTagsUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
     fun checkIn() {
         val id = personId ?: return
@@ -133,5 +146,21 @@ class PersonDetailViewModel(
         val id = personId ?: return
         if (newContent.isBlank()) return
         viewModelScope.launch { updateNoteUseCase(id, noteId, newContent) }
+    }
+
+    fun addTag(tag: String) {
+        val id = personId ?: return
+        viewModelScope.launch { addTagToPersonUseCase(id, tag) }
+    }
+
+    fun removeTag(tag: String) {
+        val id = personId ?: return
+        viewModelScope.launch { removeTagFromPersonUseCase(id, tag) }
+    }
+
+    // Deletes the tag globally — from the pool and from every person wearing it, not just
+    // this one. Distinct from removeTag, which only affects the current person.
+    fun deleteTag(tag: String) {
+        viewModelScope.launch { deleteTagUseCase(tag) }
     }
 }

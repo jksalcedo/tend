@@ -13,4 +13,5 @@ interface PersonRepository {
     suspend fun deletePerson(id: Long)
     suspend fun getLinkedPeople(): List<Person>
     fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>>
+    suspend fun getEveryPerson(): List<Person>
 }

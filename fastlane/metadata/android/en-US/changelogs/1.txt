@@ -13,3 +13,4 @@
 - Shows when a linked device contact has been removed or is no longer found
 - Shows when syncing is paused because contacts permission was revoked
 - Search bar to easily find connections by name
+- Tag connections with free-form labels (ships with Family and Friend) and filter Home by tag

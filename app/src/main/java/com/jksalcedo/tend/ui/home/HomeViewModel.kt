@@ -5,6 +5,7 @@ import androidx.lifecycle.viewModelScope
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.MaybeShowContactImportPromptUseCase
+import com.jksalcedo.tend.domain.usecase.ObserveAllTagsUseCase
 import com.jksalcedo.tend.domain.usecase.ResolveContactImportPromptUseCase
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
@@ -16,6 +17,7 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
+    observeAllTagsUseCase: ObserveAllTagsUseCase,
     private val maybeShowContactImportPromptUseCase: MaybeShowContactImportPromptUseCase,
     private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase
 ) : ViewModel() {
@@ -23,15 +25,20 @@ class HomeViewModel(
     private val _searchQuery = MutableStateFlow("")
     val searchQuery: StateFlow<String> = _searchQuery
 
+    private val _selectedTag = MutableStateFlow<String?>(null)
+    val selectedTag: StateFlow<String?> = _selectedTag.asStateFlow()
+
+    val allTags: StateFlow<List<String>> = observeAllTagsUseCase()
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
     val people: StateFlow<List<Person>> = combine(
         getUpcomingCheckInsUseCase(),
-        _searchQuery
-    ) { peopleList, query ->
-        if (query.isBlank()) {
-            peopleList
-        } else {
-            peopleList.filter { it.name.contains(query, ignoreCase = true) }
-        }
+        _searchQuery,
+        _selectedTag
+    ) { peopleList, query, tag ->
+        peopleList
+            .filter { query.isBlank() || it.name.contains(query, ignoreCase = true) }
+            .filter { tag == null || tag in it.tags }
     }.stateIn(
         scope = viewModelScope,
         started = SharingStarted.WhileSubscribed(5000),
@@ -49,6 +56,10 @@ class HomeViewModel(
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun updateSelectedTag(tag: String?) {
+        _selectedTag.value = tag
     }
 
     // Called whether the user tapped Yes, No, or dismissed the prompt — all three resolve

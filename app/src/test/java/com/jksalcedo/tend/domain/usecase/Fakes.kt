@@ -5,6 +5,7 @@ import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.ContactsRepository
 import com.jksalcedo.tend.domain.repository.OnboardingRepository
 import com.jksalcedo.tend.domain.repository.PersonRepository
+import com.jksalcedo.tend.domain.repository.TagRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.map
@@ -88,11 +89,34 @@ class FakePersonRepository : PersonRepository {
     override fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>> =
         people.map { list -> list.filter { it.nativeLookupKey == lookupKey && it.id != excludeId } }
 
+    override suspend fun getEveryPerson(): List<Person> = people.value
+
     fun seed(person: Person): Person {
         val assignedId = (people.value.maxOfOrNull { it.id } ?: 0L) + 1
         val seeded = person.copy(id = assignedId)
         people.value = people.value + seeded
         return seeded
+    }
+}
+
+class FakeTagRepository : TagRepository {
+    private val tags = MutableStateFlow<List<String>>(emptyList())
+    val deletedTags = mutableListOf<String>()
+
+    override fun observeAllTags(): Flow<List<String>> = tags.map { it.sorted() }
+
+    override suspend fun ensureTagExists(name: String) {
+        if (name.isBlank()) return
+        if (name !in tags.value) tags.value = tags.value + name
+    }
+
+    override suspend fun deleteTag(name: String) {
+        deletedTags.add(name)
+        tags.value = tags.value - name
+    }
+
+    fun seed(vararg names: String) {
+        tags.value = tags.value + names
     }
 }
 
