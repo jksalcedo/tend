@@ -23,8 +23,7 @@ object Routes {
 @Composable
 fun TendNavGraph(
     navController: NavHostController = rememberNavController(),
-    startDestination: String = Routes.HOME,
-    onOpenNotificationSettings: () -> Unit = {}
+    startDestination: String = Routes.HOME
 ) {
     NavHost(
         navController = navController,
@@ -40,7 +39,6 @@ fun TendNavGraph(
                     }
                 },
                 onPersonClick = { personId -> navController.navigate("detail/$personId") },
-                onOpenNotificationSettings = onOpenNotificationSettings,
                 onArchivedClick = { navController.navigate(Routes.ARCHIVED) }
             )
         }

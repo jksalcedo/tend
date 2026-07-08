@@ -27,7 +27,6 @@ import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
@@ -79,7 +78,6 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onOpenNotificationSettings: () -> Unit = {},
     onArchivedClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
@@ -90,7 +88,6 @@ fun HomeScreen(
         onSearchQueryChange = viewModel::updateSearchQuery,
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
-        onOpenNotificationSettings = onOpenNotificationSettings,
         onArchivedClick = onArchivedClick
     )
 }
@@ -102,7 +99,6 @@ private fun HomeScreenContent(
     onSearchQueryChange: (String) -> Unit = {},
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onOpenNotificationSettings: () -> Unit = {},
     onArchivedClick: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
@@ -220,13 +216,6 @@ private fun HomeScreenContent(
                         Icon(
                             Icons.Default.QrCodeScanner,
                             contentDescription = "Scan QR Code",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-                    IconButton(onClick = onOpenNotificationSettings) {
-                        Icon(
-                            Icons.Outlined.Notifications,
-                            contentDescription = "Notifications",
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
