@@ -1,13 +1,19 @@
 package com.jksalcedo.tend.di
 
+import androidx.datastore.core.DataStore
+import androidx.datastore.preferences.core.PreferenceDataStoreFactory
+import androidx.datastore.preferences.core.Preferences
+import androidx.datastore.preferences.preferencesDataStoreFile
 import androidx.room.Room
 import com.jksalcedo.tend.data.contacts.NativeContactsDataSource
 import com.jksalcedo.tend.data.local.AppDatabase
 import com.jksalcedo.tend.data.local.MIGRATION_3_5
 import com.jksalcedo.tend.data.local.MIGRATION_5_6
 import com.jksalcedo.tend.data.repository.ContactsRepositoryImpl
+import com.jksalcedo.tend.data.repository.OnboardingRepositoryImpl
 import com.jksalcedo.tend.data.repository.PersonRepositoryImpl
 import com.jksalcedo.tend.domain.repository.ContactsRepository
+import com.jksalcedo.tend.domain.repository.OnboardingRepository
 import com.jksalcedo.tend.domain.repository.PersonRepository
 import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.AddPersonUseCase
@@ -20,9 +26,11 @@ import com.jksalcedo.tend.domain.usecase.GetImportableContactsUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.ImportContactsUseCase
+import com.jksalcedo.tend.domain.usecase.MaybeShowContactImportPromptUseCase
 import com.jksalcedo.tend.domain.usecase.ObserveDuplicatePeopleUseCase
 import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
 import com.jksalcedo.tend.domain.usecase.RefreshLinkedContactsUseCase
+import com.jksalcedo.tend.domain.usecase.ResolveContactImportPromptUseCase
 import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.UnlinkPersonUseCase
@@ -58,7 +66,16 @@ val appModule = module {
     single { NativeContactsDataSource(androidContext()) }
     single<ContactsRepository> { ContactsRepositoryImpl(get(), get()) }
 
+    single<DataStore<Preferences>> {
+        PreferenceDataStoreFactory.create(
+            produceFile = { androidContext().preferencesDataStoreFile("tend_prefs") }
+        )
+    }
+    single<OnboardingRepository> { OnboardingRepositoryImpl(get()) }
+
     factory { GetUpcomingCheckInsUseCase(get()) }
+    factory { MaybeShowContactImportPromptUseCase(get(), get()) }
+    factory { ResolveContactImportPromptUseCase(get()) }
     factory { GetPersonUseCase(get()) }
     factory { ObservePersonUseCase(get()) }
     factory { ObserveDuplicatePeopleUseCase(get()) }

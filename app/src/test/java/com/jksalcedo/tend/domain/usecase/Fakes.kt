@@ -3,6 +3,7 @@ package com.jksalcedo.tend.domain.usecase
 import com.jksalcedo.tend.domain.model.NativeContact
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.ContactsRepository
+import com.jksalcedo.tend.domain.repository.OnboardingRepository
 import com.jksalcedo.tend.domain.repository.PersonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.MutableStateFlow
@@ -92,5 +93,19 @@ class FakePersonRepository : PersonRepository {
         val seeded = person.copy(id = assignedId)
         people.value = people.value + seeded
         return seeded
+    }
+}
+
+class FakeOnboardingRepository(
+    private var resolved: Boolean = false
+) : OnboardingRepository {
+    var markResolvedCallCount = 0
+        private set
+
+    override suspend fun isContactImportPromptResolved(): Boolean = resolved
+
+    override suspend fun markContactImportPromptResolved() {
+        markResolvedCallCount++
+        resolved = true
     }
 }

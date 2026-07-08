@@ -47,15 +47,6 @@ android {
     buildFeatures {
         compose = true
     }
-
-    applicationVariants.all {
-        val variant = this
-        outputs.all {
-            if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                this.outputFileName = "Tend-${variant.versionName}.apk"
-            }
-        }
-    }
 }
 
 kotlin {
@@ -94,6 +85,9 @@ dependencies {
 
     // Gson
     implementation(libs.gson)
+
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
 
     // Qr
     implementation(libs.core)

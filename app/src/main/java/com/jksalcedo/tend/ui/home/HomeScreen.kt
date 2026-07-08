@@ -29,6 +29,7 @@ import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -43,6 +44,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -83,6 +85,33 @@ fun HomeScreen(
 ) {
     val people by viewModel.people.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val showImportPrompt by viewModel.showImportPrompt.collectAsState()
+
+    if (showImportPrompt) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onImportPromptResolved() },
+            title = { Text("Import your contacts?") },
+            text = {
+                Text("Tend can import people from your device contacts so you don't have to add them one by one.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.onImportPromptResolved()
+                        onImportContactsClick()
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onImportPromptResolved() }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
     HomeScreenContent(
         people = people,
         searchQuery = searchQuery,
