@@ -11,6 +11,7 @@ import com.jksalcedo.tend.domain.usecase.DeleteNoteUseCase
 import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
 import com.jksalcedo.tend.domain.usecase.GetPersonUseCase
 import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
+import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.UnlinkPersonUseCase
 import com.jksalcedo.tend.domain.usecase.UpdateNoteUseCase
@@ -31,6 +32,7 @@ class PersonDetailViewModel(
     private val deletePersonUseCase: DeletePersonUseCase,
     private val unarchivePersonUseCase: UnarchivePersonUseCase,
     private val unlinkPersonUseCase: UnlinkPersonUseCase,
+    private val syncToDeviceUseCase: SyncToDeviceUseCase,
     private val deleteNoteUseCase: DeleteNoteUseCase,
     private val updateNoteUseCase: UpdateNoteUseCase,
     savedStateHandle: SavedStateHandle
@@ -94,6 +96,11 @@ class PersonDetailViewModel(
     fun unlink() {
         val id = personId ?: return
         viewModelScope.launch { unlinkPersonUseCase(id) }
+    }
+
+    fun syncToDevice() {
+        val id = personId ?: return
+        viewModelScope.launch { syncToDeviceUseCase(id) }
     }
 
     fun deleteNote(noteId: String) {

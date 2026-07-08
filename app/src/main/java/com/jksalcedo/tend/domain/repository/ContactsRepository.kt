@@ -6,4 +6,5 @@ interface ContactsRepository {
     suspend fun getImportableContacts(): List<NativeContact>
     suspend fun resolveContact(lookupKey: String, cachedContactId: Long?): NativeContact?
     suspend fun cachePhoto(contactId: Long): String?
+    suspend fun createContact(name: String, phoneNumber: String?, email: String?, photoUri: String?): NativeContact
 }

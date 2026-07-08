@@ -7,3 +7,4 @@
 - Added platform-specific icons and custom profile URL routing for social links
 - Import connections from your device contacts, selectively, any time
 - Keep imported connections synced with your device contacts, with an in-app link to edit them there
+- Sync a connection you created in Tend to your device contacts, any time you choose

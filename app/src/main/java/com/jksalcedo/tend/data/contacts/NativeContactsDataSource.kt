@@ -1,8 +1,10 @@
 package com.jksalcedo.tend.data.contacts
 
 import android.content.ContentUris
+import android.content.ContentValues
 import android.content.Context
 import android.provider.ContactsContract
+import androidx.core.net.toUri
 import com.jksalcedo.tend.domain.model.NativeContact
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
@@ -105,6 +107,103 @@ class NativeContactsDataSource(private val context: Context) {
                 )
             }
         }
+
+    // Always creates a brand-new raw contact — no fuzzy-matching against existing native
+    // contacts (see the README's "Non-Goals"). No account is set, so this becomes a local,
+    // unsynced contact exactly like ones created directly in the device's Contacts app.
+    suspend fun createContact(
+        name: String,
+        phoneNumber: String?,
+        email: String?,
+        photoUri: String?
+    ): NativeContact = withContext(Dispatchers.IO) {
+        val resolver = context.contentResolver
+
+        val rawContactUri = resolver.insert(
+            ContactsContract.RawContacts.CONTENT_URI,
+            ContentValues().apply {
+                putNull(ContactsContract.RawContacts.ACCOUNT_NAME)
+                putNull(ContactsContract.RawContacts.ACCOUNT_TYPE)
+            }
+        ) ?: error("Failed to create raw contact")
+        val rawContactId = ContentUris.parseId(rawContactUri)
+
+        resolver.insert(
+            ContactsContract.Data.CONTENT_URI,
+            ContentValues().apply {
+                put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.StructuredName.CONTENT_ITEM_TYPE)
+                put(ContactsContract.CommonDataKinds.StructuredName.DISPLAY_NAME, name)
+            }
+        )
+
+        if (!phoneNumber.isNullOrBlank()) {
+            resolver.insert(
+                ContactsContract.Data.CONTENT_URI,
+                ContentValues().apply {
+                    put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                    put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Phone.CONTENT_ITEM_TYPE)
+                    put(ContactsContract.CommonDataKinds.Phone.NUMBER, phoneNumber)
+                    put(ContactsContract.CommonDataKinds.Phone.TYPE, ContactsContract.CommonDataKinds.Phone.TYPE_MOBILE)
+                    put(ContactsContract.CommonDataKinds.Phone.IS_PRIMARY, 1)
+                }
+            )
+        }
+
+        if (!email.isNullOrBlank()) {
+            resolver.insert(
+                ContactsContract.Data.CONTENT_URI,
+                ContentValues().apply {
+                    put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                    put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Email.CONTENT_ITEM_TYPE)
+                    put(ContactsContract.CommonDataKinds.Email.ADDRESS, email)
+                    put(ContactsContract.CommonDataKinds.Email.TYPE, ContactsContract.CommonDataKinds.Email.TYPE_HOME)
+                    put(ContactsContract.CommonDataKinds.Email.IS_PRIMARY, 1)
+                }
+            )
+        }
+
+        if (!photoUri.isNullOrBlank()) {
+            runCatching {
+                resolver.openInputStream(photoUri.toUri())?.use { input ->
+                    resolver.insert(
+                        ContactsContract.Data.CONTENT_URI,
+                        ContentValues().apply {
+                            put(ContactsContract.Data.RAW_CONTACT_ID, rawContactId)
+                            put(ContactsContract.Data.MIMETYPE, ContactsContract.CommonDataKinds.Photo.CONTENT_ITEM_TYPE)
+                            put(ContactsContract.CommonDataKinds.Photo.PHOTO, input.readBytes())
+                        }
+                    )
+                }
+            }
+        }
+
+        val contactId = resolver.query(
+            ContactsContract.RawContacts.CONTENT_URI,
+            arrayOf(ContactsContract.RawContacts.CONTACT_ID),
+            "${ContactsContract.RawContacts._ID} = ?",
+            arrayOf(rawContactId.toString()),
+            null
+        )?.use { cursor -> if (cursor.moveToFirst()) cursor.getLong(0) else null } ?: rawContactId
+
+        val lookupKey = resolver.query(
+            ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId),
+            arrayOf(ContactsContract.Contacts.LOOKUP_KEY),
+            null,
+            null,
+            null
+        )?.use { cursor -> if (cursor.moveToFirst()) cursor.getString(0) else null }
+            ?: error("Newly created contact has no lookup key")
+
+        NativeContact(
+            lookupKey = lookupKey,
+            contactId = contactId,
+            name = name,
+            phoneNumber = phoneNumber,
+            email = email,
+            photoUri = photoUri
+        )
+    }
 
     // Copies the native contact's photo into app-private storage so it keeps displaying even if
     // READ_CONTACTS is later revoked (a content:// URI reference would go unreadable then). Returns

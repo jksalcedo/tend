@@ -20,6 +20,7 @@ import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.ImportContactsUseCase
 import com.jksalcedo.tend.domain.usecase.ObservePersonUseCase
 import com.jksalcedo.tend.domain.usecase.RefreshLinkedContactsUseCase
+import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.UnlinkPersonUseCase
 import com.jksalcedo.tend.domain.usecase.UpdateNoteUseCase
@@ -65,6 +66,7 @@ val appModule = module {
     factory { ImportContactsUseCase(get()) }
     factory { RefreshLinkedContactsUseCase(get(), get()) }
     factory { UnlinkPersonUseCase(get()) }
+    factory { SyncToDeviceUseCase(get(), get()) }
     factory { DeleteNoteUseCase(get()) }
     factory { UpdateNoteUseCase(get()) }
 

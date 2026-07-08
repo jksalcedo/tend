@@ -23,4 +23,13 @@ class ContactsRepositoryImpl(
     override suspend fun cachePhoto(contactId: Long): String? {
         return nativeContactsDataSource.cachePhoto(contactId)
     }
+
+    override suspend fun createContact(
+        name: String,
+        phoneNumber: String?,
+        email: String?,
+        photoUri: String?
+    ): NativeContact {
+        return nativeContactsDataSource.createContact(name, phoneNumber, email, photoUri)
+    }
 }

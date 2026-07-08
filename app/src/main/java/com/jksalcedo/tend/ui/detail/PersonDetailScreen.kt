@@ -1,10 +1,13 @@
 package com.jksalcedo.tend.ui.detail
 
 import android.Manifest
+import android.app.Activity
 import android.content.Intent
 import android.content.pm.PackageManager
 import android.graphics.BitmapFactory
+import android.net.Uri
 import android.provider.ContactsContract
+import android.provider.Settings
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -73,6 +76,7 @@ import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
 import androidx.lifecycle.Lifecycle
@@ -89,6 +93,8 @@ import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
+private enum class SyncToDeviceMessage { DENIED, PERMANENTLY_DENIED }
+
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun PersonDetailScreen(
@@ -100,6 +106,7 @@ fun PersonDetailScreen(
     val person by viewModel.person.collectAsState()
     val duplicatePerson by viewModel.duplicatePerson.collectAsState()
     val context = LocalContext.current
+    val activity = context as? Activity
     var showShareSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
@@ -116,6 +123,40 @@ fun PersonDetailScreen(
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
     ) { granted -> hasContactsPermission = granted }
+
+    var syncToDeviceMessage by remember { mutableStateOf<SyncToDeviceMessage?>(null) }
+    val writeContactsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        if (granted) {
+            syncToDeviceMessage = null
+            viewModel.syncToDevice()
+        } else {
+            syncToDeviceMessage = if (activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+                    activity,
+                    Manifest.permission.WRITE_CONTACTS
+                )
+            ) {
+                SyncToDeviceMessage.DENIED
+            } else {
+                SyncToDeviceMessage.PERMANENTLY_DENIED
+            }
+        }
+    }
+    val onSyncToDevice: () -> Unit = {
+        val granted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (granted) {
+            syncToDeviceMessage = null
+            viewModel.syncToDevice()
+        } else {
+            // Android itself skips the dialog when the permission was permanently denied —
+            // launching is always safe, the callback above disambiguates which case it was.
+            writeContactsPermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+        }
+    }
 
     val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
@@ -402,7 +443,15 @@ fun PersonDetailScreen(
                         }
                     },
                     onNavigateToDuplicate = { duplicatePerson?.let { onNavigateToPerson(it.id) } },
-                    onUnlink = { viewModel.unlink() }
+                    onUnlink = { viewModel.unlink() },
+                    onSyncToDevice = onSyncToDevice,
+                    syncToDeviceMessage = syncToDeviceMessage,
+                    onOpenSettings = {
+                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                            data = Uri.fromParts("package", context.packageName, null)
+                        }
+                        context.startActivity(intent)
+                    }
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -577,7 +626,10 @@ private fun DeviceSyncStatusSection(
     onRequestPermission: () -> Unit,
     onEditInContacts: () -> Unit,
     onNavigateToDuplicate: () -> Unit,
-    onUnlink: () -> Unit
+    onUnlink: () -> Unit,
+    onSyncToDevice: () -> Unit,
+    syncToDeviceMessage: SyncToDeviceMessage?,
+    onOpenSettings: () -> Unit
 ) {
     val isLinked = person.nativeLookupKey != null
 
@@ -606,11 +658,31 @@ private fun DeviceSyncStatusSection(
     }
 
     if (!isLinked) {
-        StatusCard(
-            text = "Not synced to your device contacts",
-            containerColor = MaterialTheme.colorScheme.surfaceVariant,
-            contentColor = MaterialTheme.colorScheme.onSurfaceVariant
-        )
+        Column {
+            StatusCard(
+                text = "Not synced to your device contacts",
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onSyncToDevice) { Text("Sync to Device") }
+            when (syncToDeviceMessage) {
+                SyncToDeviceMessage.DENIED -> Text(
+                    text = "Contacts access is needed to sync this connection to your device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                SyncToDeviceMessage.PERMANENTLY_DENIED -> Column {
+                    Text(
+                        text = "Contacts access was previously denied. Enable it from system settings to sync this connection.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                    TextButton(onClick = onOpenSettings) { Text("Open Settings") }
+                }
+                null -> {}
+            }
+        }
         return
     }
 
