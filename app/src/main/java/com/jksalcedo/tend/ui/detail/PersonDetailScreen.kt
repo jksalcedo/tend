@@ -8,6 +8,7 @@ import android.graphics.BitmapFactory
 import android.net.Uri
 import android.provider.ContactsContract
 import android.provider.Settings
+import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
@@ -60,6 +61,7 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -94,6 +96,7 @@ import java.text.SimpleDateFormat
 import java.util.Date
 
 private enum class SyncToDeviceMessage { DENIED, PERMANENTLY_DENIED }
+private enum class ReadContactsMessage { DENIED, PERMANENTLY_DENIED }
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -106,12 +109,24 @@ fun PersonDetailScreen(
     val person by viewModel.person.collectAsState()
     val duplicates by viewModel.duplicates.collectAsState()
     val isSyncing by viewModel.isSyncing.collectAsState()
+    val syncFailed by viewModel.syncFailed.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
     var showShareSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
+
+    LaunchedEffect(syncFailed) {
+        if (syncFailed) {
+            Toast.makeText(
+                context,
+                "Couldn't sync this connection to your device. Please try again.",
+                Toast.LENGTH_SHORT
+            ).show()
+            viewModel.consumeSyncFailed()
+        }
+    }
 
     var hasContactsPermission by remember {
         mutableStateOf(
@@ -121,23 +136,51 @@ fun PersonDetailScreen(
             ) == PackageManager.PERMISSION_GRANTED
         )
     }
+    var readContactsMessage by remember { mutableStateOf<ReadContactsMessage?>(null) }
     val permissionLauncher = rememberLauncherForActivityResult(
         ActivityResultContracts.RequestPermission()
-    ) { granted -> hasContactsPermission = granted }
+    ) { granted ->
+        hasContactsPermission = granted
+        readContactsMessage = if (granted) {
+            null
+        } else if (activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                Manifest.permission.READ_CONTACTS
+            )
+        ) {
+            ReadContactsMessage.DENIED
+        } else {
+            ReadContactsMessage.PERMANENTLY_DENIED
+        }
+    }
 
     var syncToDeviceMessage by remember { mutableStateOf<SyncToDeviceMessage?>(null) }
+    // Creating a native contact needs WRITE_CONTACTS, but NativeContactsDataSource.createContact()
+    // also queries the provider afterward to resolve the new contact's id/lookup key — and
+    // ContactsProvider requires READ_CONTACTS for any query regardless of WRITE_CONTACTS. Request
+    // both together so a user who never separately granted READ_CONTACTS (e.g. never used
+    // Import Contacts) doesn't hit a SecurityException on their first sync.
     val writeContactsPermissionLauncher = rememberLauncherForActivityResult(
-        ActivityResultContracts.RequestPermission()
-    ) { granted ->
-        if (granted) {
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val writeGranted = results[Manifest.permission.WRITE_CONTACTS] == true
+        val readGranted = results[Manifest.permission.READ_CONTACTS] == true
+        hasContactsPermission = readGranted
+        if (readGranted) readContactsMessage = null
+        if (writeGranted && readGranted) {
             syncToDeviceMessage = null
             viewModel.syncToDevice()
         } else {
-            syncToDeviceMessage = if (activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+            val stillNeedsRationale = activity != null && (
+                ActivityCompat.shouldShowRequestPermissionRationale(
                     activity,
                     Manifest.permission.WRITE_CONTACTS
+                ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                    activity,
+                    Manifest.permission.READ_CONTACTS
                 )
-            ) {
+            )
+            syncToDeviceMessage = if (stillNeedsRationale) {
                 SyncToDeviceMessage.DENIED
             } else {
                 SyncToDeviceMessage.PERMANENTLY_DENIED
@@ -145,17 +188,23 @@ fun PersonDetailScreen(
         }
     }
     val onSyncToDevice: () -> Unit = {
-        val granted = ContextCompat.checkSelfPermission(
+        val writeGranted = ContextCompat.checkSelfPermission(
             context,
             Manifest.permission.WRITE_CONTACTS
         ) == PackageManager.PERMISSION_GRANTED
-        if (granted) {
+        val readGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (writeGranted && readGranted) {
             syncToDeviceMessage = null
             viewModel.syncToDevice()
         } else {
-            // Android itself skips the dialog when the permission was permanently denied —
+            // Android itself skips the dialog for whichever permission was permanently denied —
             // launching is always safe, the callback above disambiguates which case it was.
-            writeContactsPermissionLauncher.launch(Manifest.permission.WRITE_CONTACTS)
+            writeContactsPermissionLauncher.launch(
+                arrayOf(Manifest.permission.WRITE_CONTACTS, Manifest.permission.READ_CONTACTS)
+            )
         }
     }
 
@@ -167,6 +216,9 @@ fun PersonDetailScreen(
                     context,
                     Manifest.permission.READ_CONTACTS
                 ) == PackageManager.PERMISSION_GRANTED
+                if (hasContactsPermission) {
+                    readContactsMessage = null
+                }
             }
         }
         lifecycleOwner.lifecycle.addObserver(observer)
@@ -430,10 +482,18 @@ fun PersonDetailScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                val onOpenSettings: () -> Unit = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                }
+
                 DeviceSyncStatusSection(
                     person = p,
                     duplicates = duplicates,
                     hasContactsPermission = hasContactsPermission,
+                    readContactsMessage = readContactsMessage,
                     isSyncing = isSyncing,
                     onRequestPermission = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
                     onEditInContacts = {
@@ -448,12 +508,7 @@ fun PersonDetailScreen(
                     onUnlink = { viewModel.unlink() },
                     onSyncToDevice = onSyncToDevice,
                     syncToDeviceMessage = syncToDeviceMessage,
-                    onOpenSettings = {
-                        val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
-                            data = Uri.fromParts("package", context.packageName, null)
-                        }
-                        context.startActivity(intent)
-                    }
+                    onOpenSettings = onOpenSettings
                 )
 
                 Spacer(modifier = Modifier.height(24.dp))
@@ -625,6 +680,7 @@ private fun DeviceSyncStatusSection(
     person: Person,
     duplicates: List<Person>,
     hasContactsPermission: Boolean,
+    readContactsMessage: ReadContactsMessage?,
     isSyncing: Boolean,
     onRequestPermission: () -> Unit,
     onEditInContacts: () -> Unit,
@@ -725,11 +781,23 @@ private fun DeviceSyncStatusSection(
                 contentColor = TendPastels.YellowDark
             )
             Spacer(modifier = Modifier.height(8.dp))
+            if (readContactsMessage == ReadContactsMessage.PERMANENTLY_DENIED) {
+                Text(
+                    text = "Contacts access was previously denied. Enable it from system settings to resume syncing.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
             Row(
                 horizontalArrangement = Arrangement.spacedBy(8.dp),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                TextButton(onClick = onRequestPermission) { Text("Grant permission") }
+                if (readContactsMessage == ReadContactsMessage.PERMANENTLY_DENIED) {
+                    TextButton(onClick = onOpenSettings) { Text("Open Settings") }
+                } else {
+                    TextButton(onClick = onRequestPermission) { Text("Grant permission") }
+                }
                 TextButton(onClick = onEditInContacts) { Text("Edit in Contacts") }
             }
         }

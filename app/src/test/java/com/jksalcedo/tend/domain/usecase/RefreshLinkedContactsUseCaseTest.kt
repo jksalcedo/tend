@@ -105,6 +105,48 @@ class RefreshLinkedContactsUseCaseTest {
         assertEquals(null, current?.nativeLookupKey)
         assertEquals("Priya", current?.name)
     }
+
+    @Test
+    fun `does not overwrite a person who was unlinked while cachePhoto was in flight`() = runBlocking {
+        // Regression test for the second half of the same race: resolveContact could also
+        // complete cleanly and THEN a concurrent unlink lands during the cachePhoto await,
+        // which happens after the first recheck but before the final write.
+        val personRepository = FakePersonRepository()
+        val seeded = personRepository.seed(person("Priya", nativeLookupKey = "key-1", nativeContactId = 1L))
+        val resolved = NativeContact(
+            lookupKey = "key-1",
+            contactId = 1L,
+            name = "Priya Updated",
+            phoneNumber = null,
+            email = null,
+            photoUri = null
+        )
+        val contactsRepository = object : com.jksalcedo.tend.domain.repository.ContactsRepository {
+            override suspend fun getImportableContacts(): List<NativeContact> = emptyList()
+            override suspend fun resolveContact(lookupKey: String, cachedContactId: Long?): NativeContact? =
+                resolved
+
+            override suspend fun cachePhoto(contactId: Long): String? {
+                // Simulate a concurrent unlink happening between resolveContact and this call.
+                personRepository.updatePerson(seeded.copy(nativeLookupKey = null, nativeContactId = null))
+                return null
+            }
+
+            override suspend fun createContact(
+                name: String,
+                phoneNumber: String?,
+                email: String?,
+                photoUri: String?
+            ): NativeContact = error("not used in this test")
+        }
+        val useCase = RefreshLinkedContactsUseCase(contactsRepository, personRepository)
+
+        useCase()
+
+        val current = personRepository.getPersonById(seeded.id)
+        assertEquals(null, current?.nativeLookupKey)
+        assertEquals("Priya", current?.name)
+    }
 }
 
 private open class ContactsRepositoryForRaceTest(

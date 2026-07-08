@@ -2,6 +2,7 @@ package com.jksalcedo.tend.ui.sync
 
 import android.Manifest
 import android.content.pm.PackageManager
+import android.util.Log
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.DisposableEffect
 import androidx.compose.runtime.rememberCoroutineScope
@@ -29,7 +30,16 @@ fun ForegroundSyncEffect() {
                     Manifest.permission.READ_CONTACTS
                 ) == PackageManager.PERMISSION_GRANTED
                 if (granted) {
-                    scope.launch { refreshLinkedContactsUseCase() }
+                    scope.launch {
+                        // Permission can be revoked between the check above and the use
+                        // case's own ContentResolver calls; don't let that (or any other
+                        // provider hiccup) crash the app on a routine foreground resume.
+                        try {
+                            refreshLinkedContactsUseCase()
+                        } catch (e: Exception) {
+                            Log.w("ForegroundSyncEffect", "Contact refresh failed", e)
+                        }
+                    }
                 }
             }
         }

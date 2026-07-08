@@ -62,6 +62,13 @@ class PersonDetailViewModel(
     private val _isSyncing = MutableStateFlow(false)
     val isSyncing: StateFlow<Boolean> = _isSyncing.asStateFlow()
 
+    private val _syncFailed = MutableStateFlow(false)
+    val syncFailed: StateFlow<Boolean> = _syncFailed.asStateFlow()
+
+    fun consumeSyncFailed() {
+        _syncFailed.value = false
+    }
+
     fun checkIn() {
         val id = personId ?: return
         viewModelScope.launch { checkInUseCase(id) }
@@ -109,6 +116,8 @@ class PersonDetailViewModel(
             _isSyncing.value = true
             try {
                 syncToDeviceUseCase(id)
+            } catch (e: Exception) {
+                _syncFailed.value = true
             } finally {
                 _isSyncing.value = false
             }

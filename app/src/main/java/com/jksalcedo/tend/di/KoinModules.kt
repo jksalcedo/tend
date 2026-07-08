@@ -8,7 +8,6 @@ import androidx.room.Room
 import com.jksalcedo.tend.data.contacts.NativeContactsDataSource
 import com.jksalcedo.tend.data.local.AppDatabase
 import com.jksalcedo.tend.data.local.MIGRATION_3_5
-import com.jksalcedo.tend.data.local.MIGRATION_5_6
 import com.jksalcedo.tend.data.repository.ContactsRepositoryImpl
 import com.jksalcedo.tend.data.repository.OnboardingRepositoryImpl
 import com.jksalcedo.tend.data.repository.PersonRepositoryImpl
@@ -51,7 +50,7 @@ val appModule = module {
             androidContext(),
             AppDatabase::class.java,
             "tend_database"
-        ).addMigrations(MIGRATION_3_5, MIGRATION_5_6)
+        ).addMigrations(MIGRATION_3_5)
             // Last-resort fallback only for installs older than version 3 (predating
             // any migration path this app has ever shipped) — everything from 3 onward
             // goes through a real Migration so upgrading never silently wipes data.
@@ -91,7 +90,9 @@ val appModule = module {
     factory { ImportContactsUseCase(get(), get()) }
     factory { RefreshLinkedContactsUseCase(get(), get()) }
     factory { UnlinkPersonUseCase(get()) }
-    factory { SyncToDeviceUseCase(get(), get()) }
+    // single, not factory: its per-person lock map must be the same instance for every caller
+    // to actually guard against concurrent invocations for the same person.
+    single { SyncToDeviceUseCase(get(), get()) }
     factory { DeleteNoteUseCase(get()) }
     factory { UpdateNoteUseCase(get()) }
 

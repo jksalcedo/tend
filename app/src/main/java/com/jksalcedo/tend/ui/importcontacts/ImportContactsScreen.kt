@@ -103,9 +103,10 @@ fun ImportContactsScreen(
     }
 
     LaunchedEffect(Unit) {
-        if (permissionState == ContactsPermissionState.GRANTED) {
-            viewModel.loadContacts()
-        } else {
+        // Loading itself is handled by LaunchedEffect(permissionState) below, which also
+        // fires on this initial value — this effect only needs to kick off the request when
+        // we don't already have permission.
+        if (permissionState != ContactsPermissionState.GRANTED) {
             permissionLauncher.launch(Manifest.permission.READ_CONTACTS)
         }
     }
