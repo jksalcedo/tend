@@ -28,6 +28,8 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -38,6 +40,8 @@ import androidx.compose.material3.ExtendedFloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedTextField
+import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
@@ -79,8 +83,11 @@ fun HomeScreen(
     onArchivedClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
+    val searchQuery by viewModel.searchQuery.collectAsState()
     HomeScreenContent(
         people = people,
+        searchQuery = searchQuery,
+        onSearchQueryChange = viewModel::updateSearchQuery,
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
         onOpenNotificationSettings = onOpenNotificationSettings,
@@ -91,6 +98,8 @@ fun HomeScreen(
 @Composable
 private fun HomeScreenContent(
     people: List<Person>,
+    searchQuery: String = "",
+    onSearchQueryChange: (String) -> Unit = {},
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onOpenNotificationSettings: () -> Unit = {},
@@ -273,6 +282,30 @@ private fun HomeScreenContent(
                     label = if (people.size == 1) "connection" else "connections"
                 )
             }
+
+            Spacer(modifier = Modifier.height(24.dp))
+
+            // Search Bar
+            OutlinedTextField(
+                value = searchQuery,
+                onValueChange = onSearchQueryChange,
+                modifier = Modifier.fillMaxWidth(),
+                placeholder = { Text("Search connections...") },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                trailingIcon = {
+                    if (searchQuery.isNotEmpty()) {
+                        IconButton(onClick = { onSearchQueryChange("") }) {
+                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                        }
+                    }
+                },
+                shape = RoundedCornerShape(12.dp),
+                singleLine = true,
+                colors = OutlinedTextFieldDefaults.colors(
+                    focusedBorderColor = mintAccent,
+                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                )
+            )
 
             Spacer(modifier = Modifier.height(24.dp))
 
