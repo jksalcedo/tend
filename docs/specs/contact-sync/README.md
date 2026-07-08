@@ -151,8 +151,8 @@ detail-screen view instead of a pre-computed column.
 | Account for natively-created contacts (Sync to Device)     | Accountless (no `ACCOUNT_NAME`/`ACCOUNT_TYPE`) — matches the existing "no sync-adapter" design (see Non-Goals) but means these contacts are local-only: they don't back up to or appear in the user's Google/cloud account. Documented, not hidden — see the note under "Sync to Device" in the app and the Non-Goals entry below. |
 | Multi-value phone/email shape                              | Full metadata per entry — `(value, type, isPrimary)` — not a bare list of strings, so it round-trips losslessly with native contacts' own shape.                                                                                                                    |
 | Sync to Device with multiple phone numbers/emails           | All entries are written to the new native contact, not just the primary one — full fidelity, consistent with the 1:1 sync goal.                                                                                                                                    |
-| Category/tag structure                                     | Multiple tags per person (not a single mutually-exclusive category), stored as a plain string list — no separate `Tag` entity/table.                                                                                                                                |
-| Category/tag catalog                                       | Free-form, user-typed — no fixed enum. Seeded with a small built-in set of common suggestions (Family/Friend/Work/Acquaintance) plus every tag already used elsewhere, both offered as quick-select chips alongside free typing.                                    |
+| Category/tag structure                                     | Multiple tags per person (not a single mutually-exclusive category), stored as a plain string list per person plus a separate persisted catalog of every known tag name.                                                                                            |
+| Category/tag catalog                                       | Free-form, user-typed — no fixed enum. Ships with two default tags (Family/Friend) on equal footing with any user-typed tag. Persists in the pool independent of current usage — going to zero people wearing a tag does not remove it; only an explicit delete does, which also strips it from anyone still wearing it. |
 
 ## Non-Goals (v1)
 
@@ -231,14 +231,23 @@ Free-form tags (e.g. "Family", "Book Club"), specified in
   frequency/notes/events — Tend-owned regardless of Case 1/2 status, never
   read from or written to `ContactsContract.Groups`.
 - **Multiple tags per person**, stored as `Person.tags: List<String>` —
-  same lightweight pattern as phone numbers/emails above, no separate `Tag`
-  entity/table. A tag is just a string; there's no rename-everywhere or
-  color/icon management screen for v1 (removing a tag from a person doesn't
-  affect anyone else tagged the same thing).
-- **Free-form creation, seeded with starter suggestions.** The user can
-  type any new tag; a small built-in list (e.g. Family, Friend, Work,
-  Acquaintance) plus every tag already used across other people appear as
-  quick-select chips, so you're rarely typing the same tag twice by hand.
+  same lightweight pattern as phone numbers/emails above. Removing a tag
+  from a person doesn't affect anyone else tagged the same thing.
+- **The tag pool is a persisted catalog, not derived from current usage.**
+  A tag stays selectable in the picker even after the last person wearing
+  it has it removed — going to zero users is not the same event as being
+  deleted. This needs a small separate table (or equivalent persisted set)
+  of every known tag name, since a pure `Person.tags` union would silently
+  drop a tag the moment nobody currently has it. A tag leaves the pool only
+  via an explicit delete action (e.g. long-press a chip in the picker),
+  which also strips it from anyone still wearing it. No rename-everywhere
+  or color/icon management screen for v1 — deletion is the only pool-level
+  operation.
+- **Seeded with two default tags.** The app ships with "Family" and
+  "Friend" in the pool from first launch, on equal footing with everything
+  else in it — no code path treats them differently from a user-typed tag,
+  and they can be deleted like any other (see above) if the user doesn't
+  want them.
 - **Home screen filtering by tag** is in scope for `06` — without it, tags
   are purely decorative, which undercuts the point of a relationship-tending
   app being able to answer "who's overdue, among family?"
@@ -318,3 +327,8 @@ redoing it) rather than reusing what step 1 actually produces.
    migration regardless of when it lands. `06` is fully additive (one new
    list field, no changes to existing fields) and is the lowest-risk of the
    six to build in isolation.
+
+**Status (2026-07-08):** `05` is paused pending team discussion on whether
+to pursue it at all — not deferred for technical reasons, just not yet
+decided. `06` is unaffected by that discussion and can proceed
+independently once prioritized.
