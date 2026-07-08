@@ -12,3 +12,4 @@
 - Unlink a connection from a device contact that's been removed, keeping its Tend history
 - Shows when a linked device contact has been removed or is no longer found
 - Shows when syncing is paused because contacts permission was revoked
+- Search bar to easily find connections by name

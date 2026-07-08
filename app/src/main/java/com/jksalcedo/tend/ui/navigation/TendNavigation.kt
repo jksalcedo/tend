@@ -26,8 +26,7 @@ object Routes {
 @Composable
 fun TendNavGraph(
     navController: NavHostController = rememberNavController(),
-    startDestination: String = Routes.HOME,
-    onOpenNotificationSettings: () -> Unit = {}
+    startDestination: String = Routes.HOME
 ) {
     ForegroundSyncEffect()
 
@@ -45,7 +44,6 @@ fun TendNavGraph(
                     }
                 },
                 onPersonClick = { personId -> navController.navigate("detail/$personId") },
-                onOpenNotificationSettings = onOpenNotificationSettings,
                 onArchivedClick = { navController.navigate(Routes.ARCHIVED) },
                 onImportContactsClick = { navController.navigate(Routes.IMPORT_CONTACTS) }
             )
