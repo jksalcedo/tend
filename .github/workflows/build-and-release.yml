@@ -45,11 +45,11 @@ jobs:
         run: mv ${{ steps.sign_app.outputs.signedReleaseFile }} Tend-${{ github.ref_name }}.apk
 
       # Create the GitHub Release
-      - name: 🚀 Create GitHub Release
+      - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
           files: Tend-${{ github.ref_name }}.apk
-          generate_release_notes: true
+          body_path: RELEASE_NOTES.md
           prerelease: ${{ contains(github.ref_name, '-') }}
 
       - name: Install Codeberg CLI (Tea)
@@ -72,11 +72,10 @@ jobs:
             echo "Pre-release tag detected. Adding pre-release flag for Codeberg."
           fi
           
-          # Replace with your actual Codeberg repo info
           tea release create \
-            --repo your-codeberg-username/your-repo-name \
+            --repo jksalcedo/tend \
             --tag ${{ github.ref_name }} \
             --title "Release ${{ github.ref_name }}" \
-            --note "Automated release mirrored from GitHub." \
+            --note-file RELEASE_NOTES.md \
             $PRERELEASE_FLAG \
             --asset Tend-${{ github.ref_name }}.apk
