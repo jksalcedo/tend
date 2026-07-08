@@ -13,7 +13,7 @@ android {
         minSdk = 26
         targetSdk = 37
         versionCode = 1
-        versionName = "1.0"
+        versionName = "v0.1.0-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
 
@@ -46,6 +46,15 @@ android {
 
     buildFeatures {
         compose = true
+    }
+
+    applicationVariants.all {
+        val variant = this
+        outputs.all {
+            if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
+                this.outputFileName = "Tend-${variant.versionName}.apk"
+            }
+        }
     }
 }
 
