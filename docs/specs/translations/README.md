@@ -120,6 +120,84 @@ is lost, even though nothing about the repo or app breaks. Whoever manages
 the migration should confirm all completed translations are synced into
 the repo before the old server goes away.
 
+## Operational checklists
+
+These aren't specced as `.feature` scenarios — they're one-time or
+occasional operational procedures for whoever manages the server, not
+app behavior to build or test. Update these as real decisions land (the
+sync mechanism, launch languages, etc. — see "Open questions").
+
+### Takedown (decommissioning a server, POC or otherwise)
+
+- [ ] Confirm every completed translation on the server has been
+      exported/synced into `res/values-xx/strings.xml` in the repo — this
+      is the one real risk (see above); nothing else here matters if this
+      is missed.
+- [ ] Check Weblate's own component/translation stats for any in-progress
+      work that hasn't been synced yet, not just "completed" translations.
+- [ ] Revoke and rotate any credentials issued for this server — personal
+      logins, API tokens, and especially any deploy key/bot account if one
+      was ever provisioned (should be none yet — see Non-Goals — but
+      confirm).
+- [ ] Remove or update the server URL wherever it's documented (this
+      README, `.env.example`) so nothing points at a dead server.
+- [ ] Confirm no CI workflow or webhook was ever pointed at this instance
+      (should be none — see Non-Goals — but worth a final check before
+      the server disappears and makes that harder to verify).
+- [ ] Decide whether to archive the server's own database/export
+      (translation memory, contributor history) beyond what's already
+      captured in the repo, if that history has value worth keeping.
+
+### Launch (promoting a server from POC/staging to actually driving real translations)
+
+- [ ] `01` (string externalization) is merged — nothing is translatable
+      before this exists.
+- [ ] The base English `res/values/strings.xml` is complete and stable —
+      a moving source text mid-translation wastes translator effort and
+      forces re-sync.
+- [ ] Target language(s) for this launch are decided (see "Open
+      questions" — the validation language, plus whatever the actual
+      launch set turns out to be).
+- [ ] The sync mechanism from Weblate back into the repo is decided *and
+      tested end-to-end* at least once (see "Open questions" — currently
+      unknown whether this is automatic or manual).
+- [ ] The process for inviting/managing translator access is defined (see
+      "Open questions" — currently only the team lead's process is known).
+- [ ] Live-verify on a real device set to the target locale: a translated
+      string renders correctly, and a string with no translation yet
+      falls back to English without a crash or blank UI (see "Resilience"
+      above — confirms the fallback is actually relied on correctly, not
+      just documented).
+- [ ] A contribution guideline exists (e.g. in `CONTRIBUTING.md`) telling
+      contributors new UI strings must go in `strings.xml`, not as
+      literals — otherwise `01`'s externalization work erodes over time.
+
+### Move (migrating from one Weblate host to another)
+
+Effectively Takedown (old server) and Launch (new server) combined, in a
+specific order — do not decommission the old server until the new one is
+proven working end-to-end.
+
+- [ ] Complete every item in "Takedown" above **for the old server**,
+      except actually deleting/decommissioning it yet.
+- [ ] Stand up the new server and re-create the project/component
+      configuration on it — this is manual re-setup, since nothing here
+      is automated against a specific instance by design.
+- [ ] Issue new credentials to translators/contributors on the new
+      instance.
+- [ ] Update the documented URL in this README and `.env.example` to the
+      new server — the single reference point this was designed around
+      (see the design-decisions table).
+- [ ] Verify the new server can pull the current repo's source strings,
+      and decide whether translation memory/history from the old server
+      is worth migrating or is acceptable to lose.
+- [ ] Complete "Launch" above for the new server, including the live
+      device-fallback check, before treating the new server as the real
+      one.
+- [ ] Only once the new server is confirmed working: revoke old
+      credentials and decommission the old server (the remaining steps of
+      "Takedown").
+
 ## Non-Goals (for now)
 
 - **No CI/automation wired to this specific Weblate server.** Because it's
