@@ -11,8 +11,7 @@ data class PersonEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val photoUri: String?,
-    // TODO: single-valued — see matching TODO on domain/model/Person.kt for why, and what
-    // changing this would involve.
+    // Deliberately single-valued — see the matching note on domain/model/Person.kt.
     val phoneNumber: String? = null,
     val email: String? = null,
     val events: List<PersonEvent> = emptyList(),

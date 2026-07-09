@@ -241,10 +241,10 @@ class NativeContactsDataSource(private val context: Context) {
         file.absolutePath
     }
 
-    // TODO: Tend's Person model stores a single phoneNumber/email (see domain/model/Person.kt),
-    // but a native contact can have several of each. Until Tend supports multiple values per
-    // person, we pick the contact's own designated default (IS_SUPER_PRIMARY) when one exists,
-    // falling back to an arbitrary row otherwise — any other numbers/emails are silently dropped.
+    // Tend's Person model deliberately stores a single phoneNumber/email (see
+    // domain/model/Person.kt), but a native contact can have several of each. We pick the
+    // contact's own designated default (IS_SUPER_PRIMARY) when one exists, falling back to
+    // an arbitrary row otherwise — any other numbers/emails are intentionally dropped.
     private fun queryFirstPhoneNumber(contactId: Long): String? {
         context.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,

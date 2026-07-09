@@ -149,8 +149,6 @@ detail-screen view instead of a pre-computed column.
 | Permission permanently denied ("don't ask again")         | Detected and handled distinctly from a one-off denial: no repeated OS dialog: the user is guided to the app's system settings page instead. Applies to both `READ_CONTACTS` (import/refresh) and `WRITE_CONTACTS` (Sync to Device).                                 |
 | Two Tend people linked to the same native contact          | Detected live by querying for other linked people sharing the same `nativeLookupKey` (not a stored pairwise flag) — correct for any group size and never goes stale. No dedicated merge/resolution UI — user resolves manually via existing edit/unlink/delete actions. |
 | Account for natively-created contacts (Sync to Device)     | Accountless (no `ACCOUNT_NAME`/`ACCOUNT_TYPE`) — matches the existing "no sync-adapter" design (see Non-Goals) but means these contacts are local-only: they don't back up to or appear in the user's Google/cloud account. Documented, not hidden — see the note under "Sync to Device" in the app and the Non-Goals entry below. |
-| Multi-value phone/email shape                              | Full metadata per entry — `(value, type, isPrimary)` — not a bare list of strings, so it round-trips losslessly with native contacts' own shape.                                                                                                                    |
-| Sync to Device with multiple phone numbers/emails           | All entries are written to the new native contact, not just the primary one — full fidelity, consistent with the 1:1 sync goal.                                                                                                                                    |
 | Category/tag structure                                     | Multiple tags per person (not a single mutually-exclusive category), stored as a plain string list per person plus a separate persisted catalog of every known tag name.                                                                                            |
 | Category/tag catalog                                       | Free-form, user-typed — no fixed enum. Ships with two default tags (Family/Friend) on equal footing with any user-typed tag. Persists in the pool independent of current usage — going to zero people wearing a tag does not remove it; only an explicit delete does, which also strips it from anyone still wearing it. |
 
@@ -186,36 +184,19 @@ each.)
   to Device" button, not just buried in this doc.
 - **No `ContentObserver`-based live sync.** Case 1 refresh is a poll on app
   foreground, not a push-based live update while Tend is backgrounded.
-
-## Multiple phone numbers and emails (`05`)
-
-`Person.phoneNumber`/`Person.email` were singular fields (a pre-existing
-constraint predating contact-sync), silently dropping every number/email on
-a native contact beyond the one `NativeContactsDataSource` picked as
-default. `05_multiple_contact_methods.feature` replaces this:
-
-- `Person.phoneNumbers: List<PhoneNumber>` / `Person.emails: List<Email>`,
-  where `PhoneNumber`/`Email` are `(value, type, isPrimary)` — matching
-  native contacts' own shape (type + a default flag), not a bare
-  `List<String>`, so re-syncing later doesn't lose which was Home vs Work
-  or which was the default. Stored the same way `socialLinks`/`events`
-  already are: a Room `TypeConverter`-backed JSON column, no new entity
-  table needed.
-- **Case 1 (linked):** still fully read-only in Tend, same as today —
-  `NativeContactsDataSource` now reads every phone/email row instead of
-  just the default one; "Edit in Contacts" remains the only way to change
-  them.
-- **Case 2 (Tend-only):** freely add/remove/edit entries and mark one
-  primary, the same add/remove-list UI pattern `AddPersonScreen` already
-  uses for social links and events.
-- **Sync to Device** writes every entry as its own native data row (not
-  just the primary one) — full fidelity in both directions, matching the
-  "synced back and forth 1:1" goal.
-- **QR sharing** is the one place this is intentionally *not* 1:1: only the
-  primary phone/email go into the shared payload, to keep the QR code from
-  growing with every extra number/email a contact has. If nothing is marked
-  primary, the first entry in the list is the effective default for both
-  QR sharing and Sync to Device.
+- **Only one phone number and one email per person**, unlike native contacts
+  which allow several typed values each (Home/Work/Mobile/Other, one marked
+  primary). A multi-value design was drafted in
+  [`05_multiple_contact_methods.feature`](./05_multiple_contact_methods.feature)
+  (`Person.phoneNumbers: List<PhoneNumber>` / `Person.emails: List<Email>`,
+  matching native contacts' `(value, type, isPrimary)` shape) but is
+  **cancelled, not deferred** — kept out specifically to keep the UI simple,
+  not for lack of a plan. The spec file is preserved as-is rather than
+  deleted, in case this is ever reconsidered; it's marked `NOT IMPLEMENTED`
+  at the top and should not be built against without first confirming the
+  decision has actually changed. Importing from native contacts keeps only
+  the contact's designated primary (or an arbitrary one if none is marked);
+  any other numbers/emails are intentionally dropped, silently, by design.
 
 ## Contact categorization / tags (`06`)
 
@@ -231,8 +212,9 @@ Free-form tags (e.g. "Family", "Book Club"), specified in
   frequency/notes/events — Tend-owned regardless of Case 1/2 status, never
   read from or written to `ContactsContract.Groups`.
 - **Multiple tags per person**, stored as `Person.tags: List<String>` —
-  same lightweight pattern as phone numbers/emails above. Removing a tag
-  from a person doesn't affect anyone else tagged the same thing.
+  same lightweight JSON-list pattern already used for `socialLinks`/`events`.
+  Removing a tag from a person doesn't affect anyone else tagged the same
+  thing.
 - **The tag pool is a persisted catalog, not derived from current usage.**
   A tag stays selectable in the picker even after the last person wearing
   it has it removed — going to zero users is not the same event as being
@@ -254,8 +236,9 @@ Free-form tags (e.g. "Family", "Book Club"), specified in
 
 ## Further future work
 
-Still just an idea, no spec written yet — unlike `05`/`06` above, which
-have full Gherkin coverage:
+Still just an idea, no spec written yet — unlike `06` above (shipped) or
+`05` (spec'd but cancelled — see Non-Goals), both of which have full
+Gherkin coverage:
 
 - **A real merge-review UI for duplicate Tend people**, as an upgrade from
   the flag-only v1 behavior described under "Post-hoc native merges" —
@@ -317,18 +300,16 @@ recommended: steps 2–4 all build on data-model and picker code introduced in
 step 1, so parallel work would mean guessing at that plumbing's shape (or
 redoing it) rather than reusing what step 1 actually produces.
 
-5. **`05_multiple_contact_methods.feature`** and
-   **`06_categorization.feature`** — added after `01`/`02` shipped. Neither
-   depends on `03`/`04` (Sync to Device and the first-run prompt), so they
-   don't have to wait in line behind those — `05`/`06` could ship before,
-   after, or interleaved with `03`/`04` without rework. `05` does touch the
-   same `Person`/`PersonEntity` model `01`/`02` already extended, and
-   `ShareScanSheet`'s `SharedPerson` QR payload shape, so it's a moderate
-   migration regardless of when it lands. `06` is fully additive (one new
-   list field, no changes to existing fields) and is the lowest-risk of the
-   six to build in isolation.
+5. **`06_categorization.feature`** — added after `01`/`02` shipped, and
+   shipped in this PR. Fully additive (one new list field plus a small
+   separate table, no changes to existing fields) — the lowest-risk of the
+   set to build in isolation, since it doesn't depend on `03`/`04` (Sync to
+   Device and the first-run prompt) at all.
 
-**Status (2026-07-08):** `05` is paused pending team discussion on whether
-to pursue it at all — not deferred for technical reasons, just not yet
-decided. `06` is unaffected by that discussion and can proceed
-independently once prioritized.
+**Status (2026-07-08):** `05_multiple_contact_methods.feature` is
+**cancelled, not deferred** — the team decided against it in favor of
+keeping the UI simple. The spec file is kept in this directory (marked
+`NOT IMPLEMENTED` at the top) rather than deleted, so the design work isn't
+lost if this is ever revisited, but nothing should be built against it
+without first confirming the decision has changed. See the Non-Goals
+section above for the reasoning.

@@ -1,3 +1,9 @@
+# STATUS: NOT IMPLEMENTED — cancelled, not deferred. Kept out of Tend specifically to keep
+# the UI simple (one phone number, one email per person); see the "Non-Goals" section of
+# docs/specs/contact-sync/README.md. This spec is preserved as-is (not deleted) so the design
+# work isn't lost if this is ever reconsidered — do not build against it without first
+# confirming with the team that the decision has actually changed.
+
 Feature: Multiple phone numbers and emails
   As a Tend user
   I want Tend to store every phone number and email a contact has, not just one

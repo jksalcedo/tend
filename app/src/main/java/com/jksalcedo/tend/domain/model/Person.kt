@@ -4,12 +4,11 @@ data class Person(
     val id: Long = 0,
     val name: String,
     val photoUri: String?,
-    // TODO: single-valued, unlike native contacts which allow several typed phone
-    // numbers/emails per contact (Home/Work/Mobile/Other, one marked primary). Importing
-    // from native contacts currently keeps only the contact's designated primary (or an
-    // arbitrary one if none is marked) — see NativeContactsDataSource. Supporting multiple
-    // values here would need these to become lists (with a Room migration) plus UI changes
-    // to AddPersonScreen/PersonDetailScreen for multi-value entry.
+    // Deliberately single-valued, unlike native contacts which allow several typed phone
+    // numbers/emails per contact (Home/Work/Mobile/Other, one marked primary) — keeping a
+    // simpler UI was chosen over full multi-value fidelity (see the README's Non-Goals).
+    // Importing from native contacts keeps only the contact's designated primary (or an
+    // arbitrary one if none is marked) — see NativeContactsDataSource.
     val phoneNumber: String? = null,
     val email: String? = null,
     val events: List<PersonEvent> = emptyList(),
