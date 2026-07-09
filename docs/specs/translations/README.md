@@ -71,6 +71,54 @@ than usual, precisely because the server is expected to be replaced.
 | Coupling repo tooling to this specific Weblate instance | Deliberately avoided for now. No CI workflow or webhook is being built against `weblate.tend.farband.ca` specifically until a permanent host is chosen — see Non-Goals.                           |
 | Initial language set                                    | English is the existing source language (already `01`'s base `values/strings.xml`) — nothing to translate there. A second language will be picked specifically to prove the pipeline works end to end, not as a commitment to a particular launch-language set. Which second language is still open — see "Open questions."                           |
 | Scope of `01`'s string externalization                  | Every hardcoded string in the app as it exists today — not a per-screen subset. One complete pass, not an incremental rollout; anything added after `01` lands is covered by the "no new hardcoded strings" scenario already in the feature file.                                                |
+| App behavior if the Weblate server is down, moved, or relinked | Unaffected. The app never talks to Weblate at runtime — see "Resilience to Weblate outages/migration" below.                                                                                                                                                                                       |
+
+## Resilience to Weblate outages/migration
+
+The app has **no runtime dependency on Weblate at all**. Weblate only ever
+interacts with this git repository (translators edit strings on the
+server; translated values get synced into `res/values-xx/strings.xml`
+files in the repo). The compiled app just ships whatever's in the repo at
+build time — it never makes a network call to Weblate, checks it's
+reachable, or otherwise knows it exists.
+
+That means, concretely:
+
+- **If the Weblate server goes down**, nothing about the installed app
+  changes. Every translation already synced into the repo keeps working
+  exactly as before. The only impact is that translators can't submit new
+  work until the server's back.
+- **If the server moves or needs to be relinked** (expected, since this is
+  a POC — see "Confirmed starting state"), it's a repo-doc update (the URL
+  in this README and `.env.example`) plus re-registering the project on
+  the new instance. No app code, build script, or CI configuration changes
+  — none of them reference the server, by design (see the Non-Goals entry
+  on avoiding coupling).
+- **For any string without a synced translation for a given locale** —
+  whether because it's genuinely not translated yet, or because the server
+  was unreachable when a sync would otherwise have happened — Android's
+  own resource fallback shows the base English string for that key.
+  Same mechanism as the "missing or incomplete translation" row above;
+  a server outage is just one more reason a translation might be missing,
+  not a special case needing its own handling.
+
+**Is setup effort wasted if the server moves?** Mostly no. String
+externalization (`01`) — the actual bulk of the work — has nothing to do
+with Weblate specifically; it's the same prerequisite for any Android
+translation tool, and carries over completely regardless of what happens
+to this server. The Weblate-specific piece (`02`, the URL, the project/
+component configuration on this one instance) is cheap to redo precisely
+because nothing beyond documentation depends on it — no CI/automation was
+built against this instance (a deliberate Non-Goal, for exactly this
+reason).
+
+**The one real risk** isn't engineering effort, it's translated *content*:
+any translations completed on the current server but not yet exported/
+synced into this repo exist only in that server's database. If the POC
+server is decommissioned before that sync happens, that translation work
+is lost, even though nothing about the repo or app breaks. Whoever manages
+the migration should confirm all completed translations are synced into
+the repo before the old server goes away.
 
 ## Non-Goals (for now)
 
