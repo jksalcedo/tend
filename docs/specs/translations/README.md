@@ -26,12 +26,13 @@ questions" below before assuming any unstated behavior.
   translator/contributor as they're added. No credentials — shared or
   individual — are stored in this repository. See "Credentials" below for
   where they _do_ live.
-- **Tend currently has zero externalized strings.** `app/src/main/res/values/strings.xml`
-  contains only the auto-generated `app_name` entry; every other piece of
-  UI text (48+ call sites as of this writing) is a hardcoded string literal
-  passed directly to `Text(...)` in Compose code. Nothing is translatable
-  yet — string externalization is a genuine prerequisite, not a formality,
-  and is spec'd as `01` below.
+- **`01` (string externalization) is implemented** on this branch, not yet
+  merged. `app/src/main/res/values/strings.xml` now defines 108 `<string>`
+  entries plus 2 `<plurals>` resources (110 total), and every screen has
+  been switched to `stringResource(...)`/`context.getString(...)`. See
+  [`01_string_externalization.manual-tests.md`](./01_string_externalization.manual-tests.md)
+  for the live-verification record. Until this lands on `main`, nothing is
+  actually translatable yet.
 - Android's own resource resolution already provides locale fallback for
   free once strings _are_ externalized: any string missing from a
   locale-specific `values-xx/strings.xml` automatically resolves to the
@@ -70,7 +71,7 @@ than usual, precisely because the server is expected to be replaced.
 | Server URL / credentials in the repo                    | Never. The current POC URL is documented here and in `.env.example` as a placeholder value only — see "Credentials" above.                                                                        |
 | Coupling repo tooling to this specific Weblate instance | Deliberately avoided for now. No CI workflow or webhook is being built against `weblate.tend.farband.ca` specifically until a permanent host is chosen — see Non-Goals.                           |
 | Initial language set                                    | English is the existing source language (already `01`'s base `values/strings.xml`) — nothing to translate there. A second language will be picked specifically to prove the pipeline works end to end, not as a commitment to a particular launch-language set. Which second language is still open — see "Open questions."                           |
-| Scope of `01`'s string externalization                  | Every hardcoded string on `main` as it exists today (48 `Text(...)` call sites as of 2026-07-09) — not a per-screen subset. One complete pass over that surface, not an incremental rollout. **Explicit exception:** `feature/contact-sync` (PR #15) is still unmerged and adds ~24 more hardcoded strings; those are a deliberate, separate follow-up pass once that PR lands — `01` does not wait for it. Anything added after `01` lands is covered by the "no new hardcoded strings" scenario already in the feature file.                                                |
+| Scope of `01`'s string externalization                  | Every hardcoded string on `main` as it existed on 2026-07-09 — not a per-screen subset. One complete pass over that surface, not an incremental rollout; landed as 108 `<string>` entries plus 2 `<plurals>` resources (110 total, revised up from an initial rough estimate of 48 `Text(...)` call sites once content descriptions, Toast messages, dialog text, and field labels/placeholders were also counted). **Explicit exception:** `feature/contact-sync` (PR #15) is still unmerged and adds ~24 more hardcoded strings; those are a deliberate, separate follow-up pass once that PR lands — `01` does not wait for it. Anything added after `01` lands is covered by the "no new hardcoded strings" scenario already in the feature file.                                                |
 | App behavior if the Weblate server is down, moved, or relinked | Unaffected. The app never talks to Weblate at runtime — see "Resilience to Weblate outages/migration" below.                                                                                                                                                                                       |
 
 ## Resilience to Weblate outages/migration

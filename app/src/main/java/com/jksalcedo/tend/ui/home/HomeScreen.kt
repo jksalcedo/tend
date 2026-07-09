@@ -56,11 +56,14 @@ import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.pluralStringResource
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import com.google.gson.Gson
+import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.ui.add.SharedPerson
@@ -119,7 +122,7 @@ private fun HomeScreenContent(
                         } else {
                             Toast.makeText(
                                 context,
-                                "Scanned QR code does not contain a valid connection",
+                                context.getString(R.string.home_qr_scan_invalid_connection),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -131,7 +134,7 @@ private fun HomeScreenContent(
                         } else {
                             Toast.makeText(
                                 context,
-                                "Scanned QR code is not a valid connection format",
+                                context.getString(R.string.home_qr_scan_invalid_format),
                                 Toast.LENGTH_SHORT
                             ).show()
                         }
@@ -142,7 +145,7 @@ private fun HomeScreenContent(
             is QRResult.QRMissingPermission -> {
                 Toast.makeText(
                     context,
-                    "Camera permission is required to scan QR codes",
+                    context.getString(R.string.home_qr_scan_camera_permission_required),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -150,7 +153,7 @@ private fun HomeScreenContent(
             is QRResult.QRError -> {
                 Toast.makeText(
                     context,
-                    "Error scanning QR code: ${result.exception.message}",
+                    context.getString(R.string.home_qr_scan_error, result.exception.message),
                     Toast.LENGTH_SHORT
                 ).show()
             }
@@ -204,7 +207,7 @@ private fun HomeScreenContent(
                     Spacer(modifier = Modifier.width(12.dp))
                     Column {
                         Text(
-                            text = "Hi there!",
+                            text = stringResource(R.string.home_greeting),
                             style = MaterialTheme.typography.headlineSmall,
                             fontWeight = FontWeight.Bold,
                             color = MaterialTheme.colorScheme.onBackground
@@ -215,7 +218,7 @@ private fun HomeScreenContent(
                     IconButton(onClick = { scanQrCodeLauncher.launch(null) }) {
                         Icon(
                             Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan QR Code",
+                            contentDescription = stringResource(R.string.home_scan_qr_content_description),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
@@ -224,7 +227,7 @@ private fun HomeScreenContent(
                         IconButton(onClick = { showHomeMenu = true }) {
                             Icon(
                                 Icons.Default.MoreVert,
-                                contentDescription = "More options",
+                                contentDescription = stringResource(R.string.common_more_options),
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
@@ -233,7 +236,7 @@ private fun HomeScreenContent(
                             onDismissRequest = { showHomeMenu = false }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Archived connections") },
+                                text = { Text(stringResource(R.string.home_archived_connections)) },
                                 onClick = {
                                     showHomeMenu = false
                                     onArchivedClick()
@@ -253,22 +256,22 @@ private fun HomeScreenContent(
             ) {
                 DashboardCard(
                     modifier = Modifier.weight(1f),
-                    title = "Due Soon",
+                    title = stringResource(R.string.home_due_soon),
                     icon = Icons.Default.DateRange,
                     backgroundColor = yellowColor,
                     contentColor = yellowAccent,
                     count = dueSoon.size,
-                    label = "reminders"
+                    label = stringResource(R.string.home_due_soon_label)
                 )
 
                 DashboardCard(
                     modifier = Modifier.weight(1f),
-                    title = "Connections",
+                    title = stringResource(R.string.home_connections_card_title),
                     icon = Icons.Default.Person,
                     backgroundColor = purpleColor,
                     contentColor = purpleAccent,
                     count = people.size,
-                    label = if (people.size == 1) "connection" else "connections"
+                    label = pluralStringResource(R.plurals.home_connections_count, people.size)
                 )
             }
 
@@ -279,12 +282,12 @@ private fun HomeScreenContent(
                 value = searchQuery,
                 onValueChange = onSearchQueryChange,
                 modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search connections...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+                placeholder = { Text(stringResource(R.string.home_search_placeholder)) },
+                leadingIcon = { Icon(Icons.Default.Search, contentDescription = stringResource(R.string.home_search_content_description)) },
                 trailingIcon = {
                     if (searchQuery.isNotEmpty()) {
                         IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
+                            Icon(Icons.Default.Clear, contentDescription = stringResource(R.string.home_clear_search_content_description))
                         }
                     }
                 },
@@ -300,7 +303,7 @@ private fun HomeScreenContent(
 
             // Section Header
             Text(
-                text = "Your Connections",
+                text = stringResource(R.string.home_your_connections),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -350,7 +353,7 @@ private fun HomeScreenContent(
         ) {
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
-            Text("New Connection", fontWeight = FontWeight.Medium)
+            Text(stringResource(R.string.home_new_connection), fontWeight = FontWeight.Medium)
         }
     }
 }
@@ -428,17 +431,17 @@ private fun EmptyStateCard(
                 .fillMaxWidth(),
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text("🌱", fontSize = 48.sp)
+            Text(stringResource(R.string.home_empty_state_emoji), fontSize = 48.sp)
             Spacer(modifier = Modifier.height(12.dp))
             Text(
-                text = "No connections yet",
+                text = stringResource(R.string.home_empty_state_title),
                 style = MaterialTheme.typography.titleMedium,
                 fontWeight = FontWeight.SemiBold,
                 color = pinkAccent
             )
             Spacer(modifier = Modifier.height(4.dp))
             Text(
-                text = "Add someone to start keeping in touch",
+                text = stringResource(R.string.home_empty_state_subtitle),
                 style = MaterialTheme.typography.bodyMedium,
                 color = pinkAccent.copy(alpha = 0.8f)
             )
@@ -448,7 +451,7 @@ private fun EmptyStateCard(
                 colors = ButtonDefaults.buttonColors(containerColor = pinkAccent),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Add Connection")
+                Text(stringResource(R.string.home_add_connection_button))
             }
         }
     }
@@ -529,10 +532,14 @@ fun PersonCard(
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
                     text = when {
-                        isOverdue -> "Overdue by ${-daysUntil} day${if (-daysUntil != 1L) "s" else ""}"
-                        daysUntil == 0L -> "Due today!"
-                        daysUntil == 1L -> "Due tomorrow"
-                        else -> "Due in $daysUntil days"
+                        isOverdue -> pluralStringResource(
+                            R.plurals.home_person_overdue,
+                            (-daysUntil).toInt(),
+                            -daysUntil
+                        )
+                        daysUntil == 0L -> stringResource(R.string.home_person_due_today)
+                        daysUntil == 1L -> stringResource(R.string.home_person_due_tomorrow)
+                        else -> stringResource(R.string.home_person_due_in_days, daysUntil)
                     },
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (cardColor == MaterialTheme.colorScheme.surface) MaterialTheme.colorScheme.onSurfaceVariant else accentColor.copy(

@@ -19,7 +19,9 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
+import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
 
@@ -33,13 +35,13 @@ fun AddSocialLinkDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Social Link") },
+        title = { Text(stringResource(R.string.add_person_social_dialog_title)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = platform,
                     onValueChange = { platform = it },
-                    label = { Text("Platform (e.g. Discord)") },
+                    label = { Text(stringResource(R.string.add_person_platform_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -47,7 +49,7 @@ fun AddSocialLinkDialog(
                 OutlinedTextField(
                     value = handle,
                     onValueChange = { handle = it },
-                    label = { Text("Handle/Username") },
+                    label = { Text(stringResource(R.string.add_person_handle_label)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -58,12 +60,12 @@ fun AddSocialLinkDialog(
                 onClick = { onConfirm(SocialLink(platform, handle)) },
                 enabled = platform.isNotBlank() && handle.isNotBlank()
             ) {
-                Text("Add")
+                Text(stringResource(R.string.common_add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
@@ -88,12 +90,12 @@ fun AddEventDialog(
                     selectedDate = datePickerState.selectedDateMillis
                     showDatePicker = false
                 }) {
-                    Text("OK")
+                    Text(stringResource(R.string.common_ok))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDatePicker = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         ) {
@@ -103,13 +105,13 @@ fun AddEventDialog(
 
     AlertDialog(
         onDismissRequest = onDismiss,
-        title = { Text("Add Event") },
+        title = { Text(stringResource(R.string.add_person_event_dialog_title)) },
         text = {
             Column {
                 OutlinedTextField(
                     value = label,
                     onValueChange = { label = it },
-                    label = { Text("Label (e.g. Birthday)") },
+                    label = { Text(stringResource(R.string.add_person_event_label_field)) },
                     singleLine = true,
                     modifier = Modifier.fillMaxWidth()
                 )
@@ -118,7 +120,7 @@ fun AddEventDialog(
                     onClick = { showDatePicker = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (selectedDate != null) "Date Selected" else "Select Date")
+                    Text(if (selectedDate != null) stringResource(R.string.add_person_date_selected) else stringResource(R.string.add_person_select_date))
                 }
             }
         },
@@ -131,12 +133,12 @@ fun AddEventDialog(
                 },
                 enabled = label.isNotBlank() && selectedDate != null
             ) {
-                Text("Add")
+                Text(stringResource(R.string.common_add))
             }
         },
         dismissButton = {
             TextButton(onClick = onDismiss) {
-                Text("Cancel")
+                Text(stringResource(R.string.common_cancel))
             }
         }
     )
