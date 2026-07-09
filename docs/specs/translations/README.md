@@ -70,6 +70,7 @@ than usual, precisely because the server is expected to be replaced.
 | Server URL / credentials in the repo                    | Never. The current POC URL is documented here and in `.env.example` as a placeholder value only — see "Credentials" above.                                                                        |
 | Coupling repo tooling to this specific Weblate instance | Deliberately avoided for now. No CI workflow or webhook is being built against `weblate.tend.farband.ca` specifically until a permanent host is chosen — see Non-Goals.                           |
 | Initial language set                                    | English is the existing source language (already `01`'s base `values/strings.xml`) — nothing to translate there. A second language will be picked specifically to prove the pipeline works end to end, not as a commitment to a particular launch-language set. Which second language is still open — see "Open questions."                           |
+| Scope of `01`'s string externalization                  | Every hardcoded string in the app as it exists today — not a per-screen subset. One complete pass, not an incremental rollout; anything added after `01` lands is covered by the "no new hardcoded strings" scenario already in the feature file.                                                |
 
 ## Non-Goals (for now)
 
@@ -97,9 +98,6 @@ Not yet decided — do not assume answers to these when implementing:
   hosting decision and hasn't been discussed yet.
 - Who besides the team lead can invite new Weblate users, and what's the
   process?
-- Does every hardcoded string in the app need externalizing in one pass, or
-  should `01` be scoped to a subset (e.g. Home and person-detail screens
-  first) with the rest following incrementally?
 
 ## Feature files (numbered in suggested implementation order)
 

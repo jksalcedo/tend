@@ -7,6 +7,14 @@ Feature: Externalize UI strings into string resources
     Given Tend's res/values/strings.xml currently contains only the auto-generated "app_name" entry
     And every other user-facing string is a literal passed directly to Text(...) in Compose code
 
+  Scenario: Every existing hardcoded string is externalized in this pass, not a subset
+    Given the full set of hardcoded UI strings that exist in the app today
+    When 01 is implemented
+    Then all of them should be externalized in one pass, across every screen
+    And none should be deferred to a later, incremental follow-up
+    # Scoped this way deliberately — see the README's design-decisions table. A partial
+    # pass would leave some screens untranslatable and complicate tracking what's left.
+
   Scenario: A screen's visible text is defined as a string resource, not a literal
     Given a Composable that previously called Text("Search connections...")
     When the string is externalized
