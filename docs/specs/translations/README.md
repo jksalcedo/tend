@@ -57,20 +57,6 @@ API token for future CLI/automation use), the standard convention applies:
   local secrets. Each contributor has their own; nobody else's values ever
   touch this repo.
 
-Your Weblate web-UI login (username/password) isn't in the committed
-`.env.example` template — the API token covers what tooling in this repo
-actually needs. If you'd still rather keep your login project-local than
-use an external password manager, that's a reasonable per-contributor
-choice: add `WEBLATE_USERNAME`/`WEBLATE_PASSWORD` to your own local `.env`
-(it's gitignored regardless, so this doesn't require touching the
-template). Worth doing with eyes open, though — `.env` is plaintext on
-disk, so a password there carries more risk than the token does (no
-scoping, no expiry, and passwords are more likely to be reused elsewhere
-than a token is). Don't reuse this password anywhere else, and treat
-`.env` as sensitive — gitignored is necessary but not sufficient if the
-machine or checkout itself is ever shared, backed up unencrypted, or
-synced somewhere you're not sure is private.
-
 Because the current server is a known-temporary POC, keep any credentials
 granted to it narrowly scoped and easy to rotate — this matters more here
 than usual, precisely because the server is expected to be replaced.
