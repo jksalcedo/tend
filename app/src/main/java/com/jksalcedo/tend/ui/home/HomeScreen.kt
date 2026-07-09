@@ -23,13 +23,13 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
-import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -61,6 +61,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
@@ -91,7 +92,9 @@ fun HomeScreen(
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
         onOpenNotificationSettings = onOpenNotificationSettings,
-        onArchivedClick = onArchivedClick
+        onArchivedClick = onArchivedClick,
+        onExportData = viewModel::exportData,
+        onImportData = viewModel::importData
     )
 }
 
@@ -103,7 +106,9 @@ private fun HomeScreenContent(
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onOpenNotificationSettings: () -> Unit = {},
-    onArchivedClick: () -> Unit = {}
+    onArchivedClick: () -> Unit = {},
+    onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val dueSoon =
@@ -231,6 +236,42 @@ private fun HomeScreenContent(
                         )
                     }
                     var showHomeMenu by remember { mutableStateOf(false) }
+
+                    val exportLauncher = rememberLauncherForActivityResult(
+                        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+                    ) { uri ->
+                        if (uri != null) {
+                            context.contentResolver.openOutputStream(uri)?.let { outputStream ->
+                                onExportData(
+                                    outputStream,
+                                    {
+                                        Toast.makeText(context, "Export successful", Toast.LENGTH_SHORT).show()
+                                    },
+                                    { e: Exception ->
+                                        Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    val importLauncher =
+                        rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                            if (uri != null) {
+                                context.contentResolver.openInputStream(uri)?.let { inputStream ->
+                                    onImportData(
+                                        inputStream,
+                                        {
+                                            Toast.makeText(context, "Import successful", Toast.LENGTH_SHORT).show()
+                                        },
+                                        { e: Exception ->
+                                            Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
                     Box {
                         IconButton(onClick = { showHomeMenu = true }) {
                             Icon(
@@ -243,6 +284,20 @@ private fun HomeScreenContent(
                             expanded = showHomeMenu,
                             onDismissRequest = { showHomeMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text("Export Backup") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    exportLauncher.launch("tend_backup_${System.currentTimeMillis()}.json")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Import Backup") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    importLauncher.launch(arrayOf("application/json", "*/*"))
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text("Archived connections") },
                                 onClick = {
@@ -589,7 +644,9 @@ private fun HomeScreenEmptyPreviewLight() {
         HomeScreenContent(
             people = emptyList(),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }
@@ -601,7 +658,9 @@ private fun HomeScreenEmptyPreviewDark() {
         HomeScreenContent(
             people = emptyList(),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }
@@ -653,7 +712,9 @@ private fun HomeScreenWithPeoplePreviewLight() {
                 )
             ),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }
@@ -692,7 +753,9 @@ private fun HomeScreenWithPeoplePreviewDark() {
                 )
             ),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }

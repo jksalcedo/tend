@@ -10,8 +10,14 @@ import kotlinx.coroutines.flow.StateFlow
 import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 
+import com.jksalcedo.tend.domain.usecase.ExportDataUseCase
+import com.jksalcedo.tend.domain.usecase.ImportDataUseCase
+import kotlinx.coroutines.launch
+
 class HomeViewModel(
-    getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase
+    getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
+    private val exportDataUseCase: ExportDataUseCase,
+    private val importDataUseCase: ImportDataUseCase
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -34,5 +40,27 @@ class HomeViewModel(
 
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun exportData(outputStream: java.io.OutputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
+        viewModelScope.launch {
+            try {
+                exportDataUseCase(outputStream)
+                onComplete()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
+    }
+
+    fun importData(inputStream: java.io.InputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
+        viewModelScope.launch {
+            try {
+                importDataUseCase(inputStream)
+                onComplete()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
     }
 }
