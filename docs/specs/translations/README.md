@@ -57,10 +57,16 @@ API token for future CLI/automation use), the standard convention applies:
   local secrets. Each contributor has their own; nobody else's values ever
   touch this repo.
 
-Your actual Weblate *login* (username/password for the web UI) isn't a
-file-storage concern at all — that's issued directly by whoever administers
-the server and belongs in a password manager, not a repo file. The `.env`
-pattern above is for API tokens used by tooling, if and when that exists.
+Your Weblate web-UI login (username/password) can optionally go in `.env`
+too (`WEBLATE_USERNAME`/`WEBLATE_PASSWORD`) — kept project-local by choice,
+rather than an external password manager. This is a deliberate tradeoff:
+`.env` is plaintext on disk, so a password stored there carries more risk
+than an API token would (no scoping, no expiry, and passwords are more
+likely to be reused elsewhere than a token is). If you go this route,
+don't reuse this password anywhere else, and treat `.env` as sensitive —
+gitignored is necessary but not sufficient if the machine or checkout
+itself is ever shared, backed up unencrypted, or synced somewhere you're
+not sure is private.
 
 Because the current server is a known-temporary POC, keep any credentials
 granted to it narrowly scoped and easy to rotate — this matters more here
