@@ -11,10 +11,10 @@ once that feature is implemented.
 
 This effort is at an earlier stage than contact-sync was when its spec
 folder was created — there has been no stakeholder interview yet, and
-several real decisions (target languages, exact sync workflow, whether an
-in-app language override is wanted) are still open. Rather than invent
-answers, this README states plainly what's confirmed and what isn't; see
-"Open questions" below before assuming any unstated behavior.
+several real decisions (exact sync workflow, whether an in-app language
+override is wanted) are still open. Rather than invent answers, this
+README states plainly what's confirmed and what isn't; see "Open
+questions" below before assuming any unstated behavior.
 
 ## Confirmed starting state (2026-07-09)
 
@@ -25,7 +25,7 @@ answers, this README states plainly what's confirmed and what isn't; see
 - Access is per-user: the team will issue individual credentials to each
   translator/contributor as they're added. No credentials — shared or
   individual — are stored in this repository. See "Credentials" below for
-  where they *do* live.
+  where they _do_ live.
 - **Tend currently has zero externalized strings.** `app/src/main/res/values/strings.xml`
   contains only the auto-generated `app_name` entry; every other piece of
   UI text (48+ call sites as of this writing) is a hardcoded string literal
@@ -33,7 +33,7 @@ answers, this README states plainly what's confirmed and what isn't; see
   yet — string externalization is a genuine prerequisite, not a formality,
   and is spec'd as `01` below.
 - Android's own resource resolution already provides locale fallback for
-  free once strings *are* externalized: any string missing from a
+  free once strings _are_ externalized: any string missing from a
   locale-specific `values-xx/strings.xml` automatically resolves to the
   base `values/strings.xml` entry for that key. This requires no custom
   code — see the design-decisions table below — but only works correctly
@@ -47,7 +47,7 @@ server URL baked into app code (there's no reason the Android app would
 ever talk to Weblate at runtime; this is a repo/tooling-level concern, not
 an in-app one), and not any token or password.
 
-For anything that *does* need local file storage (e.g. a personal Weblate
+For anything that _does_ need local file storage (e.g. a personal Weblate
 API token for future CLI/automation use), the standard convention applies:
 
 - **`.env.example`** (repo root, committed) — documents the variable names
@@ -63,12 +63,13 @@ than usual, precisely because the server is expected to be replaced.
 
 ## Design decisions
 
-| Question                                                    | Decision                                                                                                                                                                                                      |
-| ------------------------------------------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
-| Missing or incomplete translation for a given string          | Handled automatically by Android's resource resolution — falls back to the base (default-locale) `values/strings.xml` for that key. No custom fallback logic is needed or should be built.                    |
-| Where the base/source-of-truth language lives                | `app/src/main/res/values/strings.xml` (no locale qualifier) is the single source of truth Weblate translates *from*. Every string must exist here before it can be translated into anything else.             |
-| Server URL / credentials in the repo                         | Never. The current POC URL is documented here and in `.env.example` as a placeholder value only — see "Credentials" above.                                                                                     |
-| Coupling repo tooling to this specific Weblate instance       | Deliberately avoided for now. No CI workflow or webhook is being built against `weblate.tend.farband.ca` specifically until a permanent host is chosen — see Non-Goals.                                        |
+| Question                                                | Decision                                                                                                                                                                                          |
+| ------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Missing or incomplete translation for a given string    | Handled automatically by Android's resource resolution — falls back to the base (default-locale) `values/strings.xml` for that key. No custom fallback logic is needed or should be built.        |
+| Where the base/source-of-truth language lives           | `app/src/main/res/values/strings.xml` (no locale qualifier) is the single source of truth Weblate translates _from_. Every string must exist here before it can be translated into anything else. |
+| Server URL / credentials in the repo                    | Never. The current POC URL is documented here and in `.env.example` as a placeholder value only — see "Credentials" above.                                                                        |
+| Coupling repo tooling to this specific Weblate instance | Deliberately avoided for now. No CI workflow or webhook is being built against `weblate.tend.farband.ca` specifically until a permanent host is chosen — see Non-Goals.                           |
+| Initial language set                                    | English is the existing source language (already `01`'s base `values/strings.xml`) — nothing to translate there. A second language will be picked specifically to prove the pipeline works end to end, not as a commitment to a particular launch-language set. Which second language is still open — see "Open questions."                           |
 
 ## Non-Goals (for now)
 
@@ -88,7 +89,9 @@ than usual, precisely because the server is expected to be replaced.
 
 Not yet decided — do not assume answers to these when implementing:
 
-- Which languages are actually targeted first?
+- Which specific second language will be used to prove the pipeline works?
+  (English is confirmed as the source language — see the design-decisions
+  table above — but the validation language beyond that isn't picked yet.)
 - Does Weblate push translated strings back via an automatic PR/commit, or
   is syncing a manual export/import step? This depends on the permanent
   hosting decision and hasn't been discussed yet.
@@ -107,5 +110,6 @@ Not yet decided — do not assume answers to these when implementing:
    formality — see "Confirmed starting state" above.
 2. **`02_weblate_server_access.feature`** — documents what's concretely
    known about reaching and authenticating against the current POC server.
-   Deliberately thin: most of the real workflow (sync direction, target
-   languages) is still open — see "Open questions" above.
+   Deliberately thin: most of the real workflow (sync direction, which
+   second language validates the pipeline) is still open — see "Open
+   questions" above.
