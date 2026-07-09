@@ -13,3 +13,6 @@
 .externalNativeBuild
 .cxx
 local.properties
+
+# Local secrets (Weblate tokens, etc.) — see .env.example
+.env
