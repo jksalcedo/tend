@@ -33,6 +33,13 @@ questions" below before assuming any unstated behavior.
   [`01_string_externalization.manual-tests.md`](./01_string_externalization.manual-tests.md)
   for the live-verification record. Until this lands on `main`, nothing is
   actually translatable yet.
+- **`02` (Weblate server access) is verified.** There was no app code to
+  write for this one — it's credential hygiene and documentation. See
+  [`02_weblate_server_access.manual-tests.md`](./02_weblate_server_access.manual-tests.md)
+  for the verification record: `.env` has never been tracked, every
+  historical `.env.example` value was a placeholder, and the server URL
+  appears nowhere outside this spec folder and `.env.example` — no CI
+  workflow or app code references it.
 - Android's own resource resolution already provides locale fallback for
   free once strings _are_ externalized: any string missing from a
   locale-specific `values-xx/strings.xml` automatically resolves to the
@@ -237,4 +244,5 @@ Not yet decided — do not assume answers to these when implementing:
    known about reaching and authenticating against the current POC server.
    Deliberately thin: most of the real workflow (sync direction, which
    second language validates the pipeline) is still open — see "Open
-   questions" above.
+   questions" above. Verified (see "Confirmed starting state" above) —
+   there was no app code to write, only credential hygiene to confirm.
