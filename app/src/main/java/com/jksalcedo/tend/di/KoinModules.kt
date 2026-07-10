@@ -50,7 +50,8 @@ val appModule = module {
     factory { UnarchivePersonUseCase(get()) }
     factory { DeleteNoteUseCase(get()) }
     factory { UpdateNoteUseCase(get()) }
-    
+    factory { com.jksalcedo.tend.domain.usecase.ExportDataUseCase(get()) }
+    factory { com.jksalcedo.tend.domain.usecase.ImportDataUseCase(get()) }
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)
     viewModelOf(::PersonDetailViewModel)

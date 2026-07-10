@@ -16,11 +16,6 @@ android {
         versionName = "v0.1.0-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        //noinspection WrongGradleMethod
-//        ksp {
-//            arg("room.schemaLocation", "$projectDir/schemas")
-//        }
     }
 
     sourceSets {
@@ -47,13 +42,12 @@ android {
     buildFeatures {
         compose = true
     }
+}
 
-    applicationVariants.all {
-        val variant = this
-        outputs.all {
-            if (this is com.android.build.gradle.internal.api.BaseVariantOutputImpl) {
-                this.outputFileName = "Tend-${variant.versionName}.apk"
-            }
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("Tend-${output.versionName}-${output.versionCode}.apk")
         }
     }
 }

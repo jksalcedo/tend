@@ -10,4 +10,9 @@ interface PersonRepository {
     suspend fun insertPerson(person: Person)
     suspend fun updatePerson(person: Person)
     suspend fun deletePerson(id: Long)
+    
+    // Backup & Restore
+    suspend fun getAllPeopleList(): List<Person>
+    suspend fun insertAll(people: List<Person>)
+    suspend fun deleteAllPeople()
 }
