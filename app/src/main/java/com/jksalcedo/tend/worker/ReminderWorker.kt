@@ -32,16 +32,10 @@ class ReminderWorker(
         NotificationHelper.showReminders(applicationContext, overdueNames)
 
         // Important date reminders
-        val today = Calendar.getInstance().apply {
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
         people.filter { !it.isArchived }.forEach { person ->
             person.events.forEach { event ->
-                val daysUntil = daysUntilNextOccurrence(event.date, today)
+                val nextOccurrence = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
+                val daysUntil = com.jksalcedo.tend.utils.DateUtils.daysUntil(nextOccurrence).toInt()
                 if (daysUntil in 0..7) {
                     // Stable unique ID: base + low bits of (personId XOR eventId hash)
                     val notifId = 2000 + ((person.id xor event.id.hashCode().toLong()) and 0xFFF).toInt()
@@ -57,26 +51,5 @@ class ReminderWorker(
         }
 
         return Result.success()
-    }
-
-    private fun daysUntilNextOccurrence(dateMs: Long, today: Calendar): Int {
-        val eventCal = Calendar.getInstance().apply { timeInMillis = dateMs }
-
-        val thisYear = Calendar.getInstance().apply {
-            set(Calendar.YEAR, today.get(Calendar.YEAR))
-            set(Calendar.MONTH, eventCal.get(Calendar.MONTH))
-            set(Calendar.DAY_OF_MONTH, eventCal.get(Calendar.DAY_OF_MONTH))
-            set(Calendar.HOUR_OF_DAY, 0)
-            set(Calendar.MINUTE, 0)
-            set(Calendar.SECOND, 0)
-            set(Calendar.MILLISECOND, 0)
-        }
-
-        // If this year's occurrence has already passed, check next year
-        if (thisYear.before(today)) {
-            thisYear.add(Calendar.YEAR, 1)
-        }
-
-        return TimeUnit.MILLISECONDS.toDays(thisYear.timeInMillis - today.timeInMillis).toInt()
     }
 }
