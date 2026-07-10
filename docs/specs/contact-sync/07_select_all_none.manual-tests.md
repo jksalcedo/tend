@@ -38,7 +38,7 @@ contacts).
 **Expected:** The "No more contacts to import" message is shown; neither
 button appears alongside it.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
 
 ## 3. Select-all/none buttons appear once contacts are loaded
 
@@ -128,4 +128,4 @@ picker in step 2 (already linked, per existing behavior), and is unaffected
 by the Select All in step 3 — it was never in the list to begin with. Only
 the contacts visible at step 3 become new connections.
 
-- [ ] Pass / [ ] Fail
+- [x] Pass / [ ] Fail
