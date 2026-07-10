@@ -61,10 +61,8 @@ class NativeContactsDataSource(private val context: Context) {
         contacts
     }
 
-    // Resolves a previously-linked contact via its durable LOOKUP_KEY rather than the cached
-    // _ID, which Android's own aggregation can change (merge/split) without the contact having
-    // been deleted. Contacts.lookupContact() transparently follows that reorganization; a null
-    // result means the contact is genuinely gone, not merely renumbered.
+    // Resolves a contact via its durable LOOKUP_KEY rather than the cached _ID, 
+    // which can change due to Android's internal contact aggregation.
     suspend fun resolveContact(lookupKey: String, cachedContactId: Long?): NativeContact? =
         withContext(Dispatchers.IO) {
             val lookupUri = ContactsContract.Contacts.getLookupUri(cachedContactId ?: -1L, lookupKey)
@@ -109,18 +107,7 @@ class NativeContactsDataSource(private val context: Context) {
             }
         }
 
-    // Always creates a brand-new raw contact — no fuzzy-matching against existing native
-    // contacts (see the README's "Non-Goals"). No account is set, so this becomes a local,
-    // unsynced contact exactly like ones created directly in the device's Contacts app (see
-    // the README's "Design decisions" for why this doesn't attach to the user's existing
-    // Google/cloud account either).
-    //
-    // All rows (raw contact, name, phone, email, photo) are built as one batch of
-    // ContentProviderOperations and committed via a single applyBatch call — the documented
-    // Android pattern for multi-row contact creation, and the only way to make this atomic:
-    // without it, a failure partway through would leave an orphaned partial contact (e.g.
-    // name-only, no phone/email) permanently in the user's device Contacts app with no
-    // way for Tend to clean it up, since it never gets linked to a Person.
+    // Atomically creates a brand-new, local, unsynced raw contact.
     suspend fun createContact(
         name: String,
         phoneNumber: String?,
@@ -129,9 +116,7 @@ class NativeContactsDataSource(private val context: Context) {
     ): NativeContact = withContext(Dispatchers.IO) {
         val resolver = context.contentResolver
 
-        // Photo bytes are read outside the batch (it's plain file I/O, not a provider
-        // write) and best-effort: a failure here shouldn't fail contact creation, just
-        // leave it without a photo.
+        // Read outside the batch; failure here shouldn't block contact creation.
         val photoBytes = if (!photoUri.isNullOrBlank()) {
             runCatching { resolver.openInputStream(photoUri.toUri())?.use { it.readBytes() } }.getOrNull()
         } else null
@@ -198,8 +183,8 @@ class NativeContactsDataSource(private val context: Context) {
             arrayOf(rawContactId.toString()),
             null
         )?.use { cursor ->
-            // Cursor.getLong() on a SQL-NULL column returns 0, not null — check isNull
-            // explicitly so an aggregation lag doesn't silently resolve to contact id 0.
+            // Cursor.getLong() on a SQL-NULL column returns 0. Check isNull explicitly 
+            // to avoid aggregation lag resolving to contact ID 0.
             if (cursor.moveToFirst() && !cursor.isNull(0)) cursor.getLong(0) else null
         } ?: rawContactId
 
@@ -222,9 +207,7 @@ class NativeContactsDataSource(private val context: Context) {
         )
     }
 
-    // Copies the native contact's photo into app-private storage so it keeps displaying even if
-    // READ_CONTACTS is later revoked (a content:// URI reference would go unreadable then). Returns
-    // null if the contact has no photo; the caller should keep whatever was cached previously.
+    // Copies photo to private storage to survive READ_CONTACTS revocation.
     suspend fun cachePhoto(contactId: Long): String? = withContext(Dispatchers.IO) {
         val contactUri = ContentUris.withAppendedId(ContactsContract.Contacts.CONTENT_URI, contactId)
         val stream = ContactsContract.Contacts.openContactPhotoInputStream(
@@ -241,10 +224,7 @@ class NativeContactsDataSource(private val context: Context) {
         file.absolutePath
     }
 
-    // Tend's Person model deliberately stores a single phoneNumber/email (see
-    // domain/model/Person.kt), but a native contact can have several of each. We pick the
-    // contact's own designated default (IS_SUPER_PRIMARY) when one exists, falling back to
-    // an arbitrary row otherwise — any other numbers/emails are intentionally dropped.
+    // Fetches the IS_SUPER_PRIMARY default, dropping others to maintain Tend's single-entry model.
     private fun queryFirstPhoneNumber(contactId: Long): String? {
         context.contentResolver.query(
             ContactsContract.CommonDataKinds.Phone.CONTENT_URI,
