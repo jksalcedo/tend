@@ -111,8 +111,16 @@ private fun HomeScreenContent(
     onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit
 ) {
     val isDarkTheme = isSystemInDarkTheme()
-    val dueSoon =
-        people.filter { it.nextReminderAt <= System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3) }
+    val now = System.currentTimeMillis()
+    val dueSoon = people.filter { person ->
+        val checkInDays = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
+        if (checkInDays <= 3) return@filter true
+        
+        person.events.any { event ->
+            val next = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
+            com.jksalcedo.tend.utils.DateUtils.daysUntil(next) <= 3
+        }
+    }
 
     val context = LocalContext.current
     val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
@@ -534,9 +542,36 @@ fun PersonCard(
     onClick: () -> Unit
 ) {
     val now = System.currentTimeMillis()
-    val daysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
-    val isOverdue = daysUntil < 0
-    val isDueSoon = daysUntil in 0..3
+    val checkInDaysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
+    
+    val nextEvent = person.events.map { event ->
+        val nextOccurrence = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
+        val days = com.jksalcedo.tend.utils.DateUtils.daysUntil(nextOccurrence)
+        event to days
+    }.minByOrNull { it.second }
+
+    val (displayDays, displayMessage, displayDate) = if (nextEvent != null && nextEvent.second <= Math.max(0, checkInDaysUntil)) {
+        val eventLabel = nextEvent.first.label
+        val days = nextEvent.second
+        val message = when {
+            days == 0L -> "$eventLabel today!"
+            days == 1L -> "$eventLabel tomorrow"
+            else -> "$eventLabel in $days days"
+        }
+        val nextDateMs = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(nextEvent.first.date)
+        Triple(days, message, nextDateMs)
+    } else {
+        val message = when {
+            checkInDaysUntil < 0 -> "Overdue by ${-checkInDaysUntil} day${if (-checkInDaysUntil != 1L) "s" else ""}"
+            checkInDaysUntil == 0L -> "Due today!"
+            checkInDaysUntil == 1L -> "Due tomorrow"
+            else -> "Due in $checkInDaysUntil days"
+        }
+        Triple(checkInDaysUntil, message, person.nextReminderAt)
+    }
+
+    val isOverdue = displayDays < 0
+    val isDueSoon = displayDays in 0..3
 
     val cardColor = when {
         isOverdue -> pinkColor
@@ -594,12 +629,7 @@ fun PersonCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = when {
-                        isOverdue -> "Overdue by ${-daysUntil} day${if (-daysUntil != 1L) "s" else ""}"
-                        daysUntil == 0L -> "Due today!"
-                        daysUntil == 1L -> "Due tomorrow"
-                        else -> "Due in $daysUntil days"
-                    },
+                    text = displayMessage,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (cardColor == MaterialTheme.colorScheme.surface) MaterialTheme.colorScheme.onSurfaceVariant else accentColor.copy(
                         alpha = 0.8f
@@ -618,7 +648,7 @@ fun PersonCard(
                 ) {
                     val dateFormat = SimpleDateFormat("MMM", LocalLocale.current.platformLocale)
                     val dayFormat = SimpleDateFormat("dd", LocalLocale.current.platformLocale)
-                    val nextDate = Date(person.nextReminderAt)
+                    val nextDate = Date(displayDate)
                     Text(
                         text = dateFormat.format(nextDate).uppercase(),
                         style = MaterialTheme.typography.labelSmall,
