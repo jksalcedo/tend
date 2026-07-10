@@ -15,11 +15,17 @@ import kotlinx.coroutines.flow.combine
 import kotlinx.coroutines.flow.stateIn
 import kotlinx.coroutines.launch
 
+import com.jksalcedo.tend.domain.usecase.ExportDataUseCase
+import com.jksalcedo.tend.domain.usecase.ImportDataUseCase
+import kotlinx.coroutines.launch
+
 class HomeViewModel(
     getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
     observeAllTagsUseCase: ObserveAllTagsUseCase,
     private val maybeShowContactImportPromptUseCase: MaybeShowContactImportPromptUseCase,
     private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase
+    private val exportDataUseCase: ExportDataUseCase,
+    private val importDataUseCase: ImportDataUseCase
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -67,5 +73,25 @@ class HomeViewModel(
     fun onImportPromptResolved() {
         _showImportPrompt.value = false
         viewModelScope.launch { resolveContactImportPromptUseCase() }
+    fun exportData(outputStream: java.io.OutputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
+        viewModelScope.launch {
+            try {
+                exportDataUseCase(outputStream)
+                onComplete()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
+    }
+
+    fun importData(inputStream: java.io.InputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
+        viewModelScope.launch {
+            try {
+                importDataUseCase(inputStream)
+                onComplete()
+            } catch (e: Exception) {
+                onError(e)
+            }
+        }
     }
 }

@@ -16,11 +16,6 @@ android {
         versionName = "v0.1.0-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        //noinspection WrongGradleMethod
-//        ksp {
-//            arg("room.schemaLocation", "$projectDir/schemas")
-//        }
     }
 
     sourceSets {
@@ -46,6 +41,14 @@ android {
 
     buildFeatures {
         compose = true
+    }
+}
+
+androidComponents {
+    onVariants { variant ->
+        variant.outputs.forEach { output ->
+            output.outputFileName.set("Tend-${output.versionName}-${output.versionCode}.apk")
+        }
     }
 }
 

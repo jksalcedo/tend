@@ -120,6 +120,8 @@ val appModule = module {
     factory { RemoveTagFromPersonUseCase(get()) }
     factory { DeleteTagUseCase(get(), get()) }
 
+    factory { com.jksalcedo.tend.domain.usecase.ExportDataUseCase(get()) }
+    factory { com.jksalcedo.tend.domain.usecase.ImportDataUseCase(get()) }
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)
     viewModelOf(::PersonDetailViewModel)

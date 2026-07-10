@@ -24,6 +24,7 @@ import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material.icons.outlined.Notifications
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -64,6 +66,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
@@ -82,8 +85,9 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onArchivedClick: () -> Unit = {},
     onImportContactsClick: () -> Unit = {}
+    onOpenNotificationSettings: () -> Unit = {},
+    onArchivedClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -127,6 +131,9 @@ fun HomeScreen(
         onPersonClick = onPersonClick,
         onArchivedClick = onArchivedClick,
         onImportContactsClick = onImportContactsClick
+        onOpenNotificationSettings = onOpenNotificationSettings,
+        onExportData = viewModel::exportData,
+        onImportData = viewModel::importData
     )
 }
 
@@ -142,10 +149,21 @@ private fun HomeScreenContent(
     onPersonClick: (Long) -> Unit,
     onArchivedClick: () -> Unit = {},
     onImportContactsClick: () -> Unit = {}
+    onOpenNotificationSettings: () -> Unit = {},
+    onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit
 ) {
     val isDarkTheme = isSystemInDarkTheme()
-    val dueSoon =
-        people.filter { it.nextReminderAt <= System.currentTimeMillis() + TimeUnit.DAYS.toMillis(3) }
+    val now = System.currentTimeMillis()
+    val dueSoon = people.filter { person ->
+        val checkInDays = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
+        if (checkInDays <= 3) return@filter true
+        
+        person.events.any { event ->
+            val next = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
+            com.jksalcedo.tend.utils.DateUtils.daysUntil(next) <= 3
+        }
+    }
 
     val context = LocalContext.current
     val scanQrCodeLauncher = rememberLauncherForActivityResult(ScanQRCode()) { result ->
@@ -261,7 +279,50 @@ private fun HomeScreenContent(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
+                    IconButton(onClick = onOpenNotificationSettings) {
+                        Icon(
+                            Icons.Outlined.Notifications,
+                            contentDescription = "Notifications",
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
                     var showHomeMenu by remember { mutableStateOf(false) }
+
+                    val exportLauncher = rememberLauncherForActivityResult(
+                        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
+                    ) { uri ->
+                        if (uri != null) {
+                            context.contentResolver.openOutputStream(uri)?.let { outputStream ->
+                                onExportData(
+                                    outputStream,
+                                    {
+                                        Toast.makeText(context, "Export successful", Toast.LENGTH_SHORT).show()
+                                    },
+                                    { e: Exception ->
+                                        Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                    }
+                                )
+                            }
+                        }
+                    }
+
+                    val importLauncher =
+                        rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                            if (uri != null) {
+                                context.contentResolver.openInputStream(uri)?.let { inputStream ->
+                                    onImportData(
+                                        inputStream,
+                                        {
+                                            Toast.makeText(context, "Import successful", Toast.LENGTH_SHORT).show()
+                                        },
+                                        { e: Exception ->
+                                            Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                        }
+                                    )
+                                }
+                            }
+                        }
+
                     Box {
                         IconButton(onClick = { showHomeMenu = true }) {
                             Icon(
@@ -274,6 +335,20 @@ private fun HomeScreenContent(
                             expanded = showHomeMenu,
                             onDismissRequest = { showHomeMenu = false }
                         ) {
+                            DropdownMenuItem(
+                                text = { Text("Export Backup") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    exportLauncher.launch("tend_backup_${System.currentTimeMillis()}.json")
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Import Backup") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    importLauncher.launch(arrayOf("application/json", "*/*"))
+                                }
+                            )
                             DropdownMenuItem(
                                 text = { Text("Archived connections") },
                                 onClick = {
@@ -539,9 +614,36 @@ fun PersonCard(
     onClick: () -> Unit
 ) {
     val now = System.currentTimeMillis()
-    val daysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
-    val isOverdue = daysUntil < 0
-    val isDueSoon = daysUntil in 0..3
+    val checkInDaysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
+    
+    val nextEvent = person.events.map { event ->
+        val nextOccurrence = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
+        val days = com.jksalcedo.tend.utils.DateUtils.daysUntil(nextOccurrence)
+        event to days
+    }.minByOrNull { it.second }
+
+    val (displayDays, displayMessage, displayDate) = if (nextEvent != null && nextEvent.second <= Math.max(0, checkInDaysUntil)) {
+        val eventLabel = nextEvent.first.label
+        val days = nextEvent.second
+        val message = when {
+            days == 0L -> "$eventLabel today!"
+            days == 1L -> "$eventLabel tomorrow"
+            else -> "$eventLabel in $days days"
+        }
+        val nextDateMs = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(nextEvent.first.date)
+        Triple(days, message, nextDateMs)
+    } else {
+        val message = when {
+            checkInDaysUntil < 0 -> "Overdue by ${-checkInDaysUntil} day${if (-checkInDaysUntil != 1L) "s" else ""}"
+            checkInDaysUntil == 0L -> "Due today!"
+            checkInDaysUntil == 1L -> "Due tomorrow"
+            else -> "Due in $checkInDaysUntil days"
+        }
+        Triple(checkInDaysUntil, message, person.nextReminderAt)
+    }
+
+    val isOverdue = displayDays < 0
+    val isDueSoon = displayDays in 0..3
 
     val cardColor = when {
         isOverdue -> pinkColor
@@ -599,12 +701,7 @@ fun PersonCard(
                 )
                 Spacer(modifier = Modifier.height(4.dp))
                 Text(
-                    text = when {
-                        isOverdue -> "Overdue by ${-daysUntil} day${if (-daysUntil != 1L) "s" else ""}"
-                        daysUntil == 0L -> "Due today!"
-                        daysUntil == 1L -> "Due tomorrow"
-                        else -> "Due in $daysUntil days"
-                    },
+                    text = displayMessage,
                     style = MaterialTheme.typography.bodyMedium,
                     color = if (cardColor == MaterialTheme.colorScheme.surface) MaterialTheme.colorScheme.onSurfaceVariant else accentColor.copy(
                         alpha = 0.8f
@@ -623,7 +720,7 @@ fun PersonCard(
                 ) {
                     val dateFormat = SimpleDateFormat("MMM", LocalLocale.current.platformLocale)
                     val dayFormat = SimpleDateFormat("dd", LocalLocale.current.platformLocale)
-                    val nextDate = Date(person.nextReminderAt)
+                    val nextDate = Date(displayDate)
                     Text(
                         text = dateFormat.format(nextDate).uppercase(),
                         style = MaterialTheme.typography.labelSmall,
@@ -649,7 +746,9 @@ private fun HomeScreenEmptyPreviewLight() {
         HomeScreenContent(
             people = emptyList(),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }
@@ -661,7 +760,9 @@ private fun HomeScreenEmptyPreviewDark() {
         HomeScreenContent(
             people = emptyList(),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }
@@ -713,7 +814,9 @@ private fun HomeScreenWithPeoplePreviewLight() {
                 )
             ),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }
@@ -752,7 +855,9 @@ private fun HomeScreenWithPeoplePreviewDark() {
                 )
             ),
             onAddPersonClick = { _ -> },
-            onPersonClick = {}
+            onPersonClick = {},
+            onExportData = { _, _, _ -> },
+            onImportData = { _, _, _ -> }
         )
     }
 }

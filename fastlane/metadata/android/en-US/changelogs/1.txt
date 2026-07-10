@@ -1,16 +1,5 @@
-- Share connections via QR code; scan to import
-- Mark a connection as contacted to reset the check-in timer
-- Add, edit, and delete notes directly from a connection's detail screen
-- Edit a connection's name, contact info, social links, and important dates
-- Daily reminders for overdue check-ins and upcoming birthdays/anniversaries
-- Archive, delete, view, and unarchive connections from the new Archived screen
-- Added platform-specific icons and custom profile URL routing for social links
-- Import connections from your device contacts, selectively, any time
-- Keep imported connections synced with your device contacts, with an in-app link to edit them there
-- Sync a connection you created in Tend to your device contacts, any time you choose
-- Warns you when two connections appear to be the same device contact, with a link to review
-- Unlink a connection from a device contact that's been removed, keeping its Tend history
-- Shows when a linked device contact has been removed or is no longer found
-- Shows when syncing is paused because contacts permission was revoked
-- Search bar to easily find connections by name
-- Tag connections with free-form labels (ships with Family and Friend) and filter Home by tag
+- Contacts Sync: Import, link, and 2-way sync with device contacts. Includes duplicate warnings.
+- Connect: Share profiles via QR codes, 1-tap check-in resets, and daily reminders for check-ins & birthdays.
+- Organize: Search bar, custom tags, and a new Archive screen.
+- Profiles: Manage notes, dates, and smart social links in-app.
+- Data: JSON Import/Export backups.

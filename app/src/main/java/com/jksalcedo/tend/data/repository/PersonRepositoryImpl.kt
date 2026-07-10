@@ -54,6 +54,16 @@ class PersonRepositoryImpl(
 
     override suspend fun getEveryPerson(): List<Person> {
         return dao.getEveryPerson().map { it.toDomain() }
+    override suspend fun getAllPeopleList(): List<Person> {
+        return dao.getAllPeopleList().map { it.toDomain() }
+    }
+
+    override suspend fun insertAll(people: List<Person>) {
+        dao.insertAll(people.map { it.toEntity() })
+    }
+
+    override suspend fun deleteAllPeople() {
+        dao.deleteAllPeople()
     }
 
     private fun PersonEntity.toDomain(): Person {

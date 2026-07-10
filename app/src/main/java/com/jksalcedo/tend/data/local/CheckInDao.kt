@@ -28,6 +28,15 @@ interface CheckInDao {
     @Update
     suspend fun updatePerson(person: PersonEntity)
 
+    @Query("SELECT * FROM people")
+    suspend fun getAllPeopleList(): List<PersonEntity>
+
+    @Insert(onConflict = OnConflictStrategy.REPLACE)
+    suspend fun insertAll(people: List<PersonEntity>)
+
+    @Query("DELETE FROM people")
+    suspend fun deleteAllPeople()
+
     @Query("DELETE FROM people WHERE id = :id")
     suspend fun deletePerson(id: Long)
 
