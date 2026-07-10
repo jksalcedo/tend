@@ -40,6 +40,12 @@ for a settings label), "give or take" (good in a sentence, awkward as a field
 name), "slack"/"buffer" (read technical or deadline-flavored, wrong emotional
 register for a relationship app).
 
+**"Leeway" is still under consideration, not yet decided against.** Cleaner
+and slightly more neutral/grown-up than "wiggle room" — reads well both as a
+standalone settings label ("Leeway: 5 days") and in a sentence ("every 15
+days, with some leeway"), without the more playful/casual tone "wiggle room"
+carries. Final naming call is still open between the two.
+
 ## Nuances beyond a flat ± value
 
 A single flat `flexDays` constant is the obvious first cut, but a few
