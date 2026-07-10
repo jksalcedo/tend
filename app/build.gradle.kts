@@ -44,10 +44,16 @@ android {
     }
 }
 
-androidComponents {
-    onVariants { variant ->
-        variant.outputs.forEach { output ->
-            output.outputFileName.set("Tend-${output.versionName}-${output.versionCode}.apk")
+afterEvaluate {
+    tasks.named("assembleRelease") {
+        doLast {
+            val outDir = file("${layout.buildDirectory.get()}/outputs/apk/release")
+            outDir.listFiles()?.forEach { apk ->
+                if (apk.name.endsWith(".apk") && !apk.name.contains("-signed")) {
+                    val newName = "Tend-${android.defaultConfig.versionName}-${android.defaultConfig.versionCode}.apk"
+                    apk.renameTo(File(outDir, newName))
+                }
+            }
         }
     }
 }
