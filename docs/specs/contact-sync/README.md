@@ -234,6 +234,31 @@ Free-form tags (e.g. "Family", "Book Club"), specified in
   are purely decorative, which undercuts the point of a relationship-tending
   app being able to answer "who's overdue, among family?"
 
+## Select all / none (`07`)
+
+Specified in `07_select_all_none.feature`, not yet implemented. A single
+control (label toggles between "Select All" and "Select None") above the
+contact list in `ImportContactsScreen`, so importing most or all of a long
+list doesn't require tapping every checkbox individually.
+
+- **Shown or enabled only when appropriate** — hidden entirely while
+  contacts are loading and when the importable list is empty (nothing to
+  select). Shown as soon as the list has at least one contact, regardless
+  of list length — not suppressed for short lists, since "appropriate" here
+  means "there's something to act on," not "the list is long enough to
+  bother."
+- **Label reflects selection state, not a separate always-visible pair of
+  buttons.** Reads "Select All" whenever the current selection is anything
+  other than 100% of the visible list (including zero selected or a partial
+  selection), and flips to "Select None" only once every visible contact is
+  checked. Deselecting even one contact after a full Select All immediately
+  reverts the label to "Select All."
+- **Scoped to the currently visible list only.** Tapping it never touches
+  contacts already imported/linked in an earlier session (they're excluded
+  from the list per `01`'s existing filtering) — there's no "select
+  everything on the device" behavior, only "select everything importable
+  right now."
+
 ## Further future work
 
 Still just an idea, no spec written yet — unlike `06` above (shipped) or
