@@ -6,6 +6,7 @@ import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.PersonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+
 class PersonRepositoryImpl(
     private val dao: CheckInDao
 ) : PersonRepository {
@@ -54,6 +55,8 @@ class PersonRepositoryImpl(
 
     override suspend fun getEveryPerson(): List<Person> {
         return dao.getEveryPerson().map { it.toDomain() }
+    }
+
     override suspend fun getAllPeopleList(): List<Person> {
         return dao.getAllPeopleList().map { it.toDomain() }
     }
