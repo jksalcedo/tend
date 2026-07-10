@@ -22,6 +22,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
@@ -29,7 +31,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.outlined.Notifications
+import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -44,6 +46,7 @@ import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
 import androidx.compose.material3.Surface
 import androidx.compose.material3.Text
+import androidx.compose.material3.TextButton
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
@@ -61,7 +64,6 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.lifecycle.viewmodel.compose.viewModel
 import com.google.gson.Gson
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
@@ -73,6 +75,7 @@ import io.github.g00fy2.quickie.ScanQRCode
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -80,21 +83,23 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onOpenNotificationSettings: () -> Unit = {},
     onArchivedClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
+    val nerdStats by viewModel.nerdStats.collectAsState()
     HomeScreenContent(
         people = people,
         searchQuery = searchQuery,
+        nerdStats = nerdStats,
         onSearchQueryChange = viewModel::updateSearchQuery,
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
-        onOpenNotificationSettings = onOpenNotificationSettings,
         onArchivedClick = onArchivedClick,
         onExportData = viewModel::exportData,
-        onImportData = viewModel::importData
+        onImportData = viewModel::importData,
+        onLoadNerdStats = viewModel::loadNerdStats,
+        onClearNerdStats = viewModel::clearNerdStats
     )
 }
 
@@ -102,20 +107,22 @@ fun HomeScreen(
 private fun HomeScreenContent(
     people: List<Person>,
     searchQuery: String = "",
+    nerdStats: com.jksalcedo.tend.domain.model.NerdStats? = null,
     onSearchQueryChange: (String) -> Unit = {},
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
-    onOpenNotificationSettings: () -> Unit = {},
     onArchivedClick: () -> Unit = {},
     onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
-    onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit
+    onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onLoadNerdStats: () -> Unit = {},
+    onClearNerdStats: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
     val now = System.currentTimeMillis()
     val dueSoon = people.filter { person ->
         val checkInDays = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
         if (checkInDays <= 3) return@filter true
-        
+
         person.events.any { event ->
             val next = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
             com.jksalcedo.tend.utils.DateUtils.daysUntil(next) <= 3
@@ -236,14 +243,9 @@ private fun HomeScreenContent(
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
                     }
-                    IconButton(onClick = onOpenNotificationSettings) {
-                        Icon(
-                            Icons.Outlined.Notifications,
-                            contentDescription = "Notifications",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
+
                     var showHomeMenu by remember { mutableStateOf(false) }
+                    var expandDataManagement by remember { mutableStateOf(false) }
 
                     val exportLauncher = rememberLauncherForActivityResult(
                         androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
@@ -253,10 +255,18 @@ private fun HomeScreenContent(
                                 onExportData(
                                     outputStream,
                                     {
-                                        Toast.makeText(context, "Export successful", Toast.LENGTH_SHORT).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Export successful",
+                                            Toast.LENGTH_SHORT
+                                        ).show()
                                     },
                                     { e: Exception ->
-                                        Toast.makeText(context, "Export failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                        Toast.makeText(
+                                            context,
+                                            "Export failed: ${e.message}",
+                                            Toast.LENGTH_LONG
+                                        ).show()
                                     }
                                 )
                             }
@@ -270,10 +280,18 @@ private fun HomeScreenContent(
                                     onImportData(
                                         inputStream,
                                         {
-                                            Toast.makeText(context, "Import successful", Toast.LENGTH_SHORT).show()
+                                            Toast.makeText(
+                                                context,
+                                                "Import successful",
+                                                Toast.LENGTH_SHORT
+                                            ).show()
                                         },
                                         { e: Exception ->
-                                            Toast.makeText(context, "Import failed: ${e.message}", Toast.LENGTH_LONG).show()
+                                            Toast.makeText(
+                                                context,
+                                                "Import failed: ${e.message}",
+                                                Toast.LENGTH_LONG
+                                            ).show()
                                         }
                                     )
                                 }
@@ -290,27 +308,55 @@ private fun HomeScreenContent(
                         }
                         DropdownMenu(
                             expanded = showHomeMenu,
-                            onDismissRequest = { showHomeMenu = false }
+                            onDismissRequest = { 
+                                showHomeMenu = false
+                                expandDataManagement = false
+                            }
                         ) {
                             DropdownMenuItem(
-                                text = { Text("Export Backup") },
-                                onClick = {
-                                    showHomeMenu = false
-                                    exportLauncher.launch("tend_backup_${System.currentTimeMillis()}.json")
-                                }
+                                text = { 
+                                    Row(verticalAlignment = Alignment.CenterVertically) {
+                                        Text("Data Management")
+                                        Spacer(modifier = Modifier.width(8.dp))
+                                        Icon(
+                                            if (expandDataManagement) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                            contentDescription = null,
+                                            modifier = Modifier.size(20.dp)
+                                        )
+                                    }
+                                },
+                                onClick = { expandDataManagement = !expandDataManagement }
                             )
-                            DropdownMenuItem(
-                                text = { Text("Import Backup") },
-                                onClick = {
-                                    showHomeMenu = false
-                                    importLauncher.launch(arrayOf("application/json", "*/*"))
-                                }
-                            )
+                            if (expandDataManagement) {
+                                DropdownMenuItem(
+                                    text = { Text("Export Backup", modifier = Modifier.padding(start = 16.dp)) },
+                                    onClick = {
+                                        showHomeMenu = false
+                                        expandDataManagement = false
+                                        exportLauncher.launch("tend_backup_${System.currentTimeMillis()}.json")
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import Backup", modifier = Modifier.padding(start = 16.dp)) },
+                                    onClick = {
+                                        showHomeMenu = false
+                                        expandDataManagement = false
+                                        importLauncher.launch(arrayOf("application/json", "*/*"))
+                                    }
+                                )
+                            }
                             DropdownMenuItem(
                                 text = { Text("Archived connections") },
                                 onClick = {
                                     showHomeMenu = false
                                     onArchivedClick()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Stats for Nerds") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    onLoadNerdStats()
                                 }
                             )
                         }
@@ -425,6 +471,46 @@ private fun HomeScreenContent(
             Icon(Icons.Default.Add, contentDescription = null)
             Spacer(modifier = Modifier.width(8.dp))
             Text("New Connection", fontWeight = FontWeight.Medium)
+        }
+
+        if (nerdStats != null) {
+            AlertDialog(
+                onDismissRequest = onClearNerdStats,
+                title = { Text("Stats for Nerds", fontWeight = FontWeight.Bold) },
+                text = {
+                    Column(verticalArrangement = Arrangement.spacedBy(8.dp)) {
+                        Text("App Version: ${nerdStats.appVersion}")
+                        Text(
+                            String.format(
+                                LocalLocale.current.platformLocale,
+                                "Database Size: %.2f KB",
+                                nerdStats.databaseSizeKb
+                            )
+                        )
+                        Text("Active Connections: ${nerdStats.activeConnections}")
+                        Text("Archived Connections: ${nerdStats.archivedConnections}")
+                        Text("Total Notes: ${nerdStats.totalNotes}")
+                        Text("Total Important Dates: ${nerdStats.totalEvents}")
+                        Text("Total Social Links: ${nerdStats.totalSocialLinks}")
+                        Text(
+                            String.format(
+                                LocalLocale.current.platformLocale,
+                                "Average Frequency: %.1f days",
+                                nerdStats.averageCheckInFrequency
+                            )
+                        )
+                        Text("Shortest Frequency: ${nerdStats.shortestCheckInFrequency} days")
+                        Text("Longest Frequency: ${nerdStats.longestCheckInFrequency} days")
+                        Text("Overdue Connections: ${nerdStats.overdueConnections}")
+                        Text("Due Soon Connections: ${nerdStats.dueSoonConnections}")
+                    }
+                },
+                confirmButton = {
+                    TextButton(onClick = onClearNerdStats) {
+                        Text("Close")
+                    }
+                }
+            )
         }
     }
 }
@@ -543,19 +629,22 @@ fun PersonCard(
 ) {
     val now = System.currentTimeMillis()
     val checkInDaysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
-    
+
     val nextEvent = person.events.map { event ->
         val nextOccurrence = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
         val days = com.jksalcedo.tend.utils.DateUtils.daysUntil(nextOccurrence)
         event to days
     }.minByOrNull { it.second }
 
-    val (displayDays, displayMessage, displayDate) = if (nextEvent != null && nextEvent.second <= Math.max(0, checkInDaysUntil)) {
+    val (displayDays, displayMessage, displayDate) = if (nextEvent != null && nextEvent.second <= 0.coerceAtLeast(
+            checkInDaysUntil.toInt()
+        )
+    ) {
         val eventLabel = nextEvent.first.label
         val days = nextEvent.second
-        val message = when {
-            days == 0L -> "$eventLabel today!"
-            days == 1L -> "$eventLabel tomorrow"
+        val message = when (days) {
+            0L -> "$eventLabel today!"
+            1L -> "$eventLabel tomorrow"
             else -> "$eventLabel in $days days"
         }
         val nextDateMs = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(nextEvent.first.date)
@@ -676,7 +765,9 @@ private fun HomeScreenEmptyPreviewLight() {
             onAddPersonClick = { _ -> },
             onPersonClick = {},
             onExportData = { _, _, _ -> },
-            onImportData = { _, _, _ -> }
+            onImportData = { _, _, _ -> },
+            onLoadNerdStats = {},
+            onClearNerdStats = {}
         )
     }
 }
@@ -690,7 +781,9 @@ private fun HomeScreenEmptyPreviewDark() {
             onAddPersonClick = { _ -> },
             onPersonClick = {},
             onExportData = { _, _, _ -> },
-            onImportData = { _, _, _ -> }
+            onImportData = { _, _, _ -> },
+            onLoadNerdStats = {},
+            onClearNerdStats = {}
         )
     }
 }
@@ -744,7 +837,9 @@ private fun HomeScreenWithPeoplePreviewLight() {
             onAddPersonClick = { _ -> },
             onPersonClick = {},
             onExportData = { _, _, _ -> },
-            onImportData = { _, _, _ -> }
+            onImportData = { _, _, _ -> },
+            onLoadNerdStats = {},
+            onClearNerdStats = {}
         )
     }
 }
@@ -785,7 +880,9 @@ private fun HomeScreenWithPeoplePreviewDark() {
             onAddPersonClick = { _ -> },
             onPersonClick = {},
             onExportData = { _, _, _ -> },
-            onImportData = { _, _, _ -> }
+            onImportData = { _, _, _ -> },
+            onLoadNerdStats = {},
+            onClearNerdStats = {}
         )
     }
 }

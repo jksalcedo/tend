@@ -52,6 +52,7 @@ val appModule = module {
     factory { UpdateNoteUseCase(get()) }
     factory { com.jksalcedo.tend.domain.usecase.ExportDataUseCase(get()) }
     factory { com.jksalcedo.tend.domain.usecase.ImportDataUseCase(get()) }
+    factory { com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase(androidContext(), get()) }
     viewModelOf(::HomeViewModel)
     viewModelOf(::AddPersonViewModel)
     viewModelOf(::PersonDetailViewModel)

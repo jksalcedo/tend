@@ -17,7 +17,8 @@ import kotlinx.coroutines.launch
 class HomeViewModel(
     getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
     private val exportDataUseCase: ExportDataUseCase,
-    private val importDataUseCase: ImportDataUseCase
+    private val importDataUseCase: ImportDataUseCase,
+    private val getNerdStatsUseCase: com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -38,8 +39,25 @@ class HomeViewModel(
         initialValue = emptyList()
     )
 
+    private val _nerdStats = MutableStateFlow<com.jksalcedo.tend.domain.model.NerdStats?>(null)
+    val nerdStats: StateFlow<com.jksalcedo.tend.domain.model.NerdStats?> = _nerdStats
+
     fun updateSearchQuery(query: String) {
         _searchQuery.value = query
+    }
+
+    fun loadNerdStats() {
+        viewModelScope.launch {
+            try {
+                _nerdStats.value = getNerdStatsUseCase()
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+        }
+    }
+    
+    fun clearNerdStats() {
+        _nerdStats.value = null
     }
 
     fun exportData(outputStream: java.io.OutputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
