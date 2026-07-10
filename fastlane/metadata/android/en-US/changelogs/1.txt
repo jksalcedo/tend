@@ -7,3 +7,4 @@
 - Platform-specific icons & smart URL routing for socials
 - Search bar to quickly find connections
 - Import/Export your data as JSON backups
+- View "Stats for Nerds" from the dashboard menu
