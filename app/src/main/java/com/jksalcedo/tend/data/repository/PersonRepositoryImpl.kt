@@ -26,6 +26,10 @@ class PersonRepositoryImpl(
         return dao.getPersonById(id)?.toDomain()
     }
 
+    override fun observePersonById(id: Long): Flow<Person?> {
+        return dao.observePersonById(id).map { it?.toDomain() }
+    }
+
     override suspend fun insertPerson(person: Person) {
         dao.insertPerson(person.toEntity())
     }
@@ -38,6 +42,18 @@ class PersonRepositoryImpl(
         dao.deletePerson(id)
     }
 
+    override suspend fun getLinkedPeople(): List<Person> {
+        return dao.getLinkedPeople().map { it.toDomain() }
+    }
+
+    override fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>> {
+        return dao.observeDuplicatesOf(lookupKey, excludeId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun getEveryPerson(): List<Person> {
+        return dao.getEveryPerson().map { it.toDomain() }
     override suspend fun getAllPeopleList(): List<Person> {
         return dao.getAllPeopleList().map { it.toDomain() }
     }
@@ -63,7 +79,12 @@ class PersonRepositoryImpl(
             frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
-            isArchived = isArchived
+            isArchived = isArchived,
+            nativeLookupKey = nativeLookupKey,
+            nativeContactId = nativeContactId,
+            isDeviceLinkBroken = isDeviceLinkBroken,
+            localPhotoPath = localPhotoPath,
+            tags = tags
         )
     }
 
@@ -80,7 +101,12 @@ class PersonRepositoryImpl(
             frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
-            isArchived = isArchived
+            isArchived = isArchived,
+            nativeLookupKey = nativeLookupKey,
+            nativeContactId = nativeContactId,
+            isDeviceLinkBroken = isDeviceLinkBroken,
+            localPhotoPath = localPhotoPath,
+            tags = tags
         )
     }
 }

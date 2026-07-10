@@ -1,11 +1,26 @@
 package com.jksalcedo.tend.ui.detail
 
+import android.Manifest
+import android.app.Activity
 import android.content.Intent
+import android.content.pm.PackageManager
+import android.graphics.BitmapFactory
+import android.net.Uri
+import android.provider.ContactsContract
+import android.provider.Settings
+import android.widget.Toast
+import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
+import androidx.compose.foundation.ExperimentalFoundationApi
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
+import androidx.compose.foundation.combinedClickable
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Box
 import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.ExperimentalLayoutApi
+import androidx.compose.foundation.layout.FlowRow
 import androidx.compose.foundation.layout.Row
 import androidx.compose.foundation.layout.Spacer
 import androidx.compose.foundation.layout.fillMaxSize
@@ -23,14 +38,16 @@ import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
+import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Share
-import com.jksalcedo.tend.domain.model.Note
+import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
+import androidx.compose.material3.AssistChip
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
@@ -40,6 +57,7 @@ import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
+import androidx.compose.material3.InputChip
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.OutlinedTextField
 import androidx.compose.material3.OutlinedTextFieldDefaults
@@ -49,6 +67,8 @@ import androidx.compose.material3.TextButton
 import androidx.compose.material3.TopAppBar
 import androidx.compose.material3.TopAppBarDefaults
 import androidx.compose.runtime.Composable
+import androidx.compose.runtime.DisposableEffect
+import androidx.compose.runtime.LaunchedEffect
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.runtime.mutableStateOf
@@ -57,34 +77,163 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.app.ActivityCompat
+import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import androidx.lifecycle.Lifecycle
+import androidx.lifecycle.LifecycleEventObserver
+import com.jksalcedo.tend.domain.model.Note
+import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.ui.add.ShareScanSheet
+import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.utils.SocialIconUtils
 import com.jksalcedo.tend.utils.SocialLinkUtils
 import org.koin.androidx.compose.koinViewModel
+import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
 
-@OptIn(ExperimentalMaterial3Api::class)
+private enum class SyncToDeviceMessage { DENIED, PERMANENTLY_DENIED }
+private enum class ReadContactsMessage { DENIED, PERMANENTLY_DENIED }
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
 @Composable
 fun PersonDetailScreen(
     viewModel: PersonDetailViewModel = koinViewModel(),
     onNavigateBack: () -> Unit,
-    onEditClick: (Long) -> Unit = {}
+    onEditClick: (Long) -> Unit = {},
+    onNavigateToPerson: (Long) -> Unit = {}
 ) {
     val person by viewModel.person.collectAsState()
+    val duplicates by viewModel.duplicates.collectAsState()
+    val isSyncing by viewModel.isSyncing.collectAsState()
+    val syncFailed by viewModel.syncFailed.collectAsState()
+    val allTags by viewModel.allTags.collectAsState()
     val context = LocalContext.current
+    val activity = context as? Activity
     var showShareSheet by remember { mutableStateOf(false) }
     var showMenu by remember { mutableStateOf(false) }
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
+    var showTagPicker by remember { mutableStateOf(false) }
+    var tagToDelete by remember { mutableStateOf<String?>(null) }
+
+    LaunchedEffect(syncFailed) {
+        if (syncFailed) {
+            Toast.makeText(
+                context,
+                "Couldn't sync this connection to your device. Please try again.",
+                Toast.LENGTH_SHORT
+            ).show()
+            viewModel.consumeSyncFailed()
+        }
+    }
+
+    var hasContactsPermission by remember {
+        mutableStateOf(
+            ContextCompat.checkSelfPermission(
+                context,
+                Manifest.permission.READ_CONTACTS
+            ) == PackageManager.PERMISSION_GRANTED
+        )
+    }
+    var readContactsMessage by remember { mutableStateOf<ReadContactsMessage?>(null) }
+    val permissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestPermission()
+    ) { granted ->
+        hasContactsPermission = granted
+        readContactsMessage = if (granted) {
+            null
+        } else if (activity != null && ActivityCompat.shouldShowRequestPermissionRationale(
+                activity,
+                Manifest.permission.READ_CONTACTS
+            )
+        ) {
+            ReadContactsMessage.DENIED
+        } else {
+            ReadContactsMessage.PERMANENTLY_DENIED
+        }
+    }
+
+    var syncToDeviceMessage by remember { mutableStateOf<SyncToDeviceMessage?>(null) }
+    // Creating a native contact needs WRITE_CONTACTS, but NativeContactsDataSource.createContact()
+    // also queries the provider afterward to resolve the new contact's id/lookup key — and
+    // ContactsProvider requires READ_CONTACTS for any query regardless of WRITE_CONTACTS. Request
+    // both together so a user who never separately granted READ_CONTACTS (e.g. never used
+    // Import Contacts) doesn't hit a SecurityException on their first sync.
+    val writeContactsPermissionLauncher = rememberLauncherForActivityResult(
+        ActivityResultContracts.RequestMultiplePermissions()
+    ) { results ->
+        val writeGranted = results[Manifest.permission.WRITE_CONTACTS] == true
+        val readGranted = results[Manifest.permission.READ_CONTACTS] == true
+        hasContactsPermission = readGranted
+        if (readGranted) readContactsMessage = null
+        if (writeGranted && readGranted) {
+            syncToDeviceMessage = null
+            viewModel.syncToDevice()
+        } else {
+            val stillNeedsRationale = activity != null && (
+                ActivityCompat.shouldShowRequestPermissionRationale(
+                    activity,
+                    Manifest.permission.WRITE_CONTACTS
+                ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                    activity,
+                    Manifest.permission.READ_CONTACTS
+                )
+            )
+            syncToDeviceMessage = if (stillNeedsRationale) {
+                SyncToDeviceMessage.DENIED
+            } else {
+                SyncToDeviceMessage.PERMANENTLY_DENIED
+            }
+        }
+    }
+    val onSyncToDevice: () -> Unit = {
+        val writeGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.WRITE_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+        val readGranted = ContextCompat.checkSelfPermission(
+            context,
+            Manifest.permission.READ_CONTACTS
+        ) == PackageManager.PERMISSION_GRANTED
+        if (writeGranted && readGranted) {
+            syncToDeviceMessage = null
+            viewModel.syncToDevice()
+        } else {
+            // Android itself skips the dialog for whichever permission was permanently denied —
+            // launching is always safe, the callback above disambiguates which case it was.
+            writeContactsPermissionLauncher.launch(
+                arrayOf(Manifest.permission.WRITE_CONTACTS, Manifest.permission.READ_CONTACTS)
+            )
+        }
+    }
+
+    val lifecycleOwner = LocalLifecycleOwner.current
+    DisposableEffect(lifecycleOwner) {
+        val observer = LifecycleEventObserver { _, event ->
+            if (event == Lifecycle.Event.ON_RESUME) {
+                hasContactsPermission = ContextCompat.checkSelfPermission(
+                    context,
+                    Manifest.permission.READ_CONTACTS
+                ) == PackageManager.PERMISSION_GRANTED
+                if (hasContactsPermission) {
+                    readContactsMessage = null
+                }
+            }
+        }
+        lifecycleOwner.lifecycle.addObserver(observer)
+        onDispose { lifecycleOwner.lifecycle.removeObserver(observer) }
+    }
 
     if (showDeleteDialog) {
         AlertDialog(
@@ -126,6 +275,45 @@ fun PersonDetailScreen(
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveDialog = false }) {
+                    Text("Cancel")
+                }
+            }
+        )
+    }
+
+    if (showTagPicker) {
+        person?.let { p ->
+            TagPickerDialog(
+                allTags = allTags,
+                personTags = p.tags,
+                onToggle = { tag ->
+                    if (tag in p.tags) viewModel.removeTag(tag) else viewModel.addTag(tag)
+                },
+                onCreate = { tag -> viewModel.addTag(tag) },
+                onLongPressTag = { tag -> tagToDelete = tag },
+                onDismiss = { showTagPicker = false }
+            )
+        }
+    }
+
+    if (tagToDelete != null) {
+        val tag = tagToDelete!!
+        AlertDialog(
+            onDismissRequest = { tagToDelete = null },
+            title = { Text("Delete tag \"$tag\"?") },
+            text = { Text("This removes \"$tag\" from every connection that has it and takes it out of the tag list everywhere — this can't be undone.") },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.deleteTag(tag)
+                        tagToDelete = null
+                    }
+                ) {
+                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { tagToDelete = null }) {
                     Text("Cancel")
                 }
             }
@@ -233,6 +421,15 @@ fun PersonDetailScreen(
                                         }
                                     )
                                 }
+                                if (p.isDeviceLinkBroken) {
+                                    DropdownMenuItem(
+                                        text = { Text("Unlink from device contact") },
+                                        onClick = {
+                                            showMenu = false
+                                            viewModel.unlink()
+                                        }
+                                    )
+                                }
                                 DropdownMenuItem(
                                     text = {
                                         Text(
@@ -276,6 +473,12 @@ fun PersonDetailScreen(
                     modifier = Modifier.fillMaxWidth(),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
+                    val cachedPhoto = remember(p.localPhotoPath) {
+                        p.localPhotoPath?.let { path ->
+                            File(path).takeIf { it.exists() }
+                                ?.let { BitmapFactory.decodeFile(it.absolutePath) }
+                        }
+                    }
                     Box(
                         modifier = Modifier
                             .size(100.dp)
@@ -283,12 +486,20 @@ fun PersonDetailScreen(
                             .background(MaterialTheme.colorScheme.primaryContainer),
                         contentAlignment = Alignment.Center
                     ) {
-                        Text(
-                            text = p.name.take(1).uppercase(),
-                            fontSize = 40.sp,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onPrimaryContainer
-                        )
+                        if (cachedPhoto != null) {
+                            Image(
+                                bitmap = cachedPhoto.asImageBitmap(),
+                                contentDescription = "${p.name}'s photo",
+                                modifier = Modifier.fillMaxSize()
+                            )
+                        } else {
+                            Text(
+                                text = p.name.take(1).uppercase(),
+                                fontSize = 40.sp,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onPrimaryContainer
+                            )
+                        }
                     }
                     Spacer(modifier = Modifier.height(16.dp))
                     Text(
@@ -318,7 +529,73 @@ fun PersonDetailScreen(
                     }
                 }
 
-                Spacer(modifier = Modifier.height(32.dp))
+                Spacer(modifier = Modifier.height(24.dp))
+
+                val onOpenSettings: () -> Unit = {
+                    val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
+                        data = Uri.fromParts("package", context.packageName, null)
+                    }
+                    context.startActivity(intent)
+                }
+
+                DeviceSyncStatusSection(
+                    person = p,
+                    duplicates = duplicates,
+                    hasContactsPermission = hasContactsPermission,
+                    readContactsMessage = readContactsMessage,
+                    isSyncing = isSyncing,
+                    onRequestPermission = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
+                    onEditInContacts = {
+                        val lookupKey = p.nativeLookupKey
+                        val contactId = p.nativeContactId
+                        if (lookupKey != null && contactId != null) {
+                            val lookupUri = ContactsContract.Contacts.getLookupUri(contactId, lookupKey)
+                            context.startActivity(Intent(Intent.ACTION_EDIT).apply { data = lookupUri })
+                        }
+                    },
+                    onNavigateToDuplicate = { duplicates.firstOrNull()?.let { onNavigateToPerson(it.id) } },
+                    onUnlink = { viewModel.unlink() },
+                    onSyncToDevice = onSyncToDevice,
+                    syncToDeviceMessage = syncToDeviceMessage,
+                    onOpenSettings = onOpenSettings
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
+                // Tags
+                Text(
+                    text = "Tags",
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                FlowRow(
+                    horizontalArrangement = Arrangement.spacedBy(8.dp),
+                    verticalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    p.tags.forEach { tag ->
+                        InputChip(
+                            selected = false,
+                            onClick = {},
+                            label = { Text(tag) },
+                            trailingIcon = {
+                                Icon(
+                                    Icons.Default.Close,
+                                    contentDescription = "Remove tag $tag",
+                                    modifier = Modifier
+                                        .size(16.dp)
+                                        .clickable { viewModel.removeTag(tag) }
+                                )
+                            }
+                        )
+                    }
+                    AssistChip(
+                        onClick = { showTagPicker = true },
+                        label = { Text("+ Add tag") }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(24.dp))
 
                 // Contact Methods
                 Text(
@@ -483,6 +760,166 @@ fun PersonDetailScreen(
 }
 
 @Composable
+private fun DeviceSyncStatusSection(
+    person: Person,
+    duplicates: List<Person>,
+    hasContactsPermission: Boolean,
+    readContactsMessage: ReadContactsMessage?,
+    isSyncing: Boolean,
+    onRequestPermission: () -> Unit,
+    onEditInContacts: () -> Unit,
+    onNavigateToDuplicate: () -> Unit,
+    onUnlink: () -> Unit,
+    onSyncToDevice: () -> Unit,
+    syncToDeviceMessage: SyncToDeviceMessage?,
+    onOpenSettings: () -> Unit
+) {
+    val isLinked = person.nativeLookupKey != null
+
+    if (duplicates.isNotEmpty()) {
+        val bannerText = if (duplicates.size == 1) {
+            "Possibly a duplicate of \"${duplicates.first().name}\" — tap to review"
+        } else {
+            "Possibly a duplicate of \"${duplicates.first().name}\" and ${duplicates.size - 1} " +
+                "other${if (duplicates.size > 2) "s" else ""} — tap to review"
+        }
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .clickable(onClick = onNavigateToDuplicate),
+            shape = RoundedCornerShape(12.dp),
+            colors = CardDefaults.cardColors(containerColor = TendPastels.Yellow)
+        ) {
+            Row(
+                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Icon(Icons.Default.Warning, contentDescription = null, tint = TendPastels.YellowDark)
+                Spacer(modifier = Modifier.width(12.dp))
+                Text(
+                    text = bannerText,
+                    style = MaterialTheme.typography.bodyMedium,
+                    color = TendPastels.YellowDark
+                )
+            }
+        }
+        Spacer(modifier = Modifier.height(8.dp))
+    }
+
+    if (!isLinked) {
+        Column {
+            StatusCard(
+                text = "Not synced to your device contacts",
+                containerColor = MaterialTheme.colorScheme.surfaceVariant,
+                contentColor = MaterialTheme.colorScheme.onSurfaceVariant
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            TextButton(onClick = onSyncToDevice, enabled = !isSyncing) {
+                Text(if (isSyncing) "Syncing…" else "Sync to Device")
+            }
+            Text(
+                text = "Creates a local contact on this device only — it won't back up to your Google account.",
+                style = MaterialTheme.typography.bodySmall,
+                color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+            )
+            when (syncToDeviceMessage) {
+                SyncToDeviceMessage.DENIED -> Text(
+                    text = "Contacts access is needed to sync this connection to your device.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                SyncToDeviceMessage.PERMANENTLY_DENIED -> Column {
+                    Text(
+                        text = "Contacts access was previously denied. Enable it from system settings to sync this connection.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                    )
+                    TextButton(onClick = onOpenSettings) { Text("Open Settings") }
+                }
+                null -> {}
+            }
+        }
+        return
+    }
+
+    if (person.isDeviceLinkBroken) {
+        Column {
+            StatusCard(
+                text = "This device contact was removed or is no longer found",
+                containerColor = TendPastels.Pink,
+                contentColor = TendPastels.PinkDark
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            Row(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                TextButton(onClick = onUnlink) { Text("Unlink") }
+            }
+        }
+        return
+    }
+
+    if (!hasContactsPermission) {
+        Column {
+            StatusCard(
+                text = "Sync paused — contacts permission needed",
+                containerColor = TendPastels.Yellow,
+                contentColor = TendPastels.YellowDark
+            )
+            Spacer(modifier = Modifier.height(8.dp))
+            if (readContactsMessage == ReadContactsMessage.PERMANENTLY_DENIED) {
+                Text(
+                    text = "Contacts access was previously denied. Enable it from system settings to resume syncing.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
+                )
+                Spacer(modifier = Modifier.height(4.dp))
+            }
+            Row(
+                horizontalArrangement = Arrangement.spacedBy(8.dp),
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                if (readContactsMessage == ReadContactsMessage.PERMANENTLY_DENIED) {
+                    TextButton(onClick = onOpenSettings) { Text("Open Settings") }
+                } else {
+                    TextButton(onClick = onRequestPermission) { Text("Grant permission") }
+                }
+                TextButton(onClick = onEditInContacts) { Text("Edit in Contacts") }
+            }
+        }
+        return
+    }
+
+    Column {
+        StatusCard(
+            text = "Managed by your device contacts",
+            containerColor = TendPastels.Mint,
+            contentColor = TendPastels.MintDark
+        )
+        Spacer(modifier = Modifier.height(8.dp))
+        TextButton(onClick = onEditInContacts) { Text("Edit in Contacts") }
+    }
+}
+
+@Composable
+private fun StatusCard(
+    text: String,
+    containerColor: androidx.compose.ui.graphics.Color,
+    contentColor: androidx.compose.ui.graphics.Color
+) {
+    Card(
+        modifier = Modifier.fillMaxWidth(),
+        shape = RoundedCornerShape(12.dp),
+        colors = CardDefaults.cardColors(containerColor = containerColor)
+    ) {
+        Text(
+            text = text,
+            modifier = Modifier.padding(16.dp),
+            style = MaterialTheme.typography.bodyMedium,
+            color = contentColor
+        )
+    }
+}
+
+@Composable
 fun ContactActionItem(
     icon: ImageVector,
     label: String,
@@ -561,6 +998,104 @@ fun EventItem(event: PersonEvent) {
             )
         }
     }
+}
+
+@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@Composable
+private fun TagPickerDialog(
+    allTags: List<String>,
+    personTags: List<String>,
+    onToggle: (String) -> Unit,
+    onCreate: (String) -> Unit,
+    onLongPressTag: (String) -> Unit,
+    onDismiss: () -> Unit
+) {
+    var newTag by remember { mutableStateOf("") }
+    AlertDialog(
+        onDismissRequest = onDismiss,
+        title = { Text("Tags") },
+        text = {
+            Column {
+                if (allTags.isNotEmpty()) {
+                    Text(
+                        text = "Tap to add or remove, hold to delete a tag everywhere",
+                        style = MaterialTheme.typography.labelSmall,
+                        color = MaterialTheme.colorScheme.onSurfaceVariant
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        allTags.forEach { tag ->
+                            val isSelected = tag in personTags
+                            // A single combinedClickable rather than FilterChip's own onClick
+                            // plus a modifier on top — stacking two separate click handlers
+                            // on one component risks double-registered gestures.
+                            androidx.compose.material3.Surface(
+                                modifier = Modifier.combinedClickable(
+                                    onClick = { onToggle(tag) },
+                                    onLongClick = { onLongPressTag(tag) }
+                                ),
+                                shape = RoundedCornerShape(8.dp),
+                                color = if (isSelected) {
+                                    MaterialTheme.colorScheme.secondaryContainer
+                                } else {
+                                    MaterialTheme.colorScheme.surfaceVariant
+                                }
+                            ) {
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
+                                ) {
+                                    if (isSelected) {
+                                        Icon(
+                                            Icons.Default.CheckCircle,
+                                            contentDescription = null,
+                                            tint = MaterialTheme.colorScheme.onSecondaryContainer,
+                                            modifier = Modifier.size(16.dp)
+                                        )
+                                        Spacer(modifier = Modifier.width(6.dp))
+                                    }
+                                    Text(
+                                        text = tag,
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = if (isSelected) {
+                                            MaterialTheme.colorScheme.onSecondaryContainer
+                                        } else {
+                                            MaterialTheme.colorScheme.onSurfaceVariant
+                                        }
+                                    )
+                                }
+                            }
+                        }
+                    }
+                    Spacer(modifier = Modifier.height(16.dp))
+                }
+                OutlinedTextField(
+                    value = newTag,
+                    onValueChange = { newTag = it },
+                    label = { Text("New tag") },
+                    singleLine = true,
+                    modifier = Modifier.fillMaxWidth()
+                )
+            }
+        },
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    onCreate(newTag)
+                    newTag = ""
+                },
+                enabled = newTag.isNotBlank()
+            ) {
+                Text("Add")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) { Text("Done") }
+        }
+    )
 }
 
 @Composable

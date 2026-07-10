@@ -1,10 +1,5 @@
-- Share connections via QR code; scan to import
-- Reset check-in timers with a tap
-- Manage notes from the detail screen
-- Edit contact info, social links & dates
-- Daily reminders for check-ins, birthdays & anniversaries
-- Manage archived connections in a new screen
-- Platform-specific icons & smart URL routing for socials
-- Search bar to quickly find connections
-- Import/Export your data as JSON backups
-- View "Stats for Nerds" from the dashboard menu
+- Contacts Sync: Import, link, and 2-way sync with device contacts. Includes duplicate warnings.
+- Connect: Share profiles via QR codes, 1-tap check-in resets, and daily reminders for check-ins & birthdays.
+- Organize: Search bar, custom tags, and a new Archive screen.
+- Profiles: Manage notes, dates, and smart social links in-app.
+- Data: JSON Import/Export backups.

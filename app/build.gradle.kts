@@ -89,6 +89,9 @@ dependencies {
     // Gson
     implementation(libs.gson)
 
+    // DataStore
+    implementation(libs.androidx.datastore.preferences)
+
     // Qr
     implementation(libs.core)
     implementation(libs.quickie.bundled)

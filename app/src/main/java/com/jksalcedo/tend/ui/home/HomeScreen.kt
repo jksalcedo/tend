@@ -18,6 +18,7 @@ import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.layout.width
 import androidx.compose.foundation.lazy.LazyColumn
+import androidx.compose.foundation.lazy.LazyRow
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
@@ -31,6 +32,7 @@ import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -39,6 +41,7 @@ import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExtendedFloatingActionButton
+import androidx.compose.material3.FilterChip
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.MaterialTheme
@@ -83,19 +86,55 @@ fun HomeScreen(
     viewModel: HomeViewModel = koinViewModel(),
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
+    onImportContactsClick: () -> Unit = {},
     onArchivedClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
     val nerdStats by viewModel.nerdStats.collectAsState()
+    val showImportPrompt by viewModel.showImportPrompt.collectAsState()
+    val allTags by viewModel.allTags.collectAsState()
+    val selectedTag by viewModel.selectedTag.collectAsState()
+
+    if (showImportPrompt) {
+        AlertDialog(
+            onDismissRequest = { viewModel.onImportPromptResolved() },
+            title = { Text("Import your contacts?") },
+            text = {
+                Text("Tend can import people from your device contacts so you don't have to add them one by one.")
+            },
+            confirmButton = {
+                TextButton(
+                    onClick = {
+                        viewModel.onImportPromptResolved()
+                        onImportContactsClick()
+                    }
+                ) {
+                    Text("Yes")
+                }
+            },
+            dismissButton = {
+                TextButton(onClick = { viewModel.onImportPromptResolved() }) {
+                    Text("No")
+                }
+            }
+        )
+    }
+
     HomeScreenContent(
         people = people,
         searchQuery = searchQuery,
         nerdStats = nerdStats,
         onSearchQueryChange = viewModel::updateSearchQuery,
+        allTags = allTags,
+        selectedTag = selectedTag,
+        onSelectedTagChange = viewModel::updateSelectedTag,
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
         onArchivedClick = onArchivedClick,
+        onArchivedClick = onArchivedClick,
+        onImportContactsClick = onImportContactsClick
+        onOpenNotificationSettings = onOpenNotificationSettings,
         onExportData = viewModel::exportData,
         onImportData = viewModel::importData,
         onLoadNerdStats = viewModel::loadNerdStats,
@@ -109,9 +148,14 @@ private fun HomeScreenContent(
     searchQuery: String = "",
     nerdStats: com.jksalcedo.tend.domain.model.NerdStats? = null,
     onSearchQueryChange: (String) -> Unit = {},
+    allTags: List<String> = emptyList(),
+    selectedTag: String? = null,
+    onSelectedTagChange: (String?) -> Unit = {},
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onArchivedClick: () -> Unit = {},
+    onImportContactsClick: () -> Unit = {}
+    onOpenNotificationSettings: () -> Unit = {},
     onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onLoadNerdStats: () -> Unit = {},
@@ -308,13 +352,13 @@ private fun HomeScreenContent(
                         }
                         DropdownMenu(
                             expanded = showHomeMenu,
-                            onDismissRequest = { 
+                            onDismissRequest = {
                                 showHomeMenu = false
                                 expandDataManagement = false
                             }
                         ) {
                             DropdownMenuItem(
-                                text = { 
+                                text = {
                                     Row(verticalAlignment = Alignment.CenterVertically) {
                                         Text("Data Management")
                                         Spacer(modifier = Modifier.width(8.dp))
@@ -357,6 +401,13 @@ private fun HomeScreenContent(
                                 onClick = {
                                     showHomeMenu = false
                                     onLoadNerdStats()
+                                }
+                            )
+                            DropdownMenuItem(
+                                text = { Text("Import contacts") },
+                                onClick = {
+                                    showHomeMenu = false
+                                    onImportContactsClick()
                                 }
                             )
                         }
@@ -415,6 +466,28 @@ private fun HomeScreenContent(
                     unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
                 )
             )
+
+            if (allTags.isNotEmpty()) {
+                Spacer(modifier = Modifier.height(12.dp))
+                LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
+                    item {
+                        FilterChip(
+                            selected = selectedTag == null,
+                            onClick = { onSelectedTagChange(null) },
+                            label = { Text("All") }
+                        )
+                    }
+                    items(allTags) { tag ->
+                        FilterChip(
+                            selected = selectedTag == tag,
+                            onClick = {
+                                onSelectedTagChange(if (selectedTag == tag) null else tag)
+                            },
+                            label = { Text(tag) }
+                        )
+                    }
+                }
+            }
 
             Spacer(modifier = Modifier.height(24.dp))
 
