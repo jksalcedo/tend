@@ -1,58 +1,61 @@
 Feature: Select all / none in the contact import picker
   As a Tend user importing many contacts at once
-  I want a single control to select or clear every visible contact
+  I want separate "Select All" and "Select None" actions, each enabled only when useful
   So that I don't have to tap each checkbox individually when I want most or all of them
 
   Background:
     Given the selective contact import picker is open with contacts permission granted
 
-  Scenario: Select-all control is hidden while contacts are loading
+  Scenario: Select-all/none buttons are hidden while contacts are loading
     Given the importable contacts list is still loading
-    Then no select-all/none control should be shown
+    Then neither the "Select All" nor "Select None" button should be shown
 
-  Scenario: Select-all control is hidden when there are no importable contacts
+  Scenario: Select-all/none buttons are hidden when there are no importable contacts
     Given the importable contacts list has finished loading and is empty
-    Then no select-all/none control should be shown
+    Then neither the "Select All" nor "Select None" button should be shown
 
-  Scenario: Select-all control appears once contacts are loaded
+  Scenario: Select-all/none buttons appear once contacts are loaded
     Given the importable contacts list has finished loading and contains one or more contacts
-    Then a select-all/none control should be shown above the contact list
+    Then both a "Select All" button and a "Select None" button should be shown above the contact list
 
-  Scenario: Control reads "Select All" when nothing is selected
+  Scenario: "Select All" is enabled and "Select None" is disabled when nothing is selected
     Given one or more importable contacts are shown
     And none of them are currently selected
-    Then the control should read "Select All"
+    Then the "Select All" button should be enabled
+    And the "Select None" button should be disabled
 
-  Scenario: Control reads "Select All" when only some contacts are selected
+  Scenario: Both buttons are enabled when only some contacts are selected
     Given multiple importable contacts are shown
     And at least one, but not all, are currently selected
-    Then the control should read "Select All"
+    Then the "Select All" button should be enabled
+    And the "Select None" button should be enabled
 
   Scenario: Tapping "Select All" selects every currently visible contact
     Given multiple importable contacts are shown
     And zero or more, but not all, are currently selected
-    When the user taps the "Select All" control
+    When the user taps the "Select All" button
     Then every contact currently shown in the list should become selected
     And the Import button's count should match the total number of visible contacts
 
-  Scenario: Control reads "Select None" once every visible contact is selected
+  Scenario: "Select All" becomes disabled and "Select None" becomes enabled once everything is selected
     Given multiple importable contacts are shown
-    When the user taps the "Select All" control
-    Then the control should read "Select None"
+    When the user taps the "Select All" button
+    Then the "Select All" button should become disabled
+    And the "Select None" button should be enabled
 
   Scenario: Tapping "Select None" clears every selection
     Given every currently visible contact is selected
-    And the control reads "Select None"
-    When the user taps the "Select None" control
+    When the user taps the "Select None" button
     Then no contact should remain selected
     And the Import button's count should read 0
-    And the control should read "Select All" again
+    And the "Select All" button should become enabled again
+    And the "Select None" button should become disabled again
 
-  Scenario: Deselecting a single contact after Select All reverts the control to "Select All"
+  Scenario: Deselecting a single contact after Select All re-enables "Select All"
     Given every currently visible contact is selected
-    And the control reads "Select None"
     When the user deselects one individual contact via its own checkbox
-    Then the control should read "Select All" again
+    Then the "Select All" button should become enabled again
+    And the "Select None" button should remain enabled
     And every other contact should remain selected
 
   Scenario: Select all only affects contacts currently in the list, not previously imported ones
