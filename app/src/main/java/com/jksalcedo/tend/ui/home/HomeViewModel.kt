@@ -23,7 +23,7 @@ class HomeViewModel(
     getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
     observeAllTagsUseCase: ObserveAllTagsUseCase,
     private val maybeShowContactImportPromptUseCase: MaybeShowContactImportPromptUseCase,
-    private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase
+    private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase,
     private val exportDataUseCase: ExportDataUseCase,
     private val importDataUseCase: ImportDataUseCase,
     private val getNerdStatsUseCase: com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase
@@ -91,7 +91,13 @@ class HomeViewModel(
     fun onImportPromptResolved() {
         _showImportPrompt.value = false
         viewModelScope.launch { resolveContactImportPromptUseCase() }
-    fun exportData(outputStream: java.io.OutputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
+    }
+
+    fun exportData(
+        outputStream: java.io.OutputStream,
+        onComplete: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 exportDataUseCase(outputStream)
@@ -102,7 +108,11 @@ class HomeViewModel(
         }
     }
 
-    fun importData(inputStream: java.io.InputStream, onComplete: () -> Unit, onError: (Exception) -> Unit) {
+    fun importData(
+        inputStream: java.io.InputStream,
+        onComplete: () -> Unit,
+        onError: (Exception) -> Unit
+    ) {
         viewModelScope.launch {
             try {
                 importDataUseCase(inputStream)

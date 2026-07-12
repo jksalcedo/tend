@@ -132,9 +132,7 @@ fun HomeScreen(
         onAddPersonClick = onAddPersonClick,
         onPersonClick = onPersonClick,
         onArchivedClick = onArchivedClick,
-        onArchivedClick = onArchivedClick,
-        onImportContactsClick = onImportContactsClick
-        onOpenNotificationSettings = onOpenNotificationSettings,
+        onImportContactsClick = onImportContactsClick,
         onExportData = viewModel::exportData,
         onImportData = viewModel::importData,
         onLoadNerdStats = viewModel::loadNerdStats,
@@ -154,8 +152,7 @@ private fun HomeScreenContent(
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onArchivedClick: () -> Unit = {},
-    onImportContactsClick: () -> Unit = {}
-    onOpenNotificationSettings: () -> Unit = {},
+    onImportContactsClick: () -> Unit = {},
     onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onLoadNerdStats: () -> Unit = {},
