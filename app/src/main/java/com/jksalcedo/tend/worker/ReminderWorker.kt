@@ -39,12 +39,18 @@ class ReminderWorker(
                 if (daysUntil in 0..7) {
                     // Stable unique ID: base + low bits of (personId XOR eventId hash)
                     val notifId = 2000 + ((person.id xor event.id.hashCode().toLong()) and 0xFFF).toInt()
+                    
+                    val age = if (event.type == com.jksalcedo.tend.domain.model.EventType.BIRTHDAY || event.label.contains("birthday", ignoreCase = true) || event.type == com.jksalcedo.tend.domain.model.EventType.ANNIVERSARY || event.label.contains("anniversary", ignoreCase = true)) {
+                        com.jksalcedo.tend.utils.DateUtils.getYearsDifference(event.date, nextOccurrence)
+                    } else null
+
                     NotificationHelper.showEventReminder(
                         context = applicationContext,
                         personName = person.name,
                         eventLabel = event.label,
                         daysUntil = daysUntil,
-                        notifId = notifId
+                        notifId = notifId,
+                        age = age
                     )
                 }
             }

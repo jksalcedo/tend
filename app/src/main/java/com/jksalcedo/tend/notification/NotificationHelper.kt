@@ -53,7 +53,8 @@ object NotificationHelper {
         personName: String,
         eventLabel: String,
         daysUntil: Int,
-        notifId: Int
+        notifId: Int,
+        age: Int? = null
     ) {
         if (!NotificationManagerCompat.from(context).areNotificationsEnabled()) return
 
@@ -65,10 +66,21 @@ object NotificationHelper {
             else -> "📅 Upcoming date"
         }
 
+        val ageStr = if (age != null && age > 0) {
+            val suffix = when {
+                age % 100 in 11..13 -> "th"
+                age % 10 == 1 -> "st"
+                age % 10 == 2 -> "nd"
+                age % 10 == 3 -> "rd"
+                else -> "th"
+            }
+            " $age$suffix"
+        } else ""
+
         val body = when (daysUntil) {
-            0 -> "$personName's $eventLabel is today!"
-            1 -> "$personName's $eventLabel is tomorrow"
-            else -> "$personName's $eventLabel is in $daysUntil days"
+            0 -> "$personName's$ageStr ${eventLabel.lowercase()} is today!"
+            1 -> "$personName's$ageStr ${eventLabel.lowercase()} is tomorrow"
+            else -> "$personName's$ageStr ${eventLabel.lowercase()} is in $daysUntil days"
         }
 
         notify(context, notifId, title, body, pendingIntent)
