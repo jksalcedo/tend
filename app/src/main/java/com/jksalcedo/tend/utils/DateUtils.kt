@@ -50,4 +50,18 @@ object DateUtils {
         
         return TimeUnit.MILLISECONDS.toDays(target.timeInMillis - today.timeInMillis)
     }
+
+    fun getYearsDifference(startMs: Long, endMs: Long): Int {
+        val startCal = Calendar.getInstance().apply { timeInMillis = startMs }
+        val endCal = Calendar.getInstance().apply { timeInMillis = endMs }
+
+        var diff = endCal.get(Calendar.YEAR) - startCal.get(Calendar.YEAR)
+        if (endCal.get(Calendar.MONTH) < startCal.get(Calendar.MONTH) ||
+            (endCal.get(Calendar.MONTH) == startCal.get(Calendar.MONTH) &&
+                    endCal.get(Calendar.DAY_OF_MONTH) < startCal.get(Calendar.DAY_OF_MONTH))
+        ) {
+            diff--
+        }
+        return diff
+    }
 }
