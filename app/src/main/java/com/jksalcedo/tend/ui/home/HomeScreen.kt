@@ -1,7 +1,9 @@
 package com.jksalcedo.tend.ui.home
 
+import android.graphics.drawable.BitmapDrawable
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.isSystemInDarkTheme
@@ -23,6 +25,7 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
 import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
@@ -60,22 +63,35 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.ImageBitmap
+import androidx.compose.ui.graphics.painter.BitmapPainter
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.imageResource
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.res.ResourcesCompat
+import androidx.core.graphics.drawable.toBitmap
+import androidx.core.graphics.drawable.toDrawable
 import com.google.gson.Gson
+import com.jksalcedo.tend.R
+import com.jksalcedo.tend.domain.model.NerdStats
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.ui.add.SharedPerson
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
+import com.jksalcedo.tend.utils.DateUtils
 import io.github.g00fy2.quickie.QRResult
 import io.github.g00fy2.quickie.ScanQRCode
 import org.koin.androidx.compose.koinViewModel
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.URLEncoder
 import java.text.SimpleDateFormat
 import java.util.Date
 import java.util.concurrent.TimeUnit
@@ -145,7 +161,7 @@ fun HomeScreen(
 private fun HomeScreenContent(
     people: List<Person>,
     searchQuery: String = "",
-    nerdStats: com.jksalcedo.tend.domain.model.NerdStats? = null,
+    nerdStats: NerdStats? = null,
     weeklyInsightsCount: Int = 0,
     onSearchQueryChange: (String) -> Unit = {},
     allTags: List<String> = emptyList(),
@@ -155,8 +171,8 @@ private fun HomeScreenContent(
     onPersonClick: (Long) -> Unit,
     onArchivedClick: () -> Unit = {},
     onImportContactsClick: () -> Unit = {},
-    onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
-    onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onExportData: (OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onImportData: (InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onLoadNerdStats: () -> Unit = {},
     onClearNerdStats: () -> Unit = {}
 ) {
@@ -167,8 +183,8 @@ private fun HomeScreenContent(
         if (checkInDays <= 3) return@filter true
 
         person.events.any { event ->
-            val next = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
-            com.jksalcedo.tend.utils.DateUtils.daysUntil(next) <= 3
+            val next = DateUtils.getNextOccurrence(event.date)
+            DateUtils.daysUntil(next) <= 3
         }
     }
 
@@ -181,7 +197,7 @@ private fun HomeScreenContent(
                     try {
                         val shared = Gson().fromJson(rawValue, SharedPerson::class.java)
                         if (shared != null && shared.name.isNotBlank()) {
-                            val encodedData = java.net.URLEncoder.encode(rawValue, "UTF-8")
+                            val encodedData = URLEncoder.encode(rawValue, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
                             Toast.makeText(
@@ -193,7 +209,7 @@ private fun HomeScreenContent(
                     } catch (_: Exception) {
                         if (rawValue.length < 100) {
                             val fallbackJson = Gson().toJson(SharedPerson(name = rawValue))
-                            val encodedData = java.net.URLEncoder.encode(fallbackJson, "UTF-8")
+                            val encodedData = URLEncoder.encode(fallbackJson, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
                             Toast.makeText(
@@ -260,7 +276,7 @@ private fun HomeScreenContent(
                             isSearching = false
                             onSearchQueryChange("")
                         }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     trailingIcon = {
@@ -292,10 +308,10 @@ private fun HomeScreenContent(
                             contentAlignment = Alignment.Center
                         ) {
                             Icon(
-                                imageVector = Icons.Default.Person,
+                                painter = painterResource(id = R.mipmap.ic_launcher_monochrome),
                                 contentDescription = null,
                                 tint = purpleAccent,
-                                modifier = Modifier.size(28.dp)
+                                modifier = Modifier.padding(0.dp)
                             )
                         }
                         Spacer(modifier = Modifier.width(12.dp))
@@ -310,7 +326,11 @@ private fun HomeScreenContent(
                     }
                     Row(verticalAlignment = Alignment.CenterVertically) {
                         IconButton(onClick = { isSearching = true }) {
-                            Icon(Icons.Default.Search, contentDescription = "Search")
+                            Icon(
+                                Icons.Default.Search,
+                                contentDescription = "Search",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
                         }
                         IconButton(onClick = { scanQrCodeLauncher.launch(null) }) {
                             Icon(
@@ -324,7 +344,7 @@ private fun HomeScreenContent(
                         var expandDataManagement by remember { mutableStateOf(false) }
 
                         val exportLauncher = rememberLauncherForActivityResult(
-                            androidx.activity.result.contract.ActivityResultContracts.CreateDocument(
+                            ActivityResultContracts.CreateDocument(
                                 "application/json"
                             )
                         ) { uri ->
@@ -352,7 +372,7 @@ private fun HomeScreenContent(
                         }
 
                         val importLauncher =
-                            rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                            rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                                 if (uri != null) {
                                     context.contentResolver.openInputStream(uri)
                                         ?.let { inputStream ->
@@ -757,8 +777,8 @@ fun PersonCard(
     val checkInDaysUntil = TimeUnit.MILLISECONDS.toDays(person.nextReminderAt - now)
 
     val nextEvent = person.events.map { event ->
-        val nextOccurrence = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
-        val days = com.jksalcedo.tend.utils.DateUtils.daysUntil(nextOccurrence)
+        val nextOccurrence = DateUtils.getNextOccurrence(event.date)
+        val days = DateUtils.daysUntil(nextOccurrence)
         event to days
     }.minByOrNull { it.second }
 
@@ -773,7 +793,7 @@ fun PersonCard(
             1L -> "$eventLabel tomorrow"
             else -> "$eventLabel in $days days"
         }
-        val nextDateMs = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(nextEvent.first.date)
+        val nextDateMs = DateUtils.getNextOccurrence(nextEvent.first.date)
         Triple(days, message, nextDateMs)
     } else {
         val message = when {
@@ -809,14 +829,14 @@ fun PersonCard(
     ) {
         Row(
             modifier = Modifier
-                .padding(16.dp)
+                .padding(12.dp)
                 .fillMaxWidth(),
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar
             Box(
                 modifier = Modifier
-                    .size(56.dp)
+                    .size(48.dp)
                     .clip(CircleShape)
                     .background(
                         if (cardColor == MaterialTheme.colorScheme.surface) mintColor else MaterialTheme.colorScheme.surface.copy(
@@ -842,7 +862,7 @@ fun PersonCard(
                     fontWeight = FontWeight.SemiBold,
                     color = if (cardColor == MaterialTheme.colorScheme.surface) MaterialTheme.colorScheme.onSurface else accentColor
                 )
-                Spacer(modifier = Modifier.height(4.dp))
+                Spacer(modifier = Modifier.height(2.dp))
                 Text(
                     text = displayMessage,
                     style = MaterialTheme.typography.bodyMedium,
@@ -858,7 +878,7 @@ fun PersonCard(
                 color = if (cardColor == MaterialTheme.colorScheme.surface) purpleColor else MaterialTheme.colorScheme.surface
             ) {
                 Column(
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                    modifier = Modifier.padding(horizontal = 10.dp, vertical = 6.dp),
                     horizontalAlignment = Alignment.CenterHorizontally
                 ) {
                     val dateFormat = SimpleDateFormat("MMM", LocalLocale.current.platformLocale)
