@@ -23,16 +23,16 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.ExpandLess
-import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.Add
+import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.ExpandLess
+import androidx.compose.material.icons.filled.ExpandMore
 import androidx.compose.material.icons.filled.MoreVert
 import androidx.compose.material.icons.filled.Person
 import androidx.compose.material.icons.filled.QrCodeScanner
 import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.Button
 import androidx.compose.material3.ButtonDefaults
@@ -78,7 +78,6 @@ import io.github.g00fy2.quickie.ScanQRCode
 import org.koin.androidx.compose.koinViewModel
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 import java.util.concurrent.TimeUnit
 
 @Composable
@@ -95,6 +94,7 @@ fun HomeScreen(
     val showImportPrompt by viewModel.showImportPrompt.collectAsState()
     val allTags by viewModel.allTags.collectAsState()
     val selectedTag by viewModel.selectedTag.collectAsState()
+    val weeklyInsightsCount by viewModel.weeklyInsightsCount.collectAsState()
 
     if (showImportPrompt) {
         AlertDialog(
@@ -125,6 +125,7 @@ fun HomeScreen(
         people = people,
         searchQuery = searchQuery,
         nerdStats = nerdStats,
+        weeklyInsightsCount = weeklyInsightsCount,
         onSearchQueryChange = viewModel::updateSearchQuery,
         allTags = allTags,
         selectedTag = selectedTag,
@@ -145,6 +146,7 @@ private fun HomeScreenContent(
     people: List<Person>,
     searchQuery: String = "",
     nerdStats: com.jksalcedo.tend.domain.model.NerdStats? = null,
+    weeklyInsightsCount: Int = 0,
     onSearchQueryChange: (String) -> Unit = {},
     allTags: List<String> = emptyList(),
     selectedTag: String? = null,
@@ -243,94 +245,104 @@ private fun HomeScreenContent(
                 .fillMaxSize()
                 .background(MaterialTheme.colorScheme.background)
                 .padding(horizontal = 20.dp)
-                .padding(top = 48.dp)
+                .padding(top = 32.dp)
         ) {
             // Header
-            Row(
-                modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.SpaceBetween,
-                verticalAlignment = Alignment.CenterVertically
-            ) {
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    Box(
-                        modifier = Modifier
-                            .size(48.dp)
-                            .clip(CircleShape)
-                            .background(purpleColor),
-                        contentAlignment = Alignment.Center
-                    ) {
-                        Icon(
-                            imageVector = Icons.Default.Person,
-                            contentDescription = null,
-                            tint = purpleAccent,
-                            modifier = Modifier.size(28.dp)
-                        )
-                    }
-                    Spacer(modifier = Modifier.width(12.dp))
-                    Column {
-                        Text(
-                            text = "Hi there!",
-                            style = MaterialTheme.typography.headlineSmall,
-                            fontWeight = FontWeight.Bold,
-                            color = MaterialTheme.colorScheme.onBackground
-                        )
-                    }
-                }
-                Row(verticalAlignment = Alignment.CenterVertically) {
-                    IconButton(onClick = { scanQrCodeLauncher.launch(null) }) {
-                        Icon(
-                            Icons.Default.QrCodeScanner,
-                            contentDescription = "Scan QR Code",
-                            tint = MaterialTheme.colorScheme.onSurfaceVariant
-                        )
-                    }
-
-                    var showHomeMenu by remember { mutableStateOf(false) }
-                    var expandDataManagement by remember { mutableStateOf(false) }
-
-                    val exportLauncher = rememberLauncherForActivityResult(
-                        androidx.activity.result.contract.ActivityResultContracts.CreateDocument("application/json")
-                    ) { uri ->
-                        if (uri != null) {
-                            context.contentResolver.openOutputStream(uri)?.let { outputStream ->
-                                onExportData(
-                                    outputStream,
-                                    {
-                                        Toast.makeText(
-                                            context,
-                                            "Export successful",
-                                            Toast.LENGTH_SHORT
-                                        ).show()
-                                    },
-                                    { e: Exception ->
-                                        Toast.makeText(
-                                            context,
-                                            "Export failed: ${e.message}",
-                                            Toast.LENGTH_LONG
-                                        ).show()
-                                    }
-                                )
+            var isSearching by remember { mutableStateOf(searchQuery.isNotEmpty()) }
+            if (isSearching) {
+                OutlinedTextField(
+                    value = searchQuery,
+                    onValueChange = onSearchQueryChange,
+                    modifier = Modifier.fillMaxWidth(),
+                    placeholder = { Text("Search connections...") },
+                    leadingIcon = {
+                        IconButton(onClick = {
+                            isSearching = false
+                            onSearchQueryChange("")
+                        }) {
+                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                        }
+                    },
+                    trailingIcon = {
+                        if (searchQuery.isNotEmpty()) {
+                            IconButton(onClick = { onSearchQueryChange("") }) {
+                                Icon(Icons.Default.Clear, contentDescription = "Clear search")
                             }
                         }
+                    },
+                    shape = RoundedCornerShape(12.dp),
+                    singleLine = true,
+                    colors = OutlinedTextFieldDefaults.colors(
+                        focusedBorderColor = mintAccent,
+                        unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
+                    )
+                )
+            } else {
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.SpaceBetween,
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        Box(
+                            modifier = Modifier
+                                .size(48.dp)
+                                .clip(CircleShape)
+                                .background(purpleColor),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            Icon(
+                                imageVector = Icons.Default.Person,
+                                contentDescription = null,
+                                tint = purpleAccent,
+                                modifier = Modifier.size(28.dp)
+                            )
+                        }
+                        Spacer(modifier = Modifier.width(12.dp))
+                        Column {
+                            Text(
+                                text = "Hi there!",
+                                style = MaterialTheme.typography.headlineSmall,
+                                fontWeight = FontWeight.Bold,
+                                color = MaterialTheme.colorScheme.onBackground
+                            )
+                        }
                     }
+                    Row(verticalAlignment = Alignment.CenterVertically) {
+                        IconButton(onClick = { isSearching = true }) {
+                            Icon(Icons.Default.Search, contentDescription = "Search")
+                        }
+                        IconButton(onClick = { scanQrCodeLauncher.launch(null) }) {
+                            Icon(
+                                Icons.Default.QrCodeScanner,
+                                contentDescription = "Scan QR Code",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
 
-                    val importLauncher =
-                        rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                        var showHomeMenu by remember { mutableStateOf(false) }
+                        var expandDataManagement by remember { mutableStateOf(false) }
+
+                        val exportLauncher = rememberLauncherForActivityResult(
+                            androidx.activity.result.contract.ActivityResultContracts.CreateDocument(
+                                "application/json"
+                            )
+                        ) { uri ->
                             if (uri != null) {
-                                context.contentResolver.openInputStream(uri)?.let { inputStream ->
-                                    onImportData(
-                                        inputStream,
+                                context.contentResolver.openOutputStream(uri)?.let { outputStream ->
+                                    onExportData(
+                                        outputStream,
                                         {
                                             Toast.makeText(
                                                 context,
-                                                "Import successful",
+                                                "Export successful",
                                                 Toast.LENGTH_SHORT
                                             ).show()
                                         },
                                         { e: Exception ->
                                             Toast.makeText(
                                                 context,
-                                                "Import failed: ${e.message}",
+                                                "Export failed: ${e.message}",
                                                 Toast.LENGTH_LONG
                                             ).show()
                                         }
@@ -339,80 +351,122 @@ private fun HomeScreenContent(
                             }
                         }
 
-                    Box {
-                        IconButton(onClick = { showHomeMenu = true }) {
-                            Icon(
-                                Icons.Default.MoreVert,
-                                contentDescription = "More options",
-                                tint = MaterialTheme.colorScheme.onSurfaceVariant
-                            )
-                        }
-                        DropdownMenu(
-                            expanded = showHomeMenu,
-                            onDismissRequest = {
-                                showHomeMenu = false
-                                expandDataManagement = false
+                        val importLauncher =
+                            rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                                if (uri != null) {
+                                    context.contentResolver.openInputStream(uri)
+                                        ?.let { inputStream ->
+                                            onImportData(
+                                                inputStream,
+                                                {
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Import successful",
+                                                        Toast.LENGTH_SHORT
+                                                    ).show()
+                                                },
+                                                { e: Exception ->
+                                                    Toast.makeText(
+                                                        context,
+                                                        "Import failed: ${e.message}",
+                                                        Toast.LENGTH_LONG
+                                                    ).show()
+                                                }
+                                            )
+                                        }
+                                }
                             }
-                        ) {
-                            DropdownMenuItem(
-                                text = {
-                                    Row(verticalAlignment = Alignment.CenterVertically) {
-                                        Text("Data Management")
-                                        Spacer(modifier = Modifier.width(8.dp))
-                                        Icon(
-                                            if (expandDataManagement) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
-                                            contentDescription = null,
-                                            modifier = Modifier.size(20.dp)
-                                        )
-                                    }
-                                },
-                                onClick = { expandDataManagement = !expandDataManagement }
-                            )
-                            if (expandDataManagement) {
+
+                        Box {
+                            IconButton(onClick = { showHomeMenu = true }) {
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = "More options",
+                                    tint = MaterialTheme.colorScheme.onSurfaceVariant
+                                )
+                            }
+                            DropdownMenu(
+                                expanded = showHomeMenu,
+                                onDismissRequest = {
+                                    showHomeMenu = false
+                                    expandDataManagement = false
+                                }
+                            ) {
                                 DropdownMenuItem(
-                                    text = { Text("Export Backup", modifier = Modifier.padding(start = 16.dp)) },
+                                    text = {
+                                        Row(verticalAlignment = Alignment.CenterVertically) {
+                                            Text("Data Management")
+                                            Spacer(modifier = Modifier.width(8.dp))
+                                            Icon(
+                                                if (expandDataManagement) Icons.Default.ExpandLess else Icons.Default.ExpandMore,
+                                                contentDescription = null,
+                                                modifier = Modifier.size(20.dp)
+                                            )
+                                        }
+                                    },
+                                    onClick = { expandDataManagement = !expandDataManagement }
+                                )
+                                if (expandDataManagement) {
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Export Backup",
+                                                modifier = Modifier.padding(start = 16.dp)
+                                            )
+                                        },
+                                        onClick = {
+                                            showHomeMenu = false
+                                            expandDataManagement = false
+                                            exportLauncher.launch("tend_backup_${System.currentTimeMillis()}.json")
+                                        }
+                                    )
+                                    DropdownMenuItem(
+                                        text = {
+                                            Text(
+                                                "Import Backup",
+                                                modifier = Modifier.padding(start = 16.dp)
+                                            )
+                                        },
+                                        onClick = {
+                                            showHomeMenu = false
+                                            expandDataManagement = false
+                                            importLauncher.launch(
+                                                arrayOf(
+                                                    "application/json",
+                                                    "*/*"
+                                                )
+                                            )
+                                        }
+                                    )
+                                }
+                                DropdownMenuItem(
+                                    text = { Text("Archived connections") },
                                     onClick = {
                                         showHomeMenu = false
-                                        expandDataManagement = false
-                                        exportLauncher.launch("tend_backup_${System.currentTimeMillis()}.json")
+                                        onArchivedClick()
                                     }
                                 )
                                 DropdownMenuItem(
-                                    text = { Text("Import Backup", modifier = Modifier.padding(start = 16.dp)) },
+                                    text = { Text("Stats for Nerds") },
                                     onClick = {
                                         showHomeMenu = false
-                                        expandDataManagement = false
-                                        importLauncher.launch(arrayOf("application/json", "*/*"))
+                                        onLoadNerdStats()
+                                    }
+                                )
+                                DropdownMenuItem(
+                                    text = { Text("Import contacts") },
+                                    onClick = {
+                                        showHomeMenu = false
+                                        onImportContactsClick()
                                     }
                                 )
                             }
-                            DropdownMenuItem(
-                                text = { Text("Archived connections") },
-                                onClick = {
-                                    showHomeMenu = false
-                                    onArchivedClick()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Stats for Nerds") },
-                                onClick = {
-                                    showHomeMenu = false
-                                    onLoadNerdStats()
-                                }
-                            )
-                            DropdownMenuItem(
-                                text = { Text("Import contacts") },
-                                onClick = {
-                                    showHomeMenu = false
-                                    onImportContactsClick()
-                                }
-                            )
                         }
                     }
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(16.dp))
 
             // Dashboard Cards Row
             Row(
@@ -440,32 +494,34 @@ private fun HomeScreenContent(
                 )
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
-
-            // Search Bar
-            OutlinedTextField(
-                value = searchQuery,
-                onValueChange = onSearchQueryChange,
-                modifier = Modifier.fillMaxWidth(),
-                placeholder = { Text("Search connections...") },
-                leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
-                trailingIcon = {
-                    if (searchQuery.isNotEmpty()) {
-                        IconButton(onClick = { onSearchQueryChange("") }) {
-                            Icon(Icons.Default.Clear, contentDescription = "Clear search")
-                        }
+            if (weeklyInsightsCount > 0) {
+                Spacer(modifier = Modifier.height(12.dp))
+                Card(
+                    modifier = Modifier.fillMaxWidth(),
+                    shape = RoundedCornerShape(16.dp),
+                    colors = CardDefaults.cardColors(containerColor = mintColor)
+                ) {
+                    Row(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .padding(horizontal = 16.dp, vertical = 12.dp),
+                        verticalAlignment = Alignment.CenterVertically
+                    ) {
+                        Text("🔥", fontSize = 20.sp)
+                        Spacer(modifier = Modifier.width(8.dp))
+                        Text(
+                            text = "You checked in with $weeklyInsightsCount ${if (weeklyInsightsCount == 1) "person" else "people"} this week!",
+                            style = MaterialTheme.typography.labelMedium,
+                            color = mintAccent,
+                            fontWeight = FontWeight.SemiBold
+                        )
                     }
-                },
-                shape = RoundedCornerShape(12.dp),
-                singleLine = true,
-                colors = OutlinedTextFieldDefaults.colors(
-                    focusedBorderColor = mintAccent,
-                    unfocusedBorderColor = MaterialTheme.colorScheme.outline.copy(alpha = 0.5f)
-                )
-            )
+                }
+            }
+
+            Spacer(modifier = Modifier.height(16.dp))
 
             if (allTags.isNotEmpty()) {
-                Spacer(modifier = Modifier.height(12.dp))
                 LazyRow(horizontalArrangement = Arrangement.spacedBy(8.dp)) {
                     item {
                         FilterChip(
@@ -486,7 +542,7 @@ private fun HomeScreenContent(
                 }
             }
 
-            Spacer(modifier = Modifier.height(24.dp))
+            Spacer(modifier = Modifier.height(8.dp))
 
             // Section Header
             Text(
@@ -596,14 +652,14 @@ private fun DashboardCard(
     label: String
 ) {
     Card(
-        modifier = modifier.height(100.dp),
-        shape = RoundedCornerShape(20.dp),
+        modifier = modifier.height(72.dp),
+        shape = RoundedCornerShape(16.dp),
         colors = CardDefaults.cardColors(containerColor = backgroundColor)
     ) {
         Column(
             modifier = Modifier
                 .fillMaxSize()
-                .padding(16.dp),
+                .padding(horizontal = 12.dp, vertical = 10.dp),
             verticalArrangement = Arrangement.SpaceBetween
         ) {
             Row(
@@ -613,7 +669,7 @@ private fun DashboardCard(
             ) {
                 Text(
                     text = title,
-                    style = MaterialTheme.typography.labelLarge,
+                    style = MaterialTheme.typography.labelMedium,
                     color = contentColor,
                     fontWeight = FontWeight.Medium
                 )
@@ -621,18 +677,18 @@ private fun DashboardCard(
                     icon,
                     contentDescription = null,
                     tint = contentColor,
-                    modifier = Modifier.size(20.dp)
+                    modifier = Modifier.size(16.dp)
                 )
             }
 
             Surface(
-                shape = RoundedCornerShape(8.dp),
+                shape = RoundedCornerShape(6.dp),
                 color = contentColor
             ) {
                 Text(
                     text = "$count $label",
-                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 6.dp),
-                    style = MaterialTheme.typography.labelMedium,
+                    modifier = Modifier.padding(horizontal = 8.dp, vertical = 4.dp),
+                    style = MaterialTheme.typography.labelSmall,
                     color = backgroundColor,
                     fontWeight = FontWeight.Medium
                 )

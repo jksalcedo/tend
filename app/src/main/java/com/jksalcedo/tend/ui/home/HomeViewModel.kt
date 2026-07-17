@@ -4,6 +4,7 @@ import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
+import com.jksalcedo.tend.domain.usecase.GetWeeklyInsightsUseCase
 import com.jksalcedo.tend.domain.usecase.MaybeShowContactImportPromptUseCase
 import com.jksalcedo.tend.domain.usecase.ObserveAllTagsUseCase
 import com.jksalcedo.tend.domain.usecase.ResolveContactImportPromptUseCase
@@ -21,6 +22,7 @@ import kotlinx.coroutines.launch
 
 class HomeViewModel(
     getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
+    getWeeklyInsightsUseCase: GetWeeklyInsightsUseCase,
     observeAllTagsUseCase: ObserveAllTagsUseCase,
     private val maybeShowContactImportPromptUseCase: MaybeShowContactImportPromptUseCase,
     private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase,
@@ -51,6 +53,13 @@ class HomeViewModel(
         started = SharingStarted.WhileSubscribed(5000),
         initialValue = emptyList()
     )
+
+    val weeklyInsightsCount: StateFlow<Int> = getWeeklyInsightsUseCase()
+        .stateIn(
+            scope = viewModelScope,
+            started = SharingStarted.WhileSubscribed(5000),
+            initialValue = 0
+        )
 
     private val _nerdStats = MutableStateFlow<com.jksalcedo.tend.domain.model.NerdStats?>(null)
     val nerdStats: StateFlow<com.jksalcedo.tend.domain.model.NerdStats?> = _nerdStats
