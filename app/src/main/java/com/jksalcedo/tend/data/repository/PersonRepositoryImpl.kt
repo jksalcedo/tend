@@ -1,14 +1,17 @@
 package com.jksalcedo.tend.data.repository
 
+import android.content.Context
 import com.jksalcedo.tend.data.local.CheckInDao
 import com.jksalcedo.tend.data.local.entity.PersonEntity
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.PersonRepository
+import com.jksalcedo.tend.widget.TendWidgetProvider
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
 
 class PersonRepositoryImpl(
-    private val dao: CheckInDao
+    private val dao: CheckInDao,
+    private val context: Context
 ) : PersonRepository {
 
     override fun getAllPeople(): Flow<List<Person>> {
@@ -33,14 +36,17 @@ class PersonRepositoryImpl(
 
     override suspend fun insertPerson(person: Person) {
         dao.insertPerson(person.toEntity())
+        TendWidgetProvider.triggerUpdate(context)
     }
 
     override suspend fun updatePerson(person: Person) {
         dao.updatePerson(person.toEntity())
+        TendWidgetProvider.triggerUpdate(context)
     }
 
     override suspend fun deletePerson(id: Long) {
         dao.deletePerson(id)
+        TendWidgetProvider.triggerUpdate(context)
     }
 
     override suspend fun getLinkedPeople(): List<Person> {
@@ -63,10 +69,12 @@ class PersonRepositoryImpl(
 
     override suspend fun insertAll(people: List<Person>) {
         dao.insertAll(people.map { it.toEntity() })
+        TendWidgetProvider.triggerUpdate(context)
     }
 
     override suspend fun deleteAllPeople() {
         dao.deleteAllPeople()
+        TendWidgetProvider.triggerUpdate(context)
     }
 
     private fun PersonEntity.toDomain(): Person {

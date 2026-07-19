@@ -7,6 +7,7 @@ import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
 import androidx.navigation.compose.rememberNavController
 import androidx.navigation.navArgument
+import androidx.navigation.navDeepLink
 import com.jksalcedo.tend.ui.add.AddPersonScreen
 import com.jksalcedo.tend.ui.archived.ArchivedScreen
 import com.jksalcedo.tend.ui.detail.PersonDetailScreen
@@ -54,6 +55,9 @@ fun TendNavGraph(
                 type = NavType.StringType
                 nullable = true
                 defaultValue = null
+            }),
+            deepLinks = listOf(navDeepLink {
+                uriPattern = "tend://add_person"
             })
         ) { backStackEntry ->
             val sharedData = backStackEntry.arguments?.getString("sharedData")
@@ -66,6 +70,9 @@ fun TendNavGraph(
             route = Routes.DETAIL,
             arguments = listOf(navArgument("personId") {
                 type = NavType.LongType
+            }),
+            deepLinks = listOf(navDeepLink {
+                uriPattern = "tend://detail/{personId}"
             })
         ) {
             PersonDetailScreen(
