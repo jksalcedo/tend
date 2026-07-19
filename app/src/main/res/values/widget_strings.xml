@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="widget_name">Tend Widget</string>
+    <string name="widget_description">Shows upcoming check-ins at a glance.</string>
+    <string name="widget_title">Tend</string>
+    <string name="widget_empty_text">All caught up! 🌱</string>
+</resources>

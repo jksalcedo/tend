@@ -84,7 +84,7 @@ val appModule = module {
     single { get<AppDatabase>().tagDao() }
     single { get<AppDatabase>().checkInHistoryDao() }
 
-    single<PersonRepository> { PersonRepositoryImpl(get()) }
+    single<PersonRepository> { PersonRepositoryImpl(get(), androidContext()) }
     single<TagRepository> { TagRepositoryImpl(get()) }
     single<CheckInHistoryRepository> { CheckInHistoryRepositoryImpl(get()) }
 

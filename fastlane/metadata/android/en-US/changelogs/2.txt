@@ -1,5 +1,6 @@
 - Important date reminders (like birthdays) now show the next age.
 - Added Weekly Insights to the Home screen
 - The search bar has been moved to the top action bar to save screen space.
-- Added Bulk Actions: You can now select multiple connections on the Home screen to quickly archive, delete, or tag them all at once.
-- Added Lead-time Reminders: You can now configure a custom number of days to be reminded early for any event (e.g., 7 days before an anniversary).
+- Added Bulk Actions
+- Added Lead-time Reminders
+- Added a Home screen widget to view upcoming and overdue check-ins at a glance.

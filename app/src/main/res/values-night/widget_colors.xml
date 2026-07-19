@@ -1,0 +1,13 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <color name="widget_background">#121212</color>
+    <color name="widget_header_bg">#1E1E1E</color>
+    <color name="widget_divider">#49454F</color>
+    <color name="widget_text_title">#B39DFF</color>
+    <color name="widget_text_primary">#E5E5E5</color>
+    <color name="widget_text_secondary">#9CA3AF</color>
+    <color name="widget_item_bg_overdue">#3D2828</color>
+    <color name="widget_item_bg_due_soon">#3D3520</color>
+    <color name="widget_item_bg_normal">#1E1E1E</color>
+    <color name="widget_item_divider">#2D2D2D</color>
+</resources>
