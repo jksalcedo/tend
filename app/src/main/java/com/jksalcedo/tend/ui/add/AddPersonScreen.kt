@@ -106,7 +106,8 @@ fun AddPersonScreen(
                         EventType.valueOf(it.type)
                     } catch (_: Exception) {
                         EventType.OTHER
-                    }
+                    },
+                    leadTimeDays = it.leadTimeDays
                 )
             } ?: emptyList()
         )

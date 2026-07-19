@@ -52,7 +52,8 @@ data class SharedSocialLink(
 data class SharedEvent(
     val label: String,
     val date: Long,
-    val type: String
+    val type: String,
+    val leadTimeDays: Int = 0
 )
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -69,7 +70,7 @@ fun ShareScanSheet(
             frequencyDays = person.frequencyDays,
             notes = person.notes.firstOrNull()?.content,
             socialLinks = person.socialLinks.map { SharedSocialLink(it.platform, it.handle) },
-            events = person.events.map { SharedEvent(it.label, it.date, it.type.name) }
+            events = person.events.map { SharedEvent(it.label, it.date, it.type.name, it.leadTimeDays) }
         )
         Gson().toJson(sharedPerson)
     }

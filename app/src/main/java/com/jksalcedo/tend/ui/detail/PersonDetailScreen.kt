@@ -982,10 +982,19 @@ fun EventItem(event: PersonEvent) {
                     tint = MaterialTheme.colorScheme.secondary
                 )
                 Spacer(modifier = Modifier.width(16.dp))
-                Text(
-                    text = event.label,
-                    style = MaterialTheme.typography.bodyLarge
-                )
+                Column {
+                    Text(
+                        text = event.label,
+                        style = MaterialTheme.typography.bodyLarge
+                    )
+                    if (event.leadTimeDays > 0) {
+                        Text(
+                            text = "Remind ${event.leadTimeDays}d early",
+                            style = MaterialTheme.typography.bodySmall,
+                            color = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
             }
             Text(
                 text = SimpleDateFormat("MMM dd", LocalLocale.current.platformLocale).format(

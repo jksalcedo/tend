@@ -78,6 +78,7 @@ fun AddEventDialog(
     var label by remember { mutableStateOf("") }
     var showDatePicker by remember { mutableStateOf(false) }
     var selectedDate by remember { mutableStateOf<Long?>(null) }
+    var leadTimeDaysText by remember { mutableStateOf("0") }
     val datePickerState = rememberDatePickerState()
 
     if (showDatePicker) {
@@ -120,13 +121,29 @@ fun AddEventDialog(
                 ) {
                     Text(if (selectedDate != null) "Date Selected" else "Select Date")
                 }
+                Spacer(modifier = Modifier.height(8.dp))
+                OutlinedTextField(
+                    value = leadTimeDaysText,
+                    onValueChange = { newValue ->
+                        if (newValue.isEmpty() || newValue.all { it.isDigit() }) {
+                            leadTimeDaysText = newValue
+                        }
+                    },
+                    label = { Text("Reminder lead time (days)") },
+                    singleLine = true,
+                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
+                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    ),
+                    modifier = Modifier.fillMaxWidth()
+                )
             }
         },
         confirmButton = {
             Button(
                 onClick = {
                     selectedDate?.let { date ->
-                        onConfirm(PersonEvent(label = label, date = date))
+                        val leadTime = leadTimeDaysText.toIntOrNull() ?: 0
+                        onConfirm(PersonEvent(label = label, date = date, leadTimeDays = leadTime))
                     }
                 },
                 enabled = label.isNotBlank() && selectedDate != null

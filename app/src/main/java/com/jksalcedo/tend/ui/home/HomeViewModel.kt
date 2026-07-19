@@ -5,6 +5,9 @@ import androidx.lifecycle.viewModelScope
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.usecase.GetUpcomingCheckInsUseCase
 import com.jksalcedo.tend.domain.usecase.GetWeeklyInsightsUseCase
+import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
+import com.jksalcedo.tend.domain.usecase.DeletePersonUseCase
+import com.jksalcedo.tend.domain.usecase.AddTagToPersonUseCase
 import com.jksalcedo.tend.domain.usecase.MaybeShowContactImportPromptUseCase
 import com.jksalcedo.tend.domain.usecase.ObserveAllTagsUseCase
 import com.jksalcedo.tend.domain.usecase.ResolveContactImportPromptUseCase
@@ -28,7 +31,10 @@ class HomeViewModel(
     private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase,
     private val exportDataUseCase: ExportDataUseCase,
     private val importDataUseCase: ImportDataUseCase,
-    private val getNerdStatsUseCase: com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase
+    private val getNerdStatsUseCase: com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase,
+    private val archivePersonUseCase: ArchivePersonUseCase,
+    private val deletePersonUseCase: DeletePersonUseCase,
+    private val addTagToPersonUseCase: AddTagToPersonUseCase
 ) : ViewModel() {
 
     private val _searchQuery = MutableStateFlow("")
@@ -70,6 +76,49 @@ class HomeViewModel(
     init {
         viewModelScope.launch {
             _showImportPrompt.value = maybeShowContactImportPromptUseCase()
+        }
+    }
+
+    private val _selectedPersonIds = MutableStateFlow<Set<Long>>(emptySet())
+    val selectedPersonIds: StateFlow<Set<Long>> = _selectedPersonIds.asStateFlow()
+
+    fun toggleSelection(personId: Long) {
+        _selectedPersonIds.value = _selectedPersonIds.value.toMutableSet().apply {
+            if (contains(personId)) remove(personId) else add(personId)
+        }
+    }
+
+    fun clearSelection() {
+        _selectedPersonIds.value = emptySet()
+    }
+
+    fun archiveSelected(onComplete: () -> Unit = {}) {
+        val ids = _selectedPersonIds.value.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            ids.forEach { archivePersonUseCase(it) }
+            clearSelection()
+            onComplete()
+        }
+    }
+
+    fun deleteSelected(onComplete: () -> Unit = {}) {
+        val ids = _selectedPersonIds.value.toList()
+        if (ids.isEmpty()) return
+        viewModelScope.launch {
+            ids.forEach { deletePersonUseCase(it) }
+            clearSelection()
+            onComplete()
+        }
+    }
+
+    fun addTagToSelected(tag: String, onComplete: () -> Unit = {}) {
+        val ids = _selectedPersonIds.value.toList()
+        if (ids.isEmpty() || tag.isBlank()) return
+        viewModelScope.launch {
+            ids.forEach { addTagToPersonUseCase(it, tag) }
+            clearSelection()
+            onComplete()
         }
     }
 
