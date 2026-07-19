@@ -29,8 +29,10 @@ import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
+import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.ui.home.PersonCard
 import com.jksalcedo.tend.ui.theme.TendPastels
@@ -76,7 +78,7 @@ private fun ArchivedScreenContent(
             TopAppBar(
                 title = {
                     Text(
-                        text = "Archived Connections",
+                        text = stringResource(R.string.archived_screen_title),
                         style = MaterialTheme.typography.titleLarge,
                         fontWeight = FontWeight.Bold
                     )
@@ -85,7 +87,7 @@ private fun ArchivedScreenContent(
                     IconButton(onClick = onNavigateBack) {
                         Icon(
                             imageVector = Icons.AutoMirrored.Filled.ArrowBack,
-                            contentDescription = "Back"
+                            contentDescription = stringResource(R.string.common_back)
                         )
                     }
                 },
@@ -110,7 +112,7 @@ private fun ArchivedScreenContent(
                     contentAlignment = Alignment.Center
                 ) {
                     Text(
-                        text = "No archived connections",
+                        text = stringResource(R.string.archived_empty_state),
                         style = MaterialTheme.typography.bodyLarge,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

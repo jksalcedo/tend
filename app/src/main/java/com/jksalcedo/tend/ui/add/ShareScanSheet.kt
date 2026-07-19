@@ -23,6 +23,7 @@ import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
 import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
@@ -31,6 +32,7 @@ import androidx.core.graphics.set
 import com.google.gson.Gson
 import com.google.zxing.BarcodeFormat
 import com.google.zxing.MultiFormatWriter
+import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.Person
 import android.graphics.Color as AndroidColor
 
@@ -87,14 +89,14 @@ fun ShareScanSheet(
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
             Text(
-                text = "Share Connection",
+                text = stringResource(R.string.share_connection_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onSurface
             )
             Spacer(modifier = Modifier.height(8.dp))
             Text(
-                text = "Let someone else scan this QR code to add ${person.name} directly.",
+                text = stringResource(R.string.share_connection_subtitle, person.name),
                 style = MaterialTheme.typography.bodyMedium,
                 color = MaterialTheme.colorScheme.onSurfaceVariant,
                 textAlign = TextAlign.Center
@@ -131,7 +133,7 @@ fun ShareScanSheet(
                     .height(50.dp),
                 shape = RoundedCornerShape(12.dp)
             ) {
-                Text("Close")
+                Text(stringResource(R.string.share_close_button))
             }
         }
     }
@@ -150,7 +152,7 @@ fun QrCodeImage(
     if (bitmap != null) {
         Image(
             bitmap = bitmap.asImageBitmap(),
-            contentDescription = "QR Code",
+            contentDescription = stringResource(R.string.share_qr_code_content_description),
             modifier = modifier.size(size.dp)
         )
     } else {
@@ -160,7 +162,7 @@ fun QrCodeImage(
                 .background(MaterialTheme.colorScheme.surfaceVariant),
             contentAlignment = Alignment.Center
         ) {
-            Text("Failed to generate QR")
+            Text(stringResource(R.string.share_qr_generation_failed))
         }
     }
 }

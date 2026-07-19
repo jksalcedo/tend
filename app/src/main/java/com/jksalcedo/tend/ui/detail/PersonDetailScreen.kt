@@ -82,12 +82,14 @@ import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
+import com.jksalcedo.tend.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
 import com.jksalcedo.tend.domain.model.Note
@@ -238,8 +240,8 @@ fun PersonDetailScreen(
     if (showDeleteDialog) {
         AlertDialog(
             onDismissRequest = { showDeleteDialog = false },
-            title = { Text("Delete Connection") },
-            text = { Text("Are you sure you want to delete this connection? This action cannot be undone.") },
+            title = { Text(stringResource(R.string.person_detail_delete_dialog_title)) },
+            text = { Text(stringResource(R.string.person_detail_delete_dialog_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -247,12 +249,12 @@ fun PersonDetailScreen(
                         viewModel.delete(onComplete = onNavigateBack)
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showDeleteDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -261,8 +263,8 @@ fun PersonDetailScreen(
     if (showArchiveDialog) {
         AlertDialog(
             onDismissRequest = { showArchiveDialog = false },
-            title = { Text("Archive Connection") },
-            text = { Text("Are you sure you want to archive this connection? It will be hidden from your active connections list.") },
+            title = { Text(stringResource(R.string.person_detail_archive_dialog_title)) },
+            text = { Text(stringResource(R.string.person_detail_archive_dialog_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -270,12 +272,12 @@ fun PersonDetailScreen(
                         viewModel.archive(onComplete = onNavigateBack)
                     }
                 ) {
-                    Text("Archive")
+                    Text(stringResource(R.string.common_archive))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { showArchiveDialog = false }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -327,7 +329,7 @@ fun PersonDetailScreen(
         var editContent by remember { mutableStateOf(noteToEdit!!.content) }
         AlertDialog(
             onDismissRequest = { noteToEdit = null },
-            title = { Text("Edit Note") },
+            title = { Text(stringResource(R.string.person_detail_edit_note_dialog_title)) },
             text = {
                 OutlinedTextField(
                     value = editContent,
@@ -344,12 +346,12 @@ fun PersonDetailScreen(
                     },
                     enabled = editContent.isNotBlank()
                 ) {
-                    Text("Save")
+                    Text(stringResource(R.string.common_save))
                 }
             },
             dismissButton = {
                 TextButton(onClick = { noteToEdit = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -358,8 +360,8 @@ fun PersonDetailScreen(
     if (noteToDelete != null) {
         AlertDialog(
             onDismissRequest = { noteToDelete = null },
-            title = { Text("Delete Note") },
-            text = { Text("Are you sure you want to delete this note? This action cannot be undone.") },
+            title = { Text(stringResource(R.string.person_detail_delete_note_dialog_title)) },
+            text = { Text(stringResource(R.string.person_detail_delete_note_dialog_text)) },
             confirmButton = {
                 TextButton(
                     onClick = {
@@ -367,12 +369,12 @@ fun PersonDetailScreen(
                         noteToDelete = null
                     }
                 ) {
-                    Text("Delete", color = MaterialTheme.colorScheme.error)
+                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
                 }
             },
             dismissButton = {
                 TextButton(onClick = { noteToDelete = null }) {
-                    Text("Cancel")
+                    Text(stringResource(R.string.common_cancel))
                 }
             }
         )
@@ -385,20 +387,20 @@ fun PersonDetailScreen(
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
+                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
                     }
                 },
                 actions = {
                     person?.let { p ->
                         IconButton(onClick = { onEditClick(p.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Edit connection")
+                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_content_description))
                         }
                         IconButton(onClick = { showShareSheet = true }) {
-                            Icon(Icons.Default.Share, contentDescription = "Share connection")
+                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.person_detail_share_content_description))
                         }
                         Box {
                             IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = "More options")
+                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more_options))
                             }
                             DropdownMenu(
                                 expanded = showMenu,
@@ -406,7 +408,7 @@ fun PersonDetailScreen(
                             ) {
                                 if (p.isArchived) {
                                     DropdownMenuItem(
-                                        text = { Text("Unarchive connection") },
+                                        text = { Text(stringResource(R.string.person_detail_unarchive_connection)) },
                                         onClick = {
                                             showMenu = false
                                             viewModel.unarchive(onComplete = onNavigateBack)
@@ -414,7 +416,7 @@ fun PersonDetailScreen(
                                     )
                                 } else {
                                     DropdownMenuItem(
-                                        text = { Text("Archive connection") },
+                                        text = { Text(stringResource(R.string.person_detail_archive_connection)) },
                                         onClick = {
                                             showMenu = false
                                             showArchiveDialog = true
@@ -433,7 +435,7 @@ fun PersonDetailScreen(
                                 DropdownMenuItem(
                                     text = {
                                         Text(
-                                            "Delete connection",
+                                            stringResource(R.string.person_detail_delete_connection),
                                             color = MaterialTheme.colorScheme.error
                                         )
                                     },
@@ -509,7 +511,7 @@ fun PersonDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Check in every ${p.frequencyDays} days",
+                        text = stringResource(R.string.person_detail_check_in_frequency, p.frequencyDays),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
@@ -519,9 +521,9 @@ fun PersonDetailScreen(
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
                             text = when (daysAgo) {
-                                0L -> "Last contacted today"
-                                1L -> "Last contacted yesterday"
-                                else -> "Last contacted $daysAgo days ago"
+                                0L -> stringResource(R.string.person_detail_last_contacted_today)
+                                1L -> stringResource(R.string.person_detail_last_contacted_yesterday)
+                                else -> stringResource(R.string.person_detail_last_contacted_days_ago, daysAgo)
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -599,7 +601,7 @@ fun PersonDetailScreen(
 
                 // Contact Methods
                 Text(
-                    text = "Ways to Connect",
+                    text = stringResource(R.string.person_detail_ways_to_connect),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -608,7 +610,7 @@ fun PersonDetailScreen(
                 if (p.phoneNumber != null) {
                     ContactActionItem(
                         icon = Icons.Default.Call,
-                        label = "Call",
+                        label = stringResource(R.string.person_detail_call_label),
                         value = p.phoneNumber,
                         onClick = {
                             val intent = Intent(Intent.ACTION_DIAL).apply {
@@ -623,7 +625,7 @@ fun PersonDetailScreen(
                 if (p.email != null) {
                     ContactActionItem(
                         icon = Icons.Default.Email,
-                        label = "Email",
+                        label = stringResource(R.string.person_detail_email_label),
                         value = p.email,
                         onClick = {
                             val intent = Intent(Intent.ACTION_SENDTO).apply {
@@ -652,7 +654,7 @@ fun PersonDetailScreen(
                 // Important Dates
                 if (p.events.isNotEmpty()) {
                     Text(
-                        text = "Important Dates",
+                        text = stringResource(R.string.common_important_dates),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -665,7 +667,7 @@ fun PersonDetailScreen(
                 }
 
                 Text(
-                    text = "History & Notes",
+                    text = stringResource(R.string.person_detail_history_notes),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -680,7 +682,7 @@ fun PersonDetailScreen(
                     OutlinedTextField(
                         value = noteInput,
                         onValueChange = { noteInput = it },
-                        placeholder = { Text("Add a note…") },
+                        placeholder = { Text(stringResource(R.string.person_detail_add_note_placeholder)) },
                         modifier = Modifier.weight(1f),
                         shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
@@ -700,7 +702,7 @@ fun PersonDetailScreen(
                     ) {
                         Icon(
                             Icons.AutoMirrored.Filled.Send,
-                            contentDescription = "Save note",
+                            contentDescription = stringResource(R.string.person_detail_save_note_content_description),
                             tint = if (noteInput.isNotBlank())
                                 MaterialTheme.colorScheme.primary
                             else
@@ -713,7 +715,7 @@ fun PersonDetailScreen(
 
                 if (p.notes.isEmpty()) {
                     Text(
-                        text = "No notes yet",
+                        text = stringResource(R.string.person_detail_no_notes_yet),
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
                     )
@@ -747,7 +749,7 @@ fun PersonDetailScreen(
                     )
                     Spacer(modifier = Modifier.width(8.dp))
                     Text(
-                        "Mark as contacted",
+                        stringResource(R.string.person_detail_mark_as_contacted),
                         style = MaterialTheme.typography.titleMedium,
                         fontWeight = FontWeight.SemiBold
                     )
@@ -1139,7 +1141,7 @@ fun NoteItem(
                     ) {
                         Icon(
                             imageVector = Icons.Default.MoreVert,
-                            contentDescription = "Note Options",
+                            contentDescription = stringResource(R.string.person_detail_note_options_content_description),
                             modifier = Modifier.size(16.dp),
                             tint = MaterialTheme.colorScheme.onSurfaceVariant
                         )
@@ -1149,14 +1151,14 @@ fun NoteItem(
                         onDismissRequest = { showNoteMenu = false }
                     ) {
                         DropdownMenuItem(
-                            text = { Text("Edit note") },
+                            text = { Text(stringResource(R.string.person_detail_edit_note)) },
                             onClick = {
                                 showNoteMenu = false
                                 onEditClick()
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text("Delete note", color = MaterialTheme.colorScheme.error) },
+                            text = { Text(stringResource(R.string.person_detail_delete_note), color = MaterialTheme.colorScheme.error) },
                             onClick = {
                                 showNoteMenu = false
                                 onDeleteClick()

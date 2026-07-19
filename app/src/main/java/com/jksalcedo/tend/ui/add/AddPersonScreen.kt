@@ -43,11 +43,13 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
+import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.tooling.preview.Preview
 import androidx.compose.ui.unit.dp
 import com.google.gson.Gson
+import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
@@ -265,12 +267,12 @@ private fun AddPersonScreenContent(
             IconButton(onClick = onNavigateBack) {
                 Icon(
                     Icons.AutoMirrored.Filled.ArrowBack,
-                    contentDescription = "Back",
+                    contentDescription = stringResource(R.string.common_back),
                     tint = MaterialTheme.colorScheme.onBackground
                 )
             }
             Text(
-                text = if (isEditMode) "Edit Connection" else "Add Connection",
+                text = if (isEditMode) stringResource(R.string.add_person_edit_title) else stringResource(R.string.add_person_add_title),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -304,9 +306,9 @@ private fun AddPersonScreenContent(
             OutlinedTextField(
                 value = name,
                 onValueChange = onNameChange,
+                label = { Text(stringResource(R.string.add_person_name_label)) },
+                placeholder = { Text(stringResource(R.string.add_person_name_placeholder)) },
                 enabled = !isIdentityLocked,
-                label = { Text("Name") },
-                placeholder = { Text("Enter person's name") },
                 modifier = Modifier
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -323,9 +325,9 @@ private fun AddPersonScreenContent(
             OutlinedTextField(
                 value = phoneNumber,
                 onValueChange = onPhoneNumberChange,
+                label = { Text(stringResource(R.string.add_person_phone_label)) },
+                placeholder = { Text(stringResource(R.string.add_person_phone_placeholder)) },
                 enabled = !isIdentityLocked,
-                label = { Text("Phone Number") },
-                placeholder = { Text("+63 994 6154 397") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -342,9 +344,9 @@ private fun AddPersonScreenContent(
             OutlinedTextField(
                 value = email,
                 onValueChange = onEmailChange,
+                label = { Text(stringResource(R.string.add_person_email_label)) },
+                placeholder = { Text(stringResource(R.string.add_person_email_placeholder)) },
                 enabled = !isIdentityLocked,
-                label = { Text("Email") },
-                placeholder = { Text("example@email.com") },
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -370,12 +372,12 @@ private fun AddPersonScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Social Links",
+                            text = stringResource(R.string.add_person_social_links_header),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         TextButton(onClick = onAddSocialLink) {
-                            Text("Add")
+                            Text(stringResource(R.string.common_add))
                         }
                     }
                     socialLinks.forEach { link ->
@@ -385,14 +387,14 @@ private fun AddPersonScreenContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = "${link.platform}: ${link.handle}",
+                                text = stringResource(R.string.add_person_social_link_display_format, link.platform, link.handle),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(vertical = 4.dp).weight(1f)
                             )
                             IconButton(onClick = { onRemoveSocialLink(link) }) {
                                 Icon(
                                     Icons.Default.Close,
-                                    contentDescription = "Remove",
+                                    contentDescription = stringResource(R.string.common_remove),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -414,12 +416,12 @@ private fun AddPersonScreenContent(
                         verticalAlignment = Alignment.CenterVertically
                     ) {
                         Text(
-                            text = "Important Dates",
+                            text = stringResource(R.string.common_important_dates),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold
                         )
                         TextButton(onClick = onAddEvent) {
-                            Text("Add")
+                            Text(stringResource(R.string.common_add))
                         }
                     }
                     events.forEach { event ->
@@ -429,23 +431,21 @@ private fun AddPersonScreenContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = buildString {
-                                    append(event.label)
-                                    append(": ")
-                                    append(
-                                        SimpleDateFormat(
-                                            "MMM dd",
-                                            LocalLocale.current.platformLocale
-                                        ).format(Date(event.date))
-                                    )
-                                },
+                                text = stringResource(
+                                    R.string.add_person_event_display_format,
+                                    event.label,
+                                    SimpleDateFormat(
+                                        "MMM dd",
+                                        LocalLocale.current.platformLocale
+                                    ).format(Date(event.date))
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
                                 modifier = Modifier.padding(vertical = 4.dp).weight(1f)
                             )
                             IconButton(onClick = { onRemoveEvent(event) }) {
                                 Icon(
                                     Icons.Default.Close,
-                                    contentDescription = "Remove",
+                                    contentDescription = stringResource(R.string.common_remove),
                                     tint = MaterialTheme.colorScheme.onSurfaceVariant
                                 )
                             }
@@ -463,14 +463,14 @@ private fun AddPersonScreenContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Check-in frequency",
+                        text = stringResource(R.string.add_person_check_in_frequency_header),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = mintAccent
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "How often should you reach out?",
+                        text = stringResource(R.string.add_person_check_in_frequency_subtitle),
                         style = MaterialTheme.typography.bodySmall,
                         color = mintAccent.copy(alpha = 0.7f)
                     )
@@ -482,9 +482,9 @@ private fun AddPersonScreenContent(
                         horizontalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         listOf(
-                            "7" to "Weekly",
-                            "14" to "Bi-weekly",
-                            "30" to "Monthly"
+                            "7" to stringResource(R.string.add_person_frequency_weekly),
+                            "14" to stringResource(R.string.add_person_frequency_biweekly),
+                            "30" to stringResource(R.string.add_person_frequency_monthly)
                         ).forEach { (days, label) ->
                             val isSelected = frequency == days
                             Surface(
@@ -504,7 +504,7 @@ private fun AddPersonScreenContent(
                                         color = if (isSelected) MaterialTheme.colorScheme.surface else mintAccent
                                     )
                                     Text(
-                                        text = "$days days",
+                                        text = stringResource(R.string.add_person_frequency_days_suffix, days),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isSelected) MaterialTheme.colorScheme.surface.copy(
                                             alpha = 0.8f
@@ -523,7 +523,7 @@ private fun AddPersonScreenContent(
                     OutlinedTextField(
                         value = frequency,
                         onValueChange = onFrequencyChange,
-                        label = { Text("Custom (days)") },
+                        label = { Text(stringResource(R.string.add_person_custom_days_label)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),
@@ -547,7 +547,7 @@ private fun AddPersonScreenContent(
                 ) {
                     Column(modifier = Modifier.padding(16.dp)) {
                         Text(
-                            text = "Notes",
+                            text = stringResource(R.string.add_person_notes_header),
                             style = MaterialTheme.typography.titleSmall,
                             fontWeight = FontWeight.SemiBold,
                             color = purpleAccent
@@ -556,7 +556,7 @@ private fun AddPersonScreenContent(
                         OutlinedTextField(
                             value = notes,
                             onValueChange = onNotesChange,
-                            placeholder = { Text("How did you meet? What do they like?") },
+                            placeholder = { Text(stringResource(R.string.add_person_notes_placeholder)) },
                             modifier = Modifier.fillMaxWidth(),
                             shape = RoundedCornerShape(12.dp),
                             colors = OutlinedTextFieldDefaults.colors(
@@ -586,7 +586,7 @@ private fun AddPersonScreenContent(
                 )
             ) {
                 Text(
-                    if (isEditMode) "Save Changes" else "Save Connection",
+                    if (isEditMode) stringResource(R.string.add_person_save_changes_button) else stringResource(R.string.add_person_save_connection_button),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )

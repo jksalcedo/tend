@@ -6,6 +6,7 @@ import android.content.Intent
 import android.net.Uri
 import android.widget.Toast
 import androidx.core.net.toUri
+import com.jksalcedo.tend.R
 
 object SocialLinkUtils {
 
@@ -43,7 +44,11 @@ object SocialLinkUtils {
         try {
             context.startActivity(Intent(Intent.ACTION_VIEW, url.toUri()))
         } catch (e: ActivityNotFoundException) {
-            Toast.makeText(context, "No app found to open this link", Toast.LENGTH_SHORT).show()
+            Toast.makeText(
+                context,
+                context.getString(R.string.social_link_no_app_found),
+                Toast.LENGTH_SHORT
+            ).show()
         }
     }
 }
