@@ -6,6 +6,7 @@ import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.PersonRepository
 import kotlinx.coroutines.flow.Flow
 import kotlinx.coroutines.flow.map
+
 class PersonRepositoryImpl(
     private val dao: CheckInDao
 ) : PersonRepository {
@@ -26,6 +27,10 @@ class PersonRepositoryImpl(
         return dao.getPersonById(id)?.toDomain()
     }
 
+    override fun observePersonById(id: Long): Flow<Person?> {
+        return dao.observePersonById(id).map { it?.toDomain() }
+    }
+
     override suspend fun insertPerson(person: Person) {
         dao.insertPerson(person.toEntity())
     }
@@ -36,6 +41,32 @@ class PersonRepositoryImpl(
 
     override suspend fun deletePerson(id: Long) {
         dao.deletePerson(id)
+    }
+
+    override suspend fun getLinkedPeople(): List<Person> {
+        return dao.getLinkedPeople().map { it.toDomain() }
+    }
+
+    override fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>> {
+        return dao.observeDuplicatesOf(lookupKey, excludeId).map { entities ->
+            entities.map { it.toDomain() }
+        }
+    }
+
+    override suspend fun getEveryPerson(): List<Person> {
+        return dao.getEveryPerson().map { it.toDomain() }
+    }
+
+    override suspend fun getAllPeopleList(): List<Person> {
+        return dao.getAllPeopleList().map { it.toDomain() }
+    }
+
+    override suspend fun insertAll(people: List<Person>) {
+        dao.insertAll(people.map { it.toEntity() })
+    }
+
+    override suspend fun deleteAllPeople() {
+        dao.deleteAllPeople()
     }
 
     private fun PersonEntity.toDomain(): Person {
@@ -51,7 +82,12 @@ class PersonRepositoryImpl(
             frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
-            isArchived = isArchived
+            isArchived = isArchived,
+            nativeLookupKey = nativeLookupKey,
+            nativeContactId = nativeContactId,
+            isDeviceLinkBroken = isDeviceLinkBroken,
+            localPhotoPath = localPhotoPath,
+            tags = tags
         )
     }
 
@@ -68,7 +104,12 @@ class PersonRepositoryImpl(
             frequencyDays = frequencyDays,
             lastContactedAt = lastContactedAt,
             nextReminderAt = nextReminderAt,
-            isArchived = isArchived
+            isArchived = isArchived,
+            nativeLookupKey = nativeLookupKey,
+            nativeContactId = nativeContactId,
+            isDeviceLinkBroken = isDeviceLinkBroken,
+            localPhotoPath = localPhotoPath,
+            tags = tags
         )
     }
 }

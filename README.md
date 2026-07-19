@@ -14,7 +14,13 @@ A gentle Android app for tending the relationships that matter. Tend helps you r
 with friends, family, and loved ones.
 </div>
 
-> ### Early development.
+## Screenshots
+
+|                                                       Dashboard                                                        |                                                         Connection Details                                                         |                                                         Import Contacts                                                          |
+|:----------------------------------------------------------------------------------------------------------------------:|:----------------------------------------------------------------------------------------------------------------------------------:|:--------------------------------------------------------------------------------------------------------------------------------:|
+|  <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/dashboard.png" alt="Dashboard Screen" width="250">  |          <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/details.png" alt="Details Screen" width="250">          | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/import_contacts.png" alt="Import Contacts Screen" width="250"> |
+|                                                     **Management**                                                     |                                                        **Share Connection**                                                        |                                                                                                                                  |
+| <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/management.png" alt="Management Screen" width="250"> | <img src="fastlane/metadata/android/en-US/images/phoneScreenshots/share_connection.png" alt="Share Connection Screen" width="250"> |                                                                                                                                  |
 
 ## Features
 
@@ -35,6 +41,7 @@ with friends, family, and loved ones.
 - MVVM
 
 ## Community
+
 **Telegram**: https://t.me/tend_community
 
 ## Requirements

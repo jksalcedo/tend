@@ -16,3 +16,7 @@ local.properties
 
 # Local secrets (Weblate tokens, etc.) — see .env.example
 .env
+/app/release!/app/build/
+!/app/build/
+/app/release/
+/app/build/

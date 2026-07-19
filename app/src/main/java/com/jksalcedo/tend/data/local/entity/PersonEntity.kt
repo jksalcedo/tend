@@ -11,6 +11,7 @@ data class PersonEntity(
     @PrimaryKey(autoGenerate = true) val id: Long = 0,
     val name: String,
     val photoUri: String?,
+    // Deliberately single-valued — see the matching note on domain/model/Person.kt.
     val phoneNumber: String? = null,
     val email: String? = null,
     val events: List<PersonEvent> = emptyList(),
@@ -19,5 +20,10 @@ data class PersonEntity(
     val frequencyDays: Int,
     val lastContactedAt: Long,
     val nextReminderAt: Long,
-    val isArchived: Boolean = false
+    val isArchived: Boolean = false,
+    val nativeLookupKey: String? = null,
+    val nativeContactId: Long? = null,
+    val isDeviceLinkBroken: Boolean = false,
+    val localPhotoPath: String? = null,
+    val tags: List<String> = emptyList()
 )

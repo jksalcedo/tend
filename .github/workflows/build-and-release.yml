@@ -72,10 +72,12 @@ jobs:
             echo "Pre-release tag detected. Adding pre-release flag for Codeberg."
           fi
           
+          RELEASE_NOTES=$(cat RELEASE_NOTES.md)
+          
           tea release create \
             --repo jksalcedo/tend \
             --tag ${{ github.ref_name }} \
             --title "Release ${{ github.ref_name }}" \
-            --note-file RELEASE_NOTES.md \
+            --note "$RELEASE_NOTES" \
             $PRERELEASE_FLAG \
             --asset Tend-${{ github.ref_name }}.apk

@@ -1,8 +1,5 @@
-- Share connections via QR code; scan to import
-- Mark a connection as contacted to reset the check-in timer
-- Add, edit, and delete notes directly from a connection's detail screen
-- Edit a connection's name, contact info, social links, and important dates
-- Daily reminders for overdue check-ins and upcoming birthdays/anniversaries
-- Archive, delete, view, and unarchive connections from the new Archived screen
-- Added platform-specific icons and custom profile URL routing for social links
-- Search bar to easily find connections by name
+- Contacts Sync: Import, link, and 2-way sync with device contacts. Includes duplicate warnings.
+- Connect: Share profiles via QR codes, 1-tap check-in resets, and daily reminders for check-ins & birthdays.
+- Organize: Search bar, custom tags, and a new Archive screen.
+- Profiles: Manage notes, dates, and smart social links in-app.
+- Data: JSON Import/Export backups.

@@ -16,11 +16,6 @@ android {
         versionName = "v0.1.0-beta.1"
 
         testInstrumentationRunner = "androidx.test.runner.AndroidJUnitRunner"
-
-        //noinspection WrongGradleMethod
-//        ksp {
-//            arg("room.schemaLocation", "$projectDir/schemas")
-//        }
     }
 
     sourceSets {
@@ -46,6 +41,20 @@ android {
 
     buildFeatures {
         compose = true
+    }
+}
+
+afterEvaluate {
+    tasks.named("assembleRelease") {
+        doLast {
+            val outDir = file("${layout.buildDirectory.get()}/outputs/apk/release")
+            outDir.listFiles()?.forEach { apk ->
+                if (apk.name.endsWith(".apk") && !apk.name.contains("-signed")) {
+                    val newName = "Tend-${android.defaultConfig.versionName}-${android.defaultConfig.versionCode}.apk"
+                    apk.renameTo(File(outDir, newName))
+                }
+            }
+        }
     }
 }
 
@@ -85,6 +94,9 @@ dependencies {
 
     // Gson
     implementation(libs.gson)
+
+    // DataStore
+    implementation(libs.androidx.datastore)
 
     // Qr
     implementation(libs.core)

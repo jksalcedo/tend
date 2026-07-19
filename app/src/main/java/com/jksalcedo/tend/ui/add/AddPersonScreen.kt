@@ -1,5 +1,7 @@
 package com.jksalcedo.tend.ui.add
 
+import android.content.Intent
+import android.provider.ContactsContract
 import androidx.compose.foundation.background
 import androidx.compose.foundation.isSystemInDarkTheme
 import androidx.compose.foundation.layout.Arrangement
@@ -39,6 +41,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -65,6 +68,8 @@ fun AddPersonScreen(
 ) {
     val isEditMode = personId != null
     val existingPerson by viewModel.existingPerson.collectAsState()
+    val isIdentityLocked = existingPerson?.nativeLookupKey != null
+    val context = LocalContext.current
 
     LaunchedEffect(personId) {
         if (personId != null) viewModel.loadPerson(personId)
@@ -111,15 +116,25 @@ fun AddPersonScreen(
     var frequency by remember { mutableStateOf((sharedPerson?.frequencyDays ?: 14).toString()) }
     var notes by remember { mutableStateOf(sharedPerson?.notes ?: "") }
 
-    // Pre-fill from loaded person when in edit mode
+    // Pre-fill from loaded person when in edit mode. Only the first emission seeds every
+    // field; later emissions (from the reactive observe picking up a foreground refresh)
+    // only resync the locked identity fields, never the relationship fields the user may
+    // be mid-edit on.
+    var hasSeededForm by remember { mutableStateOf(false) }
     LaunchedEffect(existingPerson) {
-        existingPerson?.let { p ->
+        val p = existingPerson ?: return@LaunchedEffect
+        if (!hasSeededForm) {
             name = p.name
             phoneNumber = p.phoneNumber ?: ""
             email = p.email ?: ""
             socialLinks = p.socialLinks
             events = p.events
             frequency = p.frequencyDays.toString()
+            hasSeededForm = true
+        } else if (p.nativeLookupKey != null) {
+            name = p.name
+            phoneNumber = p.phoneNumber ?: ""
+            email = p.email ?: ""
         }
     }
 
@@ -148,6 +163,7 @@ fun AddPersonScreen(
 
     AddPersonScreenContent(
         isEditMode = isEditMode,
+        isIdentityLocked = isIdentityLocked,
         name = name,
         onNameChange = { name = it },
         phoneNumber = phoneNumber,
@@ -189,7 +205,15 @@ fun AddPersonScreen(
             }
             onNavigateBack()
         },
-        onNavigateBack = onNavigateBack
+        onNavigateBack = onNavigateBack,
+        onEditInContacts = {
+            val lookupKey = existingPerson?.nativeLookupKey
+            val contactId = existingPerson?.nativeContactId
+            if (lookupKey != null && contactId != null) {
+                val lookupUri = ContactsContract.Contacts.getLookupUri(contactId, lookupKey)
+                context.startActivity(Intent(Intent.ACTION_EDIT).apply { data = lookupUri })
+            }
+        }
     )
 }
 
@@ -197,6 +221,7 @@ fun AddPersonScreen(
 @Composable
 private fun AddPersonScreenContent(
     isEditMode: Boolean = false,
+    isIdentityLocked: Boolean = false,
     name: String,
     onNameChange: (String) -> Unit,
     phoneNumber: String,
@@ -214,7 +239,8 @@ private fun AddPersonScreenContent(
     notes: String,
     onNotesChange: (String) -> Unit,
     onSaveClick: () -> Unit,
-    onNavigateBack: () -> Unit
+    onNavigateBack: () -> Unit,
+    onEditInContacts: () -> Unit = {}
 ) {
     val isDarkTheme = isSystemInDarkTheme()
 
@@ -261,12 +287,27 @@ private fun AddPersonScreenContent(
         ) {
             Spacer(modifier = Modifier.height(8.dp))
 
+            if (isIdentityLocked) {
+                Text(
+                    text = "Name, phone, and email are managed by your device contacts — edit them in the Contacts app.",
+                    style = MaterialTheme.typography.bodySmall,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+                TextButton(
+                    onClick = onEditInContacts,
+                    modifier = Modifier.padding(top = 4.dp)
+                ) {
+                    Text("Edit in Contacts")
+                }
+            }
+
             // Name Field
             OutlinedTextField(
                 value = name,
                 onValueChange = onNameChange,
                 label = { Text(stringResource(R.string.add_person_name_label)) },
                 placeholder = { Text(stringResource(R.string.add_person_name_placeholder)) },
+                enabled = !isIdentityLocked,
                 modifier = Modifier
                     .fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -285,6 +326,7 @@ private fun AddPersonScreenContent(
                 onValueChange = onPhoneNumberChange,
                 label = { Text(stringResource(R.string.add_person_phone_label)) },
                 placeholder = { Text(stringResource(R.string.add_person_phone_placeholder)) },
+                enabled = !isIdentityLocked,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Phone),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
@@ -303,6 +345,7 @@ private fun AddPersonScreenContent(
                 onValueChange = onEmailChange,
                 label = { Text(stringResource(R.string.add_person_email_label)) },
                 placeholder = { Text(stringResource(R.string.add_person_email_placeholder)) },
+                enabled = !isIdentityLocked,
                 keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Email),
                 modifier = Modifier.fillMaxWidth(),
                 shape = RoundedCornerShape(12.dp),
