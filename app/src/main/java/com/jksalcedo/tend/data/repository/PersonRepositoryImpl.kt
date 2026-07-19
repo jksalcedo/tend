@@ -95,7 +95,8 @@ class PersonRepositoryImpl(
             nativeContactId = nativeContactId,
             isDeviceLinkBroken = isDeviceLinkBroken,
             localPhotoPath = localPhotoPath,
-            tags = tags
+            tags = tags,
+            reminderWindowDays = reminderWindowDays
         )
     }
 
@@ -117,7 +118,8 @@ class PersonRepositoryImpl(
             nativeContactId = nativeContactId,
             isDeviceLinkBroken = isDeviceLinkBroken,
             localPhotoPath = localPhotoPath,
-            tags = tags
+            tags = tags,
+            reminderWindowDays = reminderWindowDays
         )
     }
 }

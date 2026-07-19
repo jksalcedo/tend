@@ -13,10 +13,18 @@ class AddPersonUseCase(
         phoneNumber: String? = null,
         email: String? = null,
         socialLinks: List<com.jksalcedo.tend.domain.model.SocialLink> = emptyList(),
-        events: List<com.jksalcedo.tend.domain.model.PersonEvent> = emptyList()
+        events: List<com.jksalcedo.tend.domain.model.PersonEvent> = emptyList(),
+        reminderWindowDays: Int = 0
     ) {
         val now = System.currentTimeMillis()
-        val nextReminder = now + (frequencyDays * 24 * 60 * 60 * 1000L)
+        val finalDays = if (reminderWindowDays > 0) {
+            val minDays = maxOf(1, frequencyDays - reminderWindowDays)
+            val maxDays = frequencyDays + reminderWindowDays
+            kotlin.random.Random.nextInt(minDays, maxDays + 1)
+        } else {
+            frequencyDays
+        }
+        val nextReminder = now + (finalDays * 24 * 60 * 60 * 1000L)
         
         val notesList = if (initialNote.isNotBlank()) {
             listOf(com.jksalcedo.tend.domain.model.Note(content = initialNote))
@@ -34,7 +42,8 @@ class AddPersonUseCase(
             events = events,
             frequencyDays = frequencyDays,
             lastContactedAt = now,
-            nextReminderAt = nextReminder
+            nextReminderAt = nextReminder,
+            reminderWindowDays = reminderWindowDays
         )
         repository.insertPerson(person)
     }

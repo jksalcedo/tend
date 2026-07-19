@@ -43,7 +43,8 @@ data class SharedPerson(
     val frequencyDays: Int = 14,
     val notes: String? = null,
     val socialLinks: List<SharedSocialLink> = emptyList(),
-    val events: List<SharedEvent> = emptyList()
+    val events: List<SharedEvent> = emptyList(),
+    val reminderWindowDays: Int = 0
 )
 
 data class SharedSocialLink(
@@ -72,7 +73,8 @@ fun ShareScanSheet(
             frequencyDays = person.frequencyDays,
             notes = person.notes.firstOrNull()?.content,
             socialLinks = person.socialLinks.map { SharedSocialLink(it.platform, it.handle) },
-            events = person.events.map { SharedEvent(it.label, it.date, it.type.name, it.leadTimeDays) }
+            events = person.events.map { SharedEvent(it.label, it.date, it.type.name, it.leadTimeDays) },
+            reminderWindowDays = person.reminderWindowDays
         )
         Gson().toJson(sharedPerson)
     }

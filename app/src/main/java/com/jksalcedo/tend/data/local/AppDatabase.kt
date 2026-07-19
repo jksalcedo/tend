@@ -10,7 +10,7 @@ import com.jksalcedo.tend.data.local.entity.CheckInHistoryEntity
 
 @Database(
     entities = [PersonEntity::class, TagEntity::class, CheckInHistoryEntity::class],
-    version = 7,
+    version = 8,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -32,5 +32,11 @@ val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
         """)
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_check_in_history_personId` ON `check_in_history` (`personId`)")
         db.execSQL("CREATE INDEX IF NOT EXISTS `index_check_in_history_timestamp` ON `check_in_history` (`timestamp`)")
+    }
+}
+
+val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
+    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE people ADD COLUMN reminderWindowDays INTEGER NOT NULL DEFAULT 0")
     }
 }

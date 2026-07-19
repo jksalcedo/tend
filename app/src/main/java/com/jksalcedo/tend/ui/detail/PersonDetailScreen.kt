@@ -511,7 +511,11 @@ fun PersonDetailScreen(
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = stringResource(R.string.person_detail_check_in_frequency, p.frequencyDays),
+                        text = if (p.reminderWindowDays > 0) {
+                            stringResource(R.string.person_detail_check_in_frequency, p.frequencyDays) + " (±${p.reminderWindowDays}d float)"
+                        } else {
+                            stringResource(R.string.person_detail_check_in_frequency, p.frequencyDays)
+                        },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )

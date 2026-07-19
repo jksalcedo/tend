@@ -43,7 +43,8 @@ class AddPersonViewModel(
         phoneNumber: String?,
         email: String?,
         socialLinks: List<SocialLink>,
-        events: List<PersonEvent>
+        events: List<PersonEvent>,
+        reminderWindowDays: Int
     ) {
         viewModelScope.launch {
             addPersonUseCase(
@@ -53,7 +54,8 @@ class AddPersonViewModel(
                 phoneNumber = phoneNumber,
                 email = email,
                 socialLinks = socialLinks,
-                events = events
+                events = events,
+                reminderWindowDays = reminderWindowDays
             )
         }
     }
@@ -65,7 +67,8 @@ class AddPersonViewModel(
         phoneNumber: String?,
         email: String?,
         socialLinks: List<SocialLink>,
-        events: List<PersonEvent>
+        events: List<PersonEvent>,
+        reminderWindowDays: Int
     ) {
         viewModelScope.launch {
             updatePersonUseCase(
@@ -75,7 +78,8 @@ class AddPersonViewModel(
                 phoneNumber = phoneNumber,
                 email = email,
                 socialLinks = socialLinks,
-                events = events
+                events = events,
+                reminderWindowDays = reminderWindowDays
             )
         }
     }

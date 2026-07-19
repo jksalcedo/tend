@@ -42,7 +42,6 @@ class GetNerdStatsUseCase(
                 checkInDays
             }
             
-            // Wait, actually, let's just use checkInDays for overdue since events don't get "overdue" in the same way.
             if (checkInDays < 0) overdue++
             else if (checkInDays <= 3L || (nextEventDays != null && nextEventDays <= 3L)) dueSoon++
         }

@@ -22,5 +22,6 @@ data class Person(
     val nativeContactId: Long? = null,
     val isDeviceLinkBroken: Boolean = false,
     val localPhotoPath: String? = null,
-    val tags: List<String> = emptyList()
+    val tags: List<String> = emptyList(),
+    val reminderWindowDays: Int = 0
 )

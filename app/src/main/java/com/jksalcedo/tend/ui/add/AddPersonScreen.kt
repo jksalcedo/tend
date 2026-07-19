@@ -56,6 +56,7 @@ import com.jksalcedo.tend.domain.model.SocialLink
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
 import org.koin.androidx.compose.koinViewModel
+import java.net.URLDecoder
 import java.text.SimpleDateFormat
 import java.util.Date
 
@@ -81,7 +82,7 @@ fun AddPersonScreen(
                 Gson().fromJson(sharedData, SharedPerson::class.java)
             } catch (_: Exception) {
                 try {
-                    val decoded = java.net.URLDecoder.decode(sharedData, "UTF-8")
+                    val decoded = URLDecoder.decode(sharedData, "UTF-8")
                     Gson().fromJson(decoded, SharedPerson::class.java)
                 } catch (_: Exception) {
                     null
@@ -115,6 +116,11 @@ fun AddPersonScreen(
         )
     }
     var frequency by remember { mutableStateOf((sharedPerson?.frequencyDays ?: 14).toString()) }
+    var reminderWindowDays by remember {
+        mutableStateOf(
+            (sharedPerson?.reminderWindowDays ?: 0).toString()
+        )
+    }
     var notes by remember { mutableStateOf(sharedPerson?.notes ?: "") }
 
     // Pre-fill from loaded person when in edit mode. Only the first emission seeds every
@@ -131,6 +137,7 @@ fun AddPersonScreen(
             socialLinks = p.socialLinks
             events = p.events
             frequency = p.frequencyDays.toString()
+            reminderWindowDays = p.reminderWindowDays.toString()
             hasSeededForm = true
         } else if (p.nativeLookupKey != null) {
             name = p.name
@@ -179,10 +186,13 @@ fun AddPersonScreen(
         onRemoveEvent = { event -> events = events - event },
         frequency = frequency,
         onFrequencyChange = { frequency = it },
+        reminderWindowDays = reminderWindowDays,
+        onReminderWindowDaysChange = { reminderWindowDays = it },
         notes = notes,
         onNotesChange = { notes = it },
         onSaveClick = {
             val frequencyDays = frequency.toIntOrNull() ?: 14
+            val winDays = reminderWindowDays.toIntOrNull() ?: 0
             if (isEditMode) {
                 viewModel.updatePerson(
                     personId = personId,
@@ -191,7 +201,8 @@ fun AddPersonScreen(
                     phoneNumber = phoneNumber.ifBlank { null },
                     email = email.ifBlank { null },
                     socialLinks = socialLinks,
-                    events = events
+                    events = events,
+                    reminderWindowDays = winDays
                 )
             } else {
                 viewModel.addPerson(
@@ -201,7 +212,8 @@ fun AddPersonScreen(
                     phoneNumber = phoneNumber.ifBlank { null },
                     email = email.ifBlank { null },
                     socialLinks = socialLinks,
-                    events = events
+                    events = events,
+                    reminderWindowDays = winDays
                 )
             }
             onNavigateBack()
@@ -237,6 +249,8 @@ private fun AddPersonScreenContent(
     onRemoveEvent: (PersonEvent) -> Unit = {},
     frequency: String,
     onFrequencyChange: (String) -> Unit,
+    reminderWindowDays: String,
+    onReminderWindowDaysChange: (String) -> Unit,
     notes: String,
     onNotesChange: (String) -> Unit,
     onSaveClick: () -> Unit,
@@ -250,6 +264,9 @@ private fun AddPersonScreenContent(
 
     val purpleColor = if (isDarkTheme) TendPastels.PurpleDark else TendPastels.Purple
     val purpleAccent = if (isDarkTheme) TendPastels.Purple else TendPastels.PurpleDark
+
+    val blueColor = if (isDarkTheme) TendPastels.BlueDark else TendPastels.Blue
+    val blueAccent = if (isDarkTheme) TendPastels.Blue else TendPastels.BlueDark
 
     Column(
         modifier = Modifier
@@ -272,7 +289,9 @@ private fun AddPersonScreenContent(
                 )
             }
             Text(
-                text = if (isEditMode) stringResource(R.string.add_person_edit_title) else stringResource(R.string.add_person_add_title),
+                text = if (isEditMode) stringResource(R.string.add_person_edit_title) else stringResource(
+                    R.string.add_person_add_title
+                ),
                 style = MaterialTheme.typography.titleLarge,
                 fontWeight = FontWeight.Bold,
                 color = MaterialTheme.colorScheme.onBackground
@@ -387,9 +406,15 @@ private fun AddPersonScreenContent(
                             verticalAlignment = Alignment.CenterVertically
                         ) {
                             Text(
-                                text = stringResource(R.string.add_person_social_link_display_format, link.platform, link.handle),
+                                text = stringResource(
+                                    R.string.add_person_social_link_display_format,
+                                    link.platform,
+                                    link.handle
+                                ),
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 4.dp).weight(1f)
+                                modifier = Modifier
+                                    .padding(vertical = 4.dp)
+                                    .weight(1f)
                             )
                             IconButton(onClick = { onRemoveSocialLink(link) }) {
                                 Icon(
@@ -440,7 +465,9 @@ private fun AddPersonScreenContent(
                                     ).format(Date(event.date))
                                 ),
                                 style = MaterialTheme.typography.bodyMedium,
-                                modifier = Modifier.padding(vertical = 4.dp).weight(1f)
+                                modifier = Modifier
+                                    .padding(vertical = 4.dp)
+                                    .weight(1f)
                             )
                             IconButton(onClick = { onRemoveEvent(event) }) {
                                 Icon(
@@ -504,7 +531,10 @@ private fun AddPersonScreenContent(
                                         color = if (isSelected) MaterialTheme.colorScheme.surface else mintAccent
                                     )
                                     Text(
-                                        text = stringResource(R.string.add_person_frequency_days_suffix, days),
+                                        text = stringResource(
+                                            R.string.add_person_frequency_days_suffix,
+                                            days
+                                        ),
                                         style = MaterialTheme.typography.bodySmall,
                                         color = if (isSelected) MaterialTheme.colorScheme.surface.copy(
                                             alpha = 0.8f
@@ -530,6 +560,45 @@ private fun AddPersonScreenContent(
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = mintAccent,
                             unfocusedBorderColor = mintAccent.copy(alpha = 0.3f),
+                            focusedContainerColor = MaterialTheme.colorScheme.surface,
+                            unfocusedContainerColor = MaterialTheme.colorScheme.surface
+                        ),
+                        singleLine = true
+                    )
+                }
+            }
+
+            // Flexible Window Section
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(16.dp),
+                colors = CardDefaults.cardColors(containerColor = blueColor)
+            ) {
+                Column(modifier = Modifier.padding(16.dp)) {
+                    Text(
+                        text = "Floating reminder window",
+                        style = MaterialTheme.typography.titleSmall,
+                        fontWeight = FontWeight.SemiBold,
+                        color = blueAccent
+                    )
+                    Spacer(modifier = Modifier.height(8.dp))
+                    Text(
+                        text = "Adds a random offset (up to ±X days) when scheduling your next reminder so it feels more natural and less predictable.",
+                        style = MaterialTheme.typography.bodySmall,
+                        color = blueAccent.copy(alpha = 0.7f)
+                    )
+                    Spacer(modifier = Modifier.height(12.dp))
+
+                    OutlinedTextField(
+                        value = reminderWindowDays,
+                        onValueChange = onReminderWindowDaysChange,
+                        label = { Text("Float range in days (e.g. 3)") },
+                        keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
+                        modifier = Modifier.fillMaxWidth(),
+                        shape = RoundedCornerShape(12.dp),
+                        colors = OutlinedTextFieldDefaults.colors(
+                            focusedBorderColor = blueAccent,
+                            unfocusedBorderColor = blueAccent.copy(alpha = 0.3f),
                             focusedContainerColor = MaterialTheme.colorScheme.surface,
                             unfocusedContainerColor = MaterialTheme.colorScheme.surface
                         ),
@@ -586,7 +655,9 @@ private fun AddPersonScreenContent(
                 )
             ) {
                 Text(
-                    if (isEditMode) stringResource(R.string.add_person_save_changes_button) else stringResource(R.string.add_person_save_connection_button),
+                    if (isEditMode) stringResource(R.string.add_person_save_changes_button) else stringResource(
+                        R.string.add_person_save_connection_button
+                    ),
                     style = MaterialTheme.typography.titleMedium,
                     fontWeight = FontWeight.SemiBold
                 )
@@ -617,6 +688,8 @@ private fun AddPersonScreenPreviewLight() {
             socialLinks = emptyList(),
             onAddSocialLink = {},
             events = emptyList(),
+            reminderWindowDays = "",
+            onReminderWindowDaysChange = {},
             onAddEvent = {}
         )
     }
@@ -642,7 +715,9 @@ private fun AddPersonScreenPreviewDark() {
             socialLinks = emptyList(),
             onAddSocialLink = {},
             events = emptyList(),
-            onAddEvent = {}
+            onAddEvent = {},
+            reminderWindowDays = "",
+            onReminderWindowDaysChange = {}
         )
     }
 }
@@ -667,7 +742,9 @@ private fun AddPersonScreenFilledPreviewLight() {
             socialLinks = emptyList(),
             onAddSocialLink = {},
             events = emptyList(),
-            onAddEvent = {}
+            onAddEvent = {},
+            reminderWindowDays = "",
+            onReminderWindowDaysChange = {}
         )
     }
 }
@@ -692,7 +769,9 @@ private fun AddPersonScreenFilledPreviewDark() {
             socialLinks = emptyList(),
             onAddSocialLink = {},
             events = emptyList(),
-            onAddEvent = {}
+            onAddEvent = {},
+            reminderWindowDays = "",
+            onReminderWindowDaysChange = {}
         )
     }
 }

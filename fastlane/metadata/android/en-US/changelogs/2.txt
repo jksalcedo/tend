@@ -1,6 +1,7 @@
-- Important date reminders (like birthdays) now show the next age.
+- Important date reminders (like birthdays) now show the next age
 - Added Weekly Insights to the Home screen
-- The search bar has been moved to the top action bar to save screen space.
+- The search bar has been moved to the top action bar
 - Added Bulk Actions
 - Added Lead-time Reminders
-- Added a Home screen widget to view upcoming and overdue check-ins at a glance.
+- Added a Home screen widget
+- Added Floating Reminder Windows

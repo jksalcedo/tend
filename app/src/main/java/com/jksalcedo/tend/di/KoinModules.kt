@@ -11,6 +11,7 @@ import com.jksalcedo.tend.data.contacts.NativeContactsDataSource
 import com.jksalcedo.tend.data.local.AppDatabase
 import com.jksalcedo.tend.data.local.MIGRATION_3_6
 import com.jksalcedo.tend.data.local.MIGRATION_6_7
+import com.jksalcedo.tend.data.local.MIGRATION_7_8
 import com.jksalcedo.tend.data.repository.CheckInHistoryRepositoryImpl
 import com.jksalcedo.tend.data.repository.ContactsRepositoryImpl
 import com.jksalcedo.tend.data.repository.OnboardingRepositoryImpl
@@ -62,7 +63,7 @@ val appModule = module {
             androidContext(),
             AppDatabase::class.java,
             "tend_database"
-        ).addMigrations(MIGRATION_3_6, MIGRATION_6_7)
+        ).addMigrations(MIGRATION_3_6, MIGRATION_6_7, MIGRATION_7_8)
             // Last-resort fallback only for installs older than version 3 (predating
             // any migration path this app has ever shipped) — everything from 3 onward
             // goes through a real Migration so upgrading never silently wipes data.

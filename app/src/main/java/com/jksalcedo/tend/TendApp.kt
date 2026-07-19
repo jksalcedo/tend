@@ -23,8 +23,10 @@ class TendApp : Application() {
     }
 
     private fun scheduleReminders() {
-        val request = PeriodicWorkRequestBuilder<ReminderWorker>(1, TimeUnit.DAYS)
-            .build()
+        val request = PeriodicWorkRequestBuilder<ReminderWorker>(
+            1, TimeUnit.DAYS,
+            6, TimeUnit.HOURS
+        ).build()
         WorkManager.getInstance(this).enqueueUniquePeriodicWork(
             "tend_reminders",
             ExistingPeriodicWorkPolicy.KEEP,

@@ -16,10 +16,18 @@ class UpdatePersonUseCase(
         phoneNumber: String?,
         email: String?,
         socialLinks: List<SocialLink>,
-        events: List<PersonEvent>
+        events: List<PersonEvent>,
+        reminderWindowDays: Int
     ) {
         val existing = repository.getPersonById(personId) ?: return
-        val nextReminder = existing.lastContactedAt + (frequencyDays * 24 * 60 * 60 * 1000L)
+        val finalDays = if (reminderWindowDays > 0) {
+            val minDays = maxOf(1, frequencyDays - reminderWindowDays)
+            val maxDays = frequencyDays + reminderWindowDays
+            kotlin.random.Random.nextInt(minDays, maxDays + 1)
+        } else {
+            frequencyDays
+        }
+        val nextReminder = existing.lastContactedAt + (finalDays * 24 * 60 * 60 * 1000L)
         repository.updatePerson(
             existing.copy(
                 name = name,
@@ -28,7 +36,8 @@ class UpdatePersonUseCase(
                 phoneNumber = phoneNumber,
                 email = email,
                 socialLinks = socialLinks,
-                events = events
+                events = events,
+                reminderWindowDays = reminderWindowDays
             )
         )
     }
