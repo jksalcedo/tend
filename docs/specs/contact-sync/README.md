@@ -234,6 +234,40 @@ Free-form tags (e.g. "Family", "Book Club"), specified in
   are purely decorative, which undercuts the point of a relationship-tending
   app being able to answer "who's overdue, among family?"
 
+## Select all / none (`07`)
+
+Specified in `07_select_all_none.feature` and implemented in
+`ImportContactsScreen`/`ImportContactsViewModel`: two independent buttons,
+"Select All" and "Select None," shown above the contact list, so importing
+most or all of a long list doesn't require tapping every checkbox
+individually.
+
+- **Two separate buttons, not one control that toggles its own label.** An
+  earlier draft of this spec used a single control whose label flipped
+  between "Select All"/"Select None" depending on selection state. Changed
+  to two always-present, independently-enabled buttons instead — a single
+  toggle has to represent three states (none/partial/all selected) through
+  one label plus one checkbox glyph, which reads ambiguously (is a checked
+  box "everything is selected" or "tap to select everything"?) and is more
+  prone to state/render mismatches. Two buttons where only the applicable
+  one is enabled has no such ambiguity: each button's own enabled state
+  *is* the state.
+- **Hidden entirely, as a pair, only when there's nothing to act on** —
+  while contacts are loading and when the importable list is empty. Shown
+  as soon as the list has at least one contact, regardless of list length;
+  not suppressed for short lists.
+- **Enabled/disabled (not hidden) based on current selection**, once
+  visible: "Select All" is disabled only when every visible contact is
+  already selected (nothing left for it to do); "Select None" is disabled
+  only when nothing is selected. Both are enabled during a partial
+  selection. Deselecting even one contact after a full "Select All"
+  immediately re-enables it.
+- **Scoped to the currently visible list only.** Tapping "Select All" never
+  touches contacts already imported/linked in an earlier session (they're
+  excluded from the list per `01`'s existing filtering) — there's no
+  "select everything on the device" behavior, only "select everything
+  importable right now."
+
 ## Further future work
 
 Still just an idea, no spec written yet — unlike `06` above (shipped) or
