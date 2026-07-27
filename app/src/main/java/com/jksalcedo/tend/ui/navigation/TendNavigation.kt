@@ -15,6 +15,8 @@ import com.jksalcedo.tend.ui.home.HomeScreen
 import com.jksalcedo.tend.ui.importcontacts.ImportContactsScreen
 import com.jksalcedo.tend.ui.sync.ForegroundSyncEffect
 
+import com.jksalcedo.tend.ui.events.UpcomingEventsScreen
+
 object Routes {
     const val HOME = "home"
     const val ADD_PERSON = "add_person?sharedData={sharedData}"
@@ -22,6 +24,7 @@ object Routes {
     const val EDIT = "edit/{personId}"
     const val ARCHIVED = "archived"
     const val IMPORT_CONTACTS = "import_contacts"
+    const val UPCOMING_EVENTS = "upcoming_events"
 }
 
 @Composable
@@ -46,7 +49,8 @@ fun TendNavGraph(
                 },
                 onPersonClick = { personId -> navController.navigate("detail/$personId") },
                 onArchivedClick = { navController.navigate(Routes.ARCHIVED) },
-                onImportContactsClick = { navController.navigate(Routes.IMPORT_CONTACTS) }
+                onImportContactsClick = { navController.navigate(Routes.IMPORT_CONTACTS) },
+                onUpcomingEventsClick = { navController.navigate(Routes.UPCOMING_EVENTS) }
             )
         }
         composable(
@@ -106,6 +110,11 @@ fun TendNavGraph(
         composable(Routes.IMPORT_CONTACTS) {
             ImportContactsScreen(
                 onNavigateBack = { navController.popBackStack() }
+            )
+        }
+        composable(Routes.UPCOMING_EVENTS) {
+            UpcomingEventsScreen(
+                onPersonClick = { personId -> navController.navigate("detail/$personId") }
             )
         }
     }

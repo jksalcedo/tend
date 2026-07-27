@@ -3,7 +3,10 @@ package com.jksalcedo.tend.ui.detail
 import androidx.lifecycle.SavedStateHandle
 import androidx.lifecycle.ViewModel
 import androidx.lifecycle.viewModelScope
+import com.jksalcedo.tend.domain.model.CheckInRecord
+import com.jksalcedo.tend.domain.model.InteractionType
 import com.jksalcedo.tend.domain.model.Person
+import com.jksalcedo.tend.domain.repository.CheckInHistoryRepository
 import com.jksalcedo.tend.domain.usecase.AddNoteUseCase
 import com.jksalcedo.tend.domain.usecase.AddTagToPersonUseCase
 import com.jksalcedo.tend.domain.usecase.ArchivePersonUseCase
@@ -33,6 +36,7 @@ class PersonDetailViewModel(
     observeDuplicatePeopleUseCase: ObserveDuplicatePeopleUseCase,
     observeAllTagsUseCase: ObserveAllTagsUseCase,
     private val checkInUseCase: CheckInUseCase,
+    private val historyRepository: CheckInHistoryRepository,
     private val addNoteUseCase: AddNoteUseCase,
     private val archivePersonUseCase: ArchivePersonUseCase,
     private val deletePersonUseCase: DeletePersonUseCase,
@@ -82,9 +86,16 @@ class PersonDetailViewModel(
     val allTags: StateFlow<List<String>> = observeAllTagsUseCase()
         .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 
-    fun checkIn() {
+    val checkInHistory: StateFlow<List<CheckInRecord>> = (personId?.let { historyRepository.getHistoryForPerson(it) } ?: flowOf(emptyList()))
+        .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
+
+    fun checkIn(interactionType: InteractionType? = null, note: String? = null) {
         val id = personId ?: return
-        viewModelScope.launch { checkInUseCase(id) }
+        viewModelScope.launch { checkInUseCase(id, interactionType, note) }
+    }
+
+    fun deleteCheckInRecord(recordId: Long) {
+        viewModelScope.launch { historyRepository.deleteCheckIn(recordId) }
     }
 
     fun addNote(content: String) {

@@ -40,7 +40,6 @@ import androidx.compose.material.icons.filled.Call
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Close
 import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.MoreVert
@@ -80,7 +79,6 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalLifecycleOwner
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
@@ -89,9 +87,9 @@ import androidx.compose.ui.unit.sp
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
-import com.jksalcedo.tend.R
 import androidx.lifecycle.Lifecycle
 import androidx.lifecycle.LifecycleEventObserver
+import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.Note
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.model.PersonEvent
@@ -103,11 +101,16 @@ import org.koin.androidx.compose.koinViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
+import java.util.Locale
 
 private enum class SyncToDeviceMessage { DENIED, PERMANENTLY_DENIED }
 private enum class ReadContactsMessage { DENIED, PERMANENTLY_DENIED }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalLayoutApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 fun PersonDetailScreen(
     viewModel: PersonDetailViewModel = koinViewModel(),
@@ -120,6 +123,7 @@ fun PersonDetailScreen(
     val isSyncing by viewModel.isSyncing.collectAsState()
     val syncFailed by viewModel.syncFailed.collectAsState()
     val allTags by viewModel.allTags.collectAsState()
+    val checkInHistory by viewModel.checkInHistory.collectAsState()
     val context = LocalContext.current
     val activity = context as? Activity
     var showShareSheet by remember { mutableStateOf(false) }
@@ -127,6 +131,7 @@ fun PersonDetailScreen(
     var showDeleteDialog by remember { mutableStateOf(false) }
     var showArchiveDialog by remember { mutableStateOf(false) }
     var showTagPicker by remember { mutableStateOf(false) }
+    var showLogInteractionSheet by remember { mutableStateOf(false) }
     var tagToDelete by remember { mutableStateOf<String?>(null) }
 
     LaunchedEffect(syncFailed) {
@@ -184,14 +189,14 @@ fun PersonDetailScreen(
             viewModel.syncToDevice()
         } else {
             val stillNeedsRationale = activity != null && (
-                ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity,
-                    Manifest.permission.WRITE_CONTACTS
-                ) || ActivityCompat.shouldShowRequestPermissionRationale(
-                    activity,
-                    Manifest.permission.READ_CONTACTS
-                )
-            )
+                    ActivityCompat.shouldShowRequestPermissionRationale(
+                        activity,
+                        Manifest.permission.WRITE_CONTACTS
+                    ) || ActivityCompat.shouldShowRequestPermissionRationale(
+                        activity,
+                        Manifest.permission.READ_CONTACTS
+                    )
+                    )
             syncToDeviceMessage = if (stillNeedsRationale) {
                 SyncToDeviceMessage.DENIED
             } else {
@@ -212,15 +217,13 @@ fun PersonDetailScreen(
             syncToDeviceMessage = null
             viewModel.syncToDevice()
         } else {
-            // Android itself skips the dialog for whichever permission was permanently denied —
-            // launching is always safe, the callback above disambiguates which case it was.
             writeContactsPermissionLauncher.launch(
                 arrayOf(Manifest.permission.WRITE_CONTACTS, Manifest.permission.READ_CONTACTS)
             )
         }
     }
 
-    val lifecycleOwner = LocalLifecycleOwner.current
+    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -249,7 +252,10 @@ fun PersonDetailScreen(
                         viewModel.delete(onComplete = onNavigateBack)
                     }
                 ) {
-                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(R.string.common_delete),
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
@@ -369,7 +375,10 @@ fun PersonDetailScreen(
                         noteToDelete = null
                     }
                 ) {
-                    Text(stringResource(R.string.common_delete), color = MaterialTheme.colorScheme.error)
+                    Text(
+                        stringResource(R.string.common_delete),
+                        color = MaterialTheme.colorScheme.error
+                    )
                 }
             },
             dismissButton = {
@@ -380,6 +389,14 @@ fun PersonDetailScreen(
         )
     }
 
+    if (showLogInteractionSheet) {
+        LogInteractionBottomSheet(
+            onDismissRequest = { showLogInteractionSheet = false },
+            onLogInteraction = { type, note ->
+                viewModel.checkIn(type, note)
+            }
+        )
+    }
 
     Scaffold(
         topBar = {
@@ -387,20 +404,32 @@ fun PersonDetailScreen(
                 title = {},
                 navigationIcon = {
                     IconButton(onClick = onNavigateBack) {
-                        Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = stringResource(R.string.common_back))
+                        Icon(
+                            Icons.AutoMirrored.Filled.ArrowBack,
+                            contentDescription = stringResource(R.string.common_back)
+                        )
                     }
                 },
                 actions = {
                     person?.let { p ->
                         IconButton(onClick = { onEditClick(p.id) }) {
-                            Icon(Icons.Default.Edit, contentDescription = stringResource(R.string.person_detail_edit_content_description))
+                            Icon(
+                                Icons.Default.Edit,
+                                contentDescription = stringResource(R.string.person_detail_edit_content_description)
+                            )
                         }
                         IconButton(onClick = { showShareSheet = true }) {
-                            Icon(Icons.Default.Share, contentDescription = stringResource(R.string.person_detail_share_content_description))
+                            Icon(
+                                Icons.Default.Share,
+                                contentDescription = stringResource(R.string.person_detail_share_content_description)
+                            )
                         }
                         Box {
                             IconButton(onClick = { showMenu = true }) {
-                                Icon(Icons.Default.MoreVert, contentDescription = stringResource(R.string.common_more_options))
+                                Icon(
+                                    Icons.Default.MoreVert,
+                                    contentDescription = stringResource(R.string.common_more_options)
+                                )
                             }
                             DropdownMenu(
                                 expanded = showMenu,
@@ -512,9 +541,15 @@ fun PersonDetailScreen(
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
                         text = if (p.reminderWindowDays > 0) {
-                            stringResource(R.string.person_detail_check_in_frequency, p.frequencyDays) + " (±${p.reminderWindowDays}d float)"
+                            stringResource(
+                                R.string.person_detail_check_in_frequency,
+                                p.frequencyDays
+                            ) + " (±${p.reminderWindowDays}d float)"
                         } else {
-                            stringResource(R.string.person_detail_check_in_frequency, p.frequencyDays)
+                            stringResource(
+                                R.string.person_detail_check_in_frequency,
+                                p.frequencyDays
+                            )
                         },
                         style = MaterialTheme.typography.bodyMedium,
                         color = MaterialTheme.colorScheme.onSurfaceVariant
@@ -527,7 +562,10 @@ fun PersonDetailScreen(
                             text = when (daysAgo) {
                                 0L -> stringResource(R.string.person_detail_last_contacted_today)
                                 1L -> stringResource(R.string.person_detail_last_contacted_yesterday)
-                                else -> stringResource(R.string.person_detail_last_contacted_days_ago, daysAgo)
+                                else -> stringResource(
+                                    R.string.person_detail_last_contacted_days_ago,
+                                    daysAgo
+                                )
                             },
                             style = MaterialTheme.typography.bodySmall,
                             color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
@@ -555,11 +593,16 @@ fun PersonDetailScreen(
                         val lookupKey = p.nativeLookupKey
                         val contactId = p.nativeContactId
                         if (lookupKey != null && contactId != null) {
-                            val lookupUri = ContactsContract.Contacts.getLookupUri(contactId, lookupKey)
-                            context.startActivity(Intent(Intent.ACTION_EDIT).apply { data = lookupUri })
+                            val lookupUri =
+                                ContactsContract.Contacts.getLookupUri(contactId, lookupKey)
+                            context.startActivity(Intent(Intent.ACTION_EDIT).apply {
+                                data = lookupUri
+                            })
                         }
                     },
-                    onNavigateToDuplicate = { duplicates.firstOrNull()?.let { onNavigateToPerson(it.id) } },
+                    onNavigateToDuplicate = {
+                        duplicates.firstOrNull()?.let { onNavigateToPerson(it.id) }
+                    },
                     onUnlink = { viewModel.unlink() },
                     onSyncToDevice = onSyncToDevice,
                     syncToDeviceMessage = syncToDeviceMessage,
@@ -656,19 +699,28 @@ fun PersonDetailScreen(
                 Spacer(modifier = Modifier.height(24.dp))
 
                 // Important Dates
-                if (p.events.isNotEmpty()) {
-                    Text(
-                        text = stringResource(R.string.common_important_dates),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
+                Text(
+                    text = stringResource(R.string.common_important_dates),
+                    style = MaterialTheme.typography.titleMedium,
+                    fontWeight = FontWeight.SemiBold
+                )
+                Spacer(modifier = Modifier.height(8.dp))
+                if (p.events.isEmpty()) {
+                    AssistChip(
+                        onClick = { onEditClick(p.id) },
+                        label = { Text("+ Add Birthday / Event") }
                     )
-                    Spacer(modifier = Modifier.height(8.dp))
+                } else {
                     p.events.forEach { event ->
                         EventItem(event)
                         Spacer(modifier = Modifier.height(8.dp))
                     }
-                    Spacer(modifier = Modifier.height(24.dp))
+                    AssistChip(
+                        onClick = { onEditClick(p.id) },
+                        label = { Text("+ Add another event") }
+                    )
                 }
+                Spacer(modifier = Modifier.height(24.dp))
 
                 Text(
                     text = stringResource(R.string.person_detail_history_notes),
@@ -736,8 +788,15 @@ fun PersonDetailScreen(
 
                 Spacer(modifier = Modifier.height(24.dp))
 
+                InteractionHistorySection(
+                    history = checkInHistory,
+                    onDeleteRecord = viewModel::deleteCheckInRecord
+                )
+
+                Spacer(modifier = Modifier.height(24.dp))
+
                 Button(
-                    onClick = { viewModel.checkIn() },
+                    onClick = { showLogInteractionSheet = true },
                     modifier = Modifier
                         .fillMaxWidth()
                         .height(56.dp),
@@ -787,7 +846,7 @@ private fun DeviceSyncStatusSection(
             "Possibly a duplicate of \"${duplicates.first().name}\" — tap to review"
         } else {
             "Possibly a duplicate of \"${duplicates.first().name}\" and ${duplicates.size - 1} " +
-                "other${if (duplicates.size > 2) "s" else ""} — tap to review"
+                    "other${if (duplicates.size > 2) "s" else ""} — tap to review"
         }
         Card(
             modifier = Modifier
@@ -797,10 +856,16 @@ private fun DeviceSyncStatusSection(
             colors = CardDefaults.cardColors(containerColor = TendPastels.Yellow)
         ) {
             Row(
-                modifier = Modifier.padding(16.dp).fillMaxWidth(),
+                modifier = Modifier
+                    .padding(16.dp)
+                    .fillMaxWidth(),
                 verticalAlignment = Alignment.CenterVertically
             ) {
-                Icon(Icons.Default.Warning, contentDescription = null, tint = TendPastels.YellowDark)
+                Icon(
+                    Icons.Default.Warning,
+                    contentDescription = null,
+                    tint = TendPastels.YellowDark
+                )
                 Spacer(modifier = Modifier.width(12.dp))
                 Text(
                     text = bannerText,
@@ -834,6 +899,7 @@ private fun DeviceSyncStatusSection(
                     style = MaterialTheme.typography.bodySmall,
                     color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.7f)
                 )
+
                 SyncToDeviceMessage.PERMANENTLY_DENIED -> Column {
                     Text(
                         text = "Contacts access was previously denied. Enable it from system settings to sync this connection.",
@@ -842,6 +908,7 @@ private fun DeviceSyncStatusSection(
                     )
                     TextButton(onClick = onOpenSettings) { Text("Open Settings") }
                 }
+
                 null -> {}
             }
         }
@@ -1015,7 +1082,11 @@ fun EventItem(event: PersonEvent) {
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class, ExperimentalLayoutApi::class, ExperimentalFoundationApi::class)
+@OptIn(
+    ExperimentalMaterial3Api::class,
+    ExperimentalLayoutApi::class,
+    ExperimentalFoundationApi::class
+)
 @Composable
 private fun TagPickerDialog(
     allTags: List<String>,
@@ -1060,7 +1131,10 @@ private fun TagPickerDialog(
                                 }
                             ) {
                                 Row(
-                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    modifier = Modifier.padding(
+                                        horizontal = 12.dp,
+                                        vertical = 8.dp
+                                    ),
                                     verticalAlignment = Alignment.CenterVertically
                                 ) {
                                     if (isSelected) {
@@ -1131,7 +1205,10 @@ fun NoteItem(
                 verticalAlignment = Alignment.CenterVertically
             ) {
                 Text(
-                    text = SimpleDateFormat("MMM dd, yyyy", LocalLocale.current.platformLocale).format(
+                    text = SimpleDateFormat(
+                        "MMM dd, yyyy",
+                        LocalLocale.current.platformLocale
+                    ).format(
                         Date(note.createdAt)
                     ),
                     style = MaterialTheme.typography.labelSmall,
@@ -1162,7 +1239,12 @@ fun NoteItem(
                             }
                         )
                         DropdownMenuItem(
-                            text = { Text(stringResource(R.string.person_detail_delete_note), color = MaterialTheme.colorScheme.error) },
+                            text = {
+                                Text(
+                                    stringResource(R.string.person_detail_delete_note),
+                                    color = MaterialTheme.colorScheme.error
+                                )
+                            },
                             onClick = {
                                 showNoteMenu = false
                                 onDeleteClick()
@@ -1176,6 +1258,108 @@ fun NoteItem(
                 text = note.content,
                 style = MaterialTheme.typography.bodyMedium
             )
+        }
+    }
+}
+
+@Composable
+fun InteractionHistorySection(
+    history: List<com.jksalcedo.tend.domain.model.CheckInRecord>,
+    onDeleteRecord: (Long) -> Unit
+) {
+    Text(
+        text = "Activity & Interaction History",
+        style = MaterialTheme.typography.titleMedium,
+        fontWeight = FontWeight.SemiBold
+    )
+    Spacer(modifier = Modifier.height(8.dp))
+
+    if (history.isEmpty()) {
+        Text(
+            text = "No interaction activity logged yet.",
+            style = MaterialTheme.typography.bodyMedium,
+            color = MaterialTheme.colorScheme.onSurfaceVariant.copy(alpha = 0.6f)
+        )
+    } else {
+        val dateFormat = SimpleDateFormat(
+            "MMM d, yyyy 'at' h:mm a",
+            Locale.getDefault()
+        )
+        history.forEach { record ->
+            Card(
+                modifier = Modifier.fillMaxWidth(),
+                shape = RoundedCornerShape(12.dp),
+                colors = CardDefaults.cardColors(
+                    containerColor = MaterialTheme.colorScheme.surfaceVariant.copy(
+                        alpha = 0.4f
+                    )
+                )
+            ) {
+                Row(
+                    modifier = Modifier
+                        .padding(12.dp)
+                        .fillMaxWidth(),
+                    verticalAlignment = Alignment.CenterVertically
+                ) {
+                    val type = record.interactionType
+                        ?: com.jksalcedo.tend.domain.model.InteractionType.OTHER
+                    val icon = getInteractionIcon(type)
+
+                    Box(
+                        modifier = Modifier
+                            .size(36.dp)
+                            .clip(CircleShape)
+                            .background(MaterialTheme.colorScheme.primaryContainer),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        Icon(
+                            imageVector = icon,
+                            contentDescription = type.displayName,
+                            modifier = Modifier.size(20.dp),
+                            tint = MaterialTheme.colorScheme.onPrimaryContainer
+                        )
+                    }
+
+                    Spacer(modifier = Modifier.width(12.dp))
+
+                    Column(modifier = Modifier.weight(1f)) {
+                        Row(verticalAlignment = Alignment.CenterVertically) {
+                            Text(
+                                text = type.displayName,
+                                style = MaterialTheme.typography.titleSmall,
+                                fontWeight = FontWeight.Bold
+                            )
+                            Spacer(modifier = Modifier.width(8.dp))
+                            Text(
+                                text = dateFormat.format(Date(record.timestamp)),
+                                style = MaterialTheme.typography.bodySmall,
+                                color = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        if (!record.note.isNullOrEmpty()) {
+                            Spacer(modifier = Modifier.height(4.dp))
+                            Text(
+                                text = record.note,
+                                style = MaterialTheme.typography.bodyMedium,
+                                color = MaterialTheme.colorScheme.onSurface
+                            )
+                        }
+                    }
+
+                    IconButton(
+                        onClick = { onDeleteRecord(record.id) },
+                        modifier = Modifier.size(28.dp)
+                    ) {
+                        Icon(
+                            imageVector = Icons.Default.Close,
+                            contentDescription = "Delete record",
+                            modifier = Modifier.size(16.dp),
+                            tint = MaterialTheme.colorScheme.onSurfaceVariant
+                        )
+                    }
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
         }
     }
 }

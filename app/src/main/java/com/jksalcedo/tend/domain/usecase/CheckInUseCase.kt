@@ -1,14 +1,18 @@
 package com.jksalcedo.tend.domain.usecase
 
+import com.jksalcedo.tend.domain.model.InteractionType
 import com.jksalcedo.tend.domain.repository.CheckInHistoryRepository
 import com.jksalcedo.tend.domain.repository.PersonRepository
-import java.util.concurrent.TimeUnit
 
 class CheckInUseCase(
     private val repository: PersonRepository,
     private val historyRepository: CheckInHistoryRepository
 ) {
-    suspend operator fun invoke(personId: Long) {
+    suspend operator fun invoke(
+        personId: Long,
+        interactionType: InteractionType? = null,
+        note: String? = null
+    ) {
         val person = repository.getPersonById(personId) ?: return
         val now = System.currentTimeMillis()
         val floatDays = person.reminderWindowDays
@@ -25,6 +29,11 @@ class CheckInUseCase(
             person.copy(lastContactedAt = now, nextReminderAt = next)
         )
         
-        historyRepository.recordCheckIn(personId = personId, timestamp = now)
+        historyRepository.recordCheckIn(
+            personId = personId,
+            timestamp = now,
+            interactionType = interactionType,
+            note = note
+        )
     }
 }

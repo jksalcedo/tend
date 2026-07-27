@@ -10,7 +10,7 @@ import com.jksalcedo.tend.data.local.entity.CheckInHistoryEntity
 
 @Database(
     entities = [PersonEntity::class, TagEntity::class, CheckInHistoryEntity::class],
-    version = 8,
+    version = 9,
     exportSchema = false
 )
 @TypeConverters(Converters::class)
@@ -38,5 +38,12 @@ val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
 val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
     override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE people ADD COLUMN reminderWindowDays INTEGER NOT NULL DEFAULT 0")
+    }
+}
+
+val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
+    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+        db.execSQL("ALTER TABLE check_in_history ADD COLUMN interactionType TEXT")
+        db.execSQL("ALTER TABLE check_in_history ADD COLUMN note TEXT")
     }
 }

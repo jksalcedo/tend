@@ -24,5 +24,7 @@ data class CheckInHistoryEntity(
     @PrimaryKey(autoGenerate = true)
     val id: Long = 0,
     val personId: Long,
-    val timestamp: Long
+    val timestamp: Long,
+    val interactionType: String? = null,
+    val note: String? = null
 )

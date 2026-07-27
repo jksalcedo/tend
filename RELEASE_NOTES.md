@@ -1,19 +1,10 @@
-> **Beta Notice**: This is an early release. Please use **Data Management → Export Backup**
-> regularly to keep your data safe between updates.
+## What's new in v1.1.0
 
-## What's new
-
-- **Connections** — Add contacts with name, phone, email, social links, and notes
-- **Check-in reminders** — Set custom check-in frequencies and get daily notifications
-- **Important dates** — Track birthdays and anniversaries with annual reminders
-- **Home dashboard** — See who is due soon at a glance
-- **Person details** — Full contact view with relationship context
-- **QR sharing** — Share and import connections via QR code
-- **Search** — Quickly find any connection by name
-- **Archive** — Remove connections from your main list without deleting them
-- **Data Management** — Export and import all your data as a JSON backup
-- **Stats for Nerds** — View detailed usage stats from the overflow menu
-- **Offline-first** — Everything stays on your device, no account needed
+- **Upcoming Birthdays & Events** — Dedicated 60-day calendar feed to track upcoming birthdays,
+  anniversaries, and key dates with day countdown badges and one-tap reach-out shortcuts
+- **Interaction History & Activity Log** — Log specific check-in connection types (Call 📞, Message
+  💬, In-Person Meetup ☕, Video Call 📹, Other 📝) with custom notes and view a timeline history for
+  each connection
 
 ## Feedback
 
