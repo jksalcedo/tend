@@ -12,6 +12,7 @@ import com.jksalcedo.tend.data.local.AppDatabase
 import com.jksalcedo.tend.data.local.MIGRATION_3_6
 import com.jksalcedo.tend.data.local.MIGRATION_6_7
 import com.jksalcedo.tend.data.local.MIGRATION_7_8
+import com.jksalcedo.tend.data.local.MIGRATION_8_9
 import com.jksalcedo.tend.data.repository.CheckInHistoryRepositoryImpl
 import com.jksalcedo.tend.data.repository.ContactsRepositoryImpl
 import com.jksalcedo.tend.data.repository.OnboardingRepositoryImpl
@@ -51,6 +52,7 @@ import com.jksalcedo.tend.domain.usecase.UpdatePersonUseCase
 import com.jksalcedo.tend.ui.add.AddPersonViewModel
 import com.jksalcedo.tend.ui.archived.ArchivedViewModel
 import com.jksalcedo.tend.ui.detail.PersonDetailViewModel
+import com.jksalcedo.tend.ui.events.UpcomingEventsViewModel
 import com.jksalcedo.tend.ui.home.HomeViewModel
 import com.jksalcedo.tend.ui.importcontacts.ImportContactsViewModel
 import org.koin.android.ext.koin.androidContext
@@ -63,14 +65,8 @@ val appModule = module {
             androidContext(),
             AppDatabase::class.java,
             "tend_database"
-        ).addMigrations(MIGRATION_3_6, MIGRATION_6_7, MIGRATION_7_8)
-            // Last-resort fallback only for installs older than version 3 (predating
-            // any migration path this app has ever shipped) — everything from 3 onward
-            // goes through a real Migration so upgrading never silently wipes data.
-            .fallbackToDestructiveMigration()
-            // Seeds the two default tags for a genuinely fresh install (a DB created
-            // directly at the current version never runs MIGRATION_3_6, which only
-            // fires for installs upgrading from an earlier version).
+        ).addMigrations(MIGRATION_3_6, MIGRATION_6_7, MIGRATION_7_8, MIGRATION_8_9)
+            .fallbackToDestructiveMigration(false)
             .addCallback(object : RoomDatabase.Callback() {
                 override fun onCreate(db: SupportSQLiteDatabase) {
                     super.onCreate(db)
@@ -128,6 +124,7 @@ val appModule = module {
     factory { RemoveTagFromPersonUseCase(get()) }
     factory { DeleteTagUseCase(get(), get()) }
 
+    factory { com.jksalcedo.tend.domain.usecase.GetUpcomingEventsUseCase(get()) }
     factory { com.jksalcedo.tend.domain.usecase.ExportDataUseCase(get()) }
     factory { com.jksalcedo.tend.domain.usecase.ImportDataUseCase(get()) }
     factory { com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase(androidContext(), get()) }
@@ -136,4 +133,5 @@ val appModule = module {
     viewModelOf(::PersonDetailViewModel)
     viewModelOf(::ArchivedViewModel)
     viewModelOf(::ImportContactsViewModel)
+    viewModelOf(::UpcomingEventsViewModel)
 }

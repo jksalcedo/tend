@@ -1,0 +1,2 @@
+- Added Upcoming Birthdays & Events view with 60-day calendar feed and day countdowns
+- Added Interaction Activity Logging to record Calls, Messages, Meetups, Video calls with custom notes and timeline history

@@ -19,11 +19,16 @@ import androidx.compose.runtime.mutableStateOf
 import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.unit.dp
 import com.jksalcedo.tend.R
+import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
+import java.text.SimpleDateFormat
+import java.util.Date
+import java.util.TimeZone
 
 @Composable
 fun AddSocialLinkDialog(
@@ -121,7 +126,16 @@ fun AddEventDialog(
                     onClick = { showDatePicker = true },
                     modifier = Modifier.fillMaxWidth()
                 ) {
-                    Text(if (selectedDate != null) stringResource(R.string.add_person_date_selected) else stringResource(R.string.add_person_select_date))
+                    val dateText = selectedDate?.let { dateMillis ->
+                        val fmt = SimpleDateFormat(
+                            "MMM d, yyyy",
+                            LocalLocale.current.platformLocale
+                        ).apply {
+                            timeZone = TimeZone.getTimeZone("UTC")
+                        }
+                        fmt.format(Date(dateMillis))
+                    }
+                    Text(dateText ?: stringResource(R.string.add_person_select_date))
                 }
                 Spacer(modifier = Modifier.height(8.dp))
                 OutlinedTextField(
@@ -145,7 +159,27 @@ fun AddEventDialog(
                 onClick = {
                     selectedDate?.let { date ->
                         val leadTime = leadTimeDaysText.toIntOrNull() ?: 0
-                        onConfirm(PersonEvent(label = label, date = date, leadTimeDays = leadTime))
+                        val inferredType = when {
+                            label.contains("birthday", ignoreCase = true) || label.contains(
+                                "bday",
+                                ignoreCase = true
+                            ) -> EventType.BIRTHDAY
+
+                            label.contains(
+                                "anniversary",
+                                ignoreCase = true
+                            ) -> EventType.ANNIVERSARY
+
+                            else -> EventType.OTHER
+                        }
+                        onConfirm(
+                            PersonEvent(
+                                label = label,
+                                date = date,
+                                type = inferredType,
+                                leadTimeDays = leadTime
+                            )
+                        )
                     }
                 },
                 enabled = label.isNotBlank() && selectedDate != null

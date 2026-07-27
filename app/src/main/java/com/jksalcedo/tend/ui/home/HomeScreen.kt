@@ -88,7 +88,8 @@ fun HomeScreen(
     onAddPersonClick: (String?) -> Unit,
     onPersonClick: (Long) -> Unit,
     onImportContactsClick: () -> Unit = {},
-    onArchivedClick: () -> Unit = {}
+    onArchivedClick: () -> Unit = {},
+    onUpcomingEventsClick: () -> Unit = {}
 ) {
     val people by viewModel.people.collectAsState()
     val searchQuery by viewModel.searchQuery.collectAsState()
@@ -137,6 +138,7 @@ fun HomeScreen(
         onPersonClick = onPersonClick,
         onArchivedClick = onArchivedClick,
         onImportContactsClick = onImportContactsClick,
+        onUpcomingEventsClick = onUpcomingEventsClick,
         onExportData = viewModel::exportData,
         onImportData = viewModel::importData,
         onLoadNerdStats = viewModel::loadNerdStats,
@@ -164,6 +166,7 @@ private fun HomeScreenContent(
     onPersonClick: (Long) -> Unit,
     onArchivedClick: () -> Unit = {},
     onImportContactsClick: () -> Unit = {},
+    onUpcomingEventsClick: () -> Unit = {},
     onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onLoadNerdStats: () -> Unit = {},
@@ -354,6 +357,13 @@ private fun HomeScreenContent(
                             Icon(
                                 Icons.Default.QrCodeScanner,
                                 contentDescription = "Scan QR Code",
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant
+                            )
+                        }
+                        IconButton(onClick = onUpcomingEventsClick) {
+                            Icon(
+                                Icons.Default.DateRange,
+                                contentDescription = "Upcoming Events",
                                 tint = MaterialTheme.colorScheme.onSurfaceVariant
                             )
                         }
