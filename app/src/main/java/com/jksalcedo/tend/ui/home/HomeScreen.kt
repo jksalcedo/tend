@@ -1,7 +1,9 @@
 package com.jksalcedo.tend.ui.home
 
+import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -62,7 +64,9 @@ import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.vector.ImageVector
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.text.font.FontWeight
@@ -75,6 +79,7 @@ import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.ui.add.SharedPerson
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
+import java.io.File
 import io.github.g00fy2.quickie.QRResult
 import io.github.g00fy2.quickie.ScanQRCode
 import org.koin.androidx.compose.koinViewModel
@@ -913,12 +918,27 @@ fun PersonCard(
                         tint = MaterialTheme.colorScheme.onPrimary
                     )
                 } else {
-                    Text(
-                        text = person.name.take(1).uppercase(),
-                        style = MaterialTheme.typography.titleLarge,
-                        fontWeight = FontWeight.Bold,
-                        color = if (cardColor == MaterialTheme.colorScheme.surface) mintAccent else accentColor
-                    )
+                    val cachedPhoto = remember(person.localPhotoPath) {
+                        person.localPhotoPath?.let { path ->
+                            File(path).takeIf { it.exists() }
+                                ?.let { BitmapFactory.decodeFile(it.absolutePath) }
+                        }
+                    }
+                    if (cachedPhoto != null) {
+                        Image(
+                            bitmap = cachedPhoto.asImageBitmap(),
+                            contentDescription = "${person.name}'s photo",
+                            modifier = Modifier.fillMaxSize(),
+                            contentScale = ContentScale.Crop
+                        )
+                    } else {
+                        Text(
+                            text = person.name.take(1).uppercase(),
+                            style = MaterialTheme.typography.titleLarge,
+                            fontWeight = FontWeight.Bold,
+                            color = if (cardColor == MaterialTheme.colorScheme.surface) mintAccent else accentColor
+                        )
+                    }
                 }
             }
 

@@ -1,6 +1,8 @@
 package com.jksalcedo.tend.ui.events
 
 import android.content.Intent
+import android.graphics.BitmapFactory
+import androidx.compose.foundation.Image
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.Arrangement
@@ -39,15 +41,19 @@ import androidx.compose.material3.TopAppBar
 import androidx.compose.runtime.Composable
 import androidx.compose.runtime.collectAsState
 import androidx.compose.runtime.getValue
+import androidx.compose.runtime.remember
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
+import androidx.compose.ui.graphics.asImageBitmap
+import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.core.net.toUri
 import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.UpcomingEventItem
+import java.io.File
 import org.koin.androidx.compose.koinViewModel
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -145,6 +151,12 @@ fun UpcomingEventCard(
             verticalAlignment = Alignment.CenterVertically
         ) {
             // Avatar Circle
+            val cachedPhoto = remember(item.localPhotoPath) {
+                item.localPhotoPath?.let { path ->
+                    File(path).takeIf { it.exists() }
+                        ?.let { BitmapFactory.decodeFile(it.absolutePath) }
+                }
+            }
             Box(
                 modifier = Modifier
                     .size(48.dp)
@@ -152,12 +164,21 @@ fun UpcomingEventCard(
                     .background(MaterialTheme.colorScheme.primaryContainer),
                 contentAlignment = Alignment.Center
             ) {
-                Text(
-                    text = item.personName.take(1).uppercase(),
-                    style = MaterialTheme.typography.titleMedium,
-                    fontWeight = FontWeight.Bold,
-                    color = MaterialTheme.colorScheme.onPrimaryContainer
-                )
+                if (cachedPhoto != null) {
+                    Image(
+                        bitmap = cachedPhoto.asImageBitmap(),
+                        contentDescription = "${item.personName}'s photo",
+                        modifier = Modifier.fillMaxSize(),
+                        contentScale = ContentScale.Crop
+                    )
+                } else {
+                    Text(
+                        text = item.personName.take(1).uppercase(),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.Bold,
+                        color = MaterialTheme.colorScheme.onPrimaryContainer
+                    )
+                }
             }
 
             Spacer(modifier = Modifier.width(16.dp))

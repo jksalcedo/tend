@@ -1,0 +1,1 @@
+- Fixed contact photos only displaying on the person detail screen and not on the home, upcoming events, and import contacts lists
