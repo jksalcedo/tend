@@ -1,1 +1,3 @@
 - Fixed contact photos only displaying on the person detail screen and not on the home, upcoming events, and import contacts lists
+- Added quick Email action to Upcoming Events cards
+- Added device contact birthday & anniversary importing on contact setup and sync

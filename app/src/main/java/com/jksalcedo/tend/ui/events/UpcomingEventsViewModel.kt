@@ -13,6 +13,6 @@ class UpcomingEventsViewModel(
 ) : ViewModel() {
 
     val upcomingEvents: StateFlow<List<UpcomingEventItem>> =
-        getUpcomingEventsUseCase(daysAhead = 60)
+        getUpcomingEventsUseCase(daysAhead = 365)
             .stateIn(viewModelScope, SharingStarted.WhileSubscribed(5000), emptyList())
 }

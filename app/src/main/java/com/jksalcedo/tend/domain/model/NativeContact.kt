@@ -6,5 +6,6 @@ data class NativeContact(
     val name: String,
     val phoneNumber: String?,
     val email: String?,
-    val photoUri: String?
+    val photoUri: String?,
+    val events: List<PersonEvent> = emptyList()
 )
