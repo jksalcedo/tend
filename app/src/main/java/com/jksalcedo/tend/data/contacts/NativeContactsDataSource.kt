@@ -6,10 +6,17 @@ import android.content.ContentValues
 import android.content.Context
 import android.provider.ContactsContract
 import androidx.core.net.toUri
+import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.NativeContact
+import com.jksalcedo.tend.domain.model.PersonEvent
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.withContext
 import java.io.File
+import java.text.SimpleDateFormat
+import java.util.Calendar
+import java.util.Date
+import java.util.Locale
+import java.util.TimeZone
 
 class NativeContactsDataSource(private val context: Context) {
 
@@ -52,7 +59,8 @@ class NativeContactsDataSource(private val context: Context) {
                         name = name,
                         phoneNumber = if (hasPhone) queryFirstPhoneNumber(contactId) else null,
                         email = queryFirstEmail(contactId),
-                        photoUri = photoUri
+                        photoUri = photoUri,
+                        events = queryEvents(contactId)
                     )
                 )
             }
@@ -102,7 +110,8 @@ class NativeContactsDataSource(private val context: Context) {
                     name = name,
                     phoneNumber = if (hasPhone) queryFirstPhoneNumber(contactId) else null,
                     email = queryFirstEmail(contactId),
-                    photoUri = photoUri
+                    photoUri = photoUri,
+                    events = queryEvents(contactId)
                 )
             }
         }
@@ -254,6 +263,100 @@ class NativeContactsDataSource(private val context: Context) {
                 return cursor.getString(
                     cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Email.ADDRESS)
                 )
+            }
+        }
+        return null
+    }
+
+    private fun queryEvents(contactId: Long): List<PersonEvent> {
+        val events = mutableListOf<PersonEvent>()
+        context.contentResolver.query(
+            ContactsContract.Data.CONTENT_URI,
+            arrayOf(
+                ContactsContract.CommonDataKinds.Event.START_DATE,
+                ContactsContract.CommonDataKinds.Event.TYPE,
+                ContactsContract.CommonDataKinds.Event.LABEL
+            ),
+            "${ContactsContract.Data.CONTACT_ID} = ? AND ${ContactsContract.Data.MIMETYPE} = ?",
+            arrayOf(
+                contactId.toString(),
+                ContactsContract.CommonDataKinds.Event.CONTENT_ITEM_TYPE
+            ),
+            null
+        )?.use { cursor ->
+            val startDateIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.START_DATE)
+            val typeIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.TYPE)
+            val labelIndex = cursor.getColumnIndexOrThrow(ContactsContract.CommonDataKinds.Event.LABEL)
+
+            while (cursor.moveToNext()) {
+                val startDateStr = cursor.getString(startDateIndex) ?: continue
+                val eventTypeInt = cursor.getInt(typeIndex)
+                val customLabel = cursor.getString(labelIndex)
+
+                val parsedDate = parseEventDateToUtcMillis(startDateStr) ?: continue
+
+                val (type, label) = when (eventTypeInt) {
+                    ContactsContract.CommonDataKinds.Event.TYPE_BIRTHDAY ->
+                        EventType.BIRTHDAY to (customLabel?.takeIf { it.isNotBlank() } ?: "Birthday")
+                    ContactsContract.CommonDataKinds.Event.TYPE_ANNIVERSARY ->
+                        EventType.ANNIVERSARY to (customLabel?.takeIf { it.isNotBlank() } ?: "Anniversary")
+                    else ->
+                        EventType.OTHER to (customLabel?.takeIf { it.isNotBlank() } ?: "Other")
+                }
+
+                events.add(
+                    PersonEvent(
+                        label = label,
+                        date = parsedDate,
+                        type = type,
+                        leadTimeDays = 0
+                    )
+                )
+            }
+        }
+        return events
+    }
+
+    private fun parseEventDateToUtcMillis(dateStr: String): Long? {
+        val trimmed = dateStr.trim()
+        if (trimmed.isEmpty()) return null
+
+        if (trimmed.startsWith("--")) {
+            val parts = trimmed.removePrefix("--").split("-")
+            if (parts.size == 2) {
+                val month = parts[0].toIntOrNull() ?: return null
+                val day = parts[1].toIntOrNull() ?: return null
+                val cal = Calendar.getInstance(TimeZone.getTimeZone("UTC")).apply {
+                    clear()
+                    set(Calendar.YEAR, 1970)
+                    set(Calendar.MONTH, month - 1)
+                    set(Calendar.DAY_OF_MONTH, day)
+                }
+                return cal.timeInMillis
+            }
+        }
+
+        val formats = arrayOf(
+            "yyyy-MM-dd",
+            "yyyy-MM-dd'T'HH:mm:ss.SSS'Z'",
+            "yyyy-MM-dd'T'HH:mm:ss'Z'",
+            "yyyy/MM/dd",
+            "yyyyMMdd",
+            "MM/dd/yyyy",
+            "MM-dd-yyyy"
+        )
+
+        for (format in formats) {
+            try {
+                val sdf = SimpleDateFormat(format, Locale.US).apply {
+                    timeZone = TimeZone.getTimeZone("UTC")
+                    isLenient = false
+                }
+                val date = sdf.parse(trimmed)
+                if (date != null) {
+                    return date.time
+                }
+            } catch (_: Exception) {
             }
         }
         return null

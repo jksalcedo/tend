@@ -13,7 +13,7 @@ import java.util.TimeZone
 class GetUpcomingEventsUseCase(
     private val personRepository: PersonRepository
 ) {
-    operator fun invoke(daysAhead: Int = 60): Flow<List<UpcomingEventItem>> {
+    operator fun invoke(daysAhead: Int = 365): Flow<List<UpcomingEventItem>> {
         return personRepository.getAllPeople().map { people ->
             val upcoming = mutableListOf<UpcomingEventItem>()
             val todayCal = Calendar.getInstance().apply {

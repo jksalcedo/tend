@@ -26,6 +26,7 @@ class ImportContactsUseCase(
                     photoUri = contact.photoUri,
                     phoneNumber = contact.phoneNumber,
                     email = contact.email,
+                    events = contact.events,
                     frequencyDays = frequencyDays,
                     lastContactedAt = now,
                     nextReminderAt = nextReminder,

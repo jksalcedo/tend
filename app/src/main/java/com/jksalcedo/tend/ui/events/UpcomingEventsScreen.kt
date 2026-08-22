@@ -25,6 +25,7 @@ import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.automirrored.filled.Send
 import androidx.compose.material.icons.filled.Cake
 import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Email
 import androidx.compose.material.icons.filled.Favorite
 import androidx.compose.material.icons.filled.Phone
 import androidx.compose.material3.Card
@@ -241,39 +242,61 @@ fun UpcomingEventCard(
                     colors = chipColors
                 )
 
-                if (!item.phoneNumber.isNullOrEmpty()) {
+                val hasPhone = !item.phoneNumber.isNullOrEmpty()
+                val hasEmail = !item.email.isNullOrEmpty()
+
+                if (hasPhone || hasEmail) {
                     Row {
-                        IconButton(
-                            onClick = {
-                                val intent = Intent(
-                                    Intent.ACTION_DIAL,
-                                    "tel:${item.phoneNumber}".toUri()
+                        if (hasPhone) {
+                            IconButton(
+                                onClick = {
+                                    val intent = Intent(
+                                        Intent.ACTION_DIAL,
+                                        "tel:${item.phoneNumber}".toUri()
+                                    )
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Phone,
+                                    contentDescription = "Call",
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                context.startActivity(intent)
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.Default.Phone,
-                                contentDescription = "Call",
-                                modifier = Modifier.size(18.dp)
-                            )
+                            }
+                            IconButton(
+                                onClick = {
+                                    val intent = Intent(
+                                        Intent.ACTION_SENDTO,
+                                        "smsto:${item.phoneNumber}".toUri()
+                                    )
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.AutoMirrored.Filled.Send,
+                                    contentDescription = "Message",
+                                    modifier = Modifier.size(18.dp)
+                                )
+                            }
                         }
-                        IconButton(
-                            onClick = {
-                                val intent = Intent(
-                                    Intent.ACTION_SENDTO,
-                                    "smsto:${item.phoneNumber}".toUri()
+                        if (hasEmail) {
+                            IconButton(
+                                onClick = {
+                                    val intent = Intent(Intent.ACTION_SENDTO).apply {
+                                        data = "mailto:${item.email}".toUri()
+                                    }
+                                    context.startActivity(intent)
+                                },
+                                modifier = Modifier.size(32.dp)
+                            ) {
+                                Icon(
+                                    imageVector = Icons.Default.Email,
+                                    contentDescription = "Email",
+                                    modifier = Modifier.size(18.dp)
                                 )
-                                context.startActivity(intent)
-                            },
-                            modifier = Modifier.size(32.dp)
-                        ) {
-                            Icon(
-                                imageVector = Icons.AutoMirrored.Filled.Send,
-                                contentDescription = "Message",
-                                modifier = Modifier.size(18.dp)
-                            )
+                            }
                         }
                     }
                 }

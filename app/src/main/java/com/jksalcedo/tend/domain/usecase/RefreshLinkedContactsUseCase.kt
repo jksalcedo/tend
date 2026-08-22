@@ -41,6 +41,7 @@ class RefreshLinkedContactsUseCase(
                     name = resolved.name,
                     phoneNumber = resolved.phoneNumber,
                     email = resolved.email,
+                    events = if (current.events.isEmpty()) resolved.events else current.events,
                     photoUri = resolved.photoUri,
                     localPhotoPath = localPhotoPath ?: current.localPhotoPath,
                     nativeContactId = resolved.contactId,
