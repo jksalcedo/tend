@@ -1,10 +1,8 @@
-## What's new in v1.1.0
+## What's new in v1.1.1
 
-- **Upcoming Birthdays & Events** — Dedicated 60-day calendar feed to track upcoming birthdays,
-  anniversaries, and key dates with day countdown badges and one-tap reach-out shortcuts
-- **Interaction History & Activity Log** — Log specific check-in connection types (Call 📞, Message
-  💬, In-Person Meetup ☕, Video Call 📹, Other 📝) with custom notes and view a timeline history for
-  each connection
+- **Import Contact Events** — Automatically import birthdays and anniversaries when syncing or setting up linked device contacts
+- **Quick Email Action** — Send an email directly from Upcoming Events cards with a single tap
+- **Contact Photo Fix** — Fixed contact photos only displaying on the detail screen and not appearing on the home, upcoming events, and import contacts lists
 
 ## Feedback
 
