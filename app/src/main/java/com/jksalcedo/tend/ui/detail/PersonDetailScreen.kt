@@ -47,13 +47,13 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.Warning
 import androidx.compose.material3.AlertDialog
 import androidx.compose.material3.AssistChip
-import androidx.compose.material3.Button
-import androidx.compose.material3.ButtonDefaults
 import androidx.compose.material3.Card
 import androidx.compose.material3.CardDefaults
 import androidx.compose.material3.DropdownMenu
 import androidx.compose.material3.DropdownMenuItem
 import androidx.compose.material3.ExperimentalMaterial3Api
+import androidx.compose.material3.FabPosition
+import androidx.compose.material3.FloatingActionButton
 import androidx.compose.material3.Icon
 import androidx.compose.material3.IconButton
 import androidx.compose.material3.InputChip
@@ -102,7 +102,6 @@ import org.koin.androidx.compose.koinViewModel
 import java.io.File
 import java.text.SimpleDateFormat
 import java.util.Date
-import java.util.Locale
 
 private enum class SyncToDeviceMessage { DENIED, PERMANENTLY_DENIED }
 private enum class ReadContactsMessage { DENIED, PERMANENTLY_DENIED }
@@ -400,6 +399,7 @@ fun PersonDetailScreen(
     }
 
     Scaffold(
+        modifier = Modifier.padding(bottom = 0.dp),
         topBar = {
             TopAppBar(
                 title = {},
@@ -482,7 +482,33 @@ fun PersonDetailScreen(
                     containerColor = MaterialTheme.colorScheme.background
                 )
             )
-        }
+        },
+        floatingActionButton = {
+            FloatingActionButton(
+                onClick = { showLogInteractionSheet = true },
+                modifier = Modifier
+                    .fillMaxWidth()
+                    .height(56.dp)
+                    .padding(horizontal = 24.dp, vertical = 0.dp),
+                shape = RoundedCornerShape(16.dp),
+                containerColor = MaterialTheme.colorScheme.primary
+            ) {
+                Row {
+                    Icon(
+                        Icons.Default.CheckCircle,
+                        contentDescription = null,
+                        modifier = Modifier.size(20.dp)
+                    )
+                    Spacer(modifier = Modifier.width(8.dp))
+                    Text(
+                        stringResource(R.string.person_detail_mark_as_contacted),
+                        style = MaterialTheme.typography.titleMedium,
+                        fontWeight = FontWeight.SemiBold
+                    )
+                }
+            }
+        },
+        floatingActionButtonPosition = FabPosition.Center
     ) { padding ->
         if (showShareSheet) {
             person?.let { p ->
@@ -795,32 +821,7 @@ fun PersonDetailScreen(
                     onDeleteRecord = viewModel::deleteCheckInRecord
                 )
 
-                Spacer(modifier = Modifier.height(24.dp))
-
-                Button(
-                    onClick = { showLogInteractionSheet = true },
-                    modifier = Modifier
-                        .fillMaxWidth()
-                        .height(56.dp),
-                    shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
-                    colors = ButtonDefaults.buttonColors(
-                        containerColor = MaterialTheme.colorScheme.primary
-                    )
-                ) {
-                    Icon(
-                        Icons.Default.CheckCircle,
-                        contentDescription = null,
-                        modifier = Modifier.size(20.dp)
-                    )
-                    Spacer(modifier = Modifier.width(8.dp))
-                    Text(
-                        stringResource(R.string.person_detail_mark_as_contacted),
-                        style = MaterialTheme.typography.titleMedium,
-                        fontWeight = FontWeight.SemiBold
-                    )
-                }
-
-                Spacer(modifier = Modifier.height(48.dp))
+                Spacer(modifier = Modifier.height(70.dp))
             }
         }
     }
@@ -1285,7 +1286,7 @@ fun InteractionHistorySection(
     } else {
         val dateFormat = SimpleDateFormat(
             "MMM d, yyyy 'at' h:mm a",
-            Locale.getDefault()
+            LocalLocale.current.platformLocale
         )
         history.forEach { record ->
             Card(

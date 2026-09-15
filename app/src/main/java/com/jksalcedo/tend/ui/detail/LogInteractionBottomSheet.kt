@@ -70,16 +70,23 @@ fun LogInteractionBottomSheet(
 
             Spacer(modifier = Modifier.height(12.dp))
 
-            Row(
+            Column(
                 modifier = Modifier.fillMaxWidth(),
-                horizontalArrangement = Arrangement.spacedBy(8.dp)
+                verticalArrangement = Arrangement.spacedBy(4.dp)
             ) {
                 InteractionType.entries.forEach { type ->
                     val isSelected = selectedType == type
                     FilterChip(
+                        modifier = Modifier
+                            .fillMaxWidth(),
                         selected = isSelected,
                         onClick = { selectedType = if (isSelected) null else type },
-                        label = { Text(type.displayName) },
+                        label = {
+                            Text(
+                                text = type.displayName,
+                                modifier = Modifier.padding(16.dp)
+                            )
+                        },
                         leadingIcon = {
                             val icon = getInteractionIcon(type)
                             Icon(imageVector = icon, contentDescription = type.displayName)
