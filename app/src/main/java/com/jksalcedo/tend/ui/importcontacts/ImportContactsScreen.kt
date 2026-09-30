@@ -160,6 +160,8 @@ fun ImportContactsScreen(
         selectedLookupKeys = selectedLookupKeys,
         isLoading = isLoading,
         onToggleSelection = viewModel::toggleSelection,
+        onSelectAll = viewModel::selectAll,
+        onSelectNone = viewModel::selectNone,
         onRequestPermission = { permissionLauncher.launch(Manifest.permission.READ_CONTACTS) },
         onOpenSettings = {
             val intent = Intent(Settings.ACTION_APPLICATION_DETAILS_SETTINGS).apply {
@@ -180,6 +182,8 @@ private fun ImportContactsContent(
     selectedLookupKeys: Set<String>,
     isLoading: Boolean,
     onToggleSelection: (String) -> Unit,
+    onSelectAll: () -> Unit,
+    onSelectNone: () -> Unit,
     onRequestPermission: () -> Unit,
     onOpenSettings: () -> Unit,
     onConfirm: () -> Unit,
@@ -268,6 +272,12 @@ private fun ImportContactsContent(
                             )
                         }
                     } else {
+                        SelectAllNoneRow(
+                            selectAllEnabled = selectedLookupKeys.size < contacts.size,
+                            selectNoneEnabled = selectedLookupKeys.isNotEmpty(),
+                            onSelectAll = onSelectAll,
+                            onSelectNone = onSelectNone
+                        )
                         LazyColumn(
                             verticalArrangement = Arrangement.spacedBy(4.dp),
                             contentPadding = PaddingValues(bottom = 24.dp)
@@ -304,6 +314,26 @@ private fun PermissionMessage(
             Button(onClick = onClick) {
                 Text(buttonText)
             }
+        }
+    }
+}
+
+@Composable
+private fun SelectAllNoneRow(
+    selectAllEnabled: Boolean,
+    selectNoneEnabled: Boolean,
+    onSelectAll: () -> Unit,
+    onSelectNone: () -> Unit
+) {
+    Row(
+        modifier = Modifier.fillMaxWidth(),
+        horizontalArrangement = Arrangement.spacedBy(8.dp)
+    ) {
+        TextButton(onClick = onSelectAll, enabled = selectAllEnabled) {
+            Text("Select All")
+        }
+        TextButton(onClick = onSelectNone, enabled = selectNoneEnabled) {
+            Text("Select None")
         }
     }
 }

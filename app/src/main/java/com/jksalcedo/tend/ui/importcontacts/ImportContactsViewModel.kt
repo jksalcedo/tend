@@ -40,6 +40,14 @@ class ImportContactsViewModel(
         }
     }
 
+    fun selectAll() {
+        _selectedLookupKeys.value = _contacts.value.map { it.lookupKey }.toSet()
+    }
+
+    fun selectNone() {
+        _selectedLookupKeys.value = emptySet()
+    }
+
     fun confirmImport(onComplete: () -> Unit) {
         val selected = _contacts.value.filter { it.lookupKey in _selectedLookupKeys.value }
         if (selected.isEmpty()) {
