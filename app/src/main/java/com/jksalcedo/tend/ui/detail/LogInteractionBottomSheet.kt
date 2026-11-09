@@ -1,5 +1,4 @@
 package com.jksalcedo.tend.ui.detail
-
 import androidx.compose.foundation.layout.Arrangement
 import androidx.compose.foundation.layout.Column
 import androidx.compose.foundation.layout.Row
@@ -72,26 +71,36 @@ fun LogInteractionBottomSheet(
 
             Column(
                 modifier = Modifier.fillMaxWidth(),
-                verticalArrangement = Arrangement.spacedBy(4.dp)
+                verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                InteractionType.entries.forEach { type ->
-                    val isSelected = selectedType == type
-                    FilterChip(
-                        modifier = Modifier
-                            .fillMaxWidth(),
-                        selected = isSelected,
-                        onClick = { selectedType = if (isSelected) null else type },
-                        label = {
-                            Text(
-                                text = type.displayName,
-                                modifier = Modifier.padding(16.dp)
+                InteractionType.entries.chunked(2).forEach { rowItems ->
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.spacedBy(8.dp)
+                    ) {
+                        rowItems.forEach { type ->
+                            val isSelected = selectedType == type
+                            FilterChip(
+                                modifier = Modifier.weight(1f)
+                                    .height(48.dp),
+                                selected = isSelected,
+                                onClick = { selectedType = if (isSelected) null else type },
+                                label = {
+                                    Text(
+                                        text = type.displayName,
+                                        maxLines = 1
+                                    )
+                                },
+                                leadingIcon = {
+                                    val icon = getInteractionIcon(type)
+                                    Icon(imageVector = icon, contentDescription = type.displayName)
+                                }
                             )
-                        },
-                        leadingIcon = {
-                            val icon = getInteractionIcon(type)
-                            Icon(imageVector = icon, contentDescription = type.displayName)
                         }
-                    )
+                        if (rowItems.size < 2) {
+                            Spacer(modifier = Modifier.weight(1f))
+                        }
+                    }
                 }
             }
 
