@@ -56,6 +56,7 @@ tasks.register("updateVersionProperties") {
         versionProps.setProperty("VERSION_NAME", calculatedName)
         versionProps.store(versionPropsFile.outputStream(), null)
     }
+    description = "Update version properties"
 }
 
 android {
@@ -74,7 +75,7 @@ android {
 
     sourceSets {
         getByName("main") {
-            assets.srcDirs("$projectDir/schemas")
+            assets.directories.add("src/main/assets")
         }
     }
 
