@@ -21,7 +21,9 @@ import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalLocale
 import androidx.compose.ui.res.stringResource
+import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
+import androidx.compose.foundation.text.KeyboardOptions
 import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.EventType
 import com.jksalcedo.tend.domain.model.PersonEvent
@@ -147,8 +149,8 @@ fun AddEventDialog(
                     },
                     label = { Text("Reminder lead time (days)") },
                     singleLine = true,
-                    keyboardOptions = androidx.compose.foundation.text.KeyboardOptions(
-                        keyboardType = androidx.compose.ui.text.input.KeyboardType.Number
+                    keyboardOptions = KeyboardOptions(
+                        keyboardType = KeyboardType.Number
                     ),
                     modifier = Modifier.fillMaxWidth()
                 )

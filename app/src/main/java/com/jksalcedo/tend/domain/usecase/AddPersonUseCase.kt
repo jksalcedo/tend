@@ -2,6 +2,7 @@ package com.jksalcedo.tend.domain.usecase
 
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.PersonRepository
+import kotlin.random.Random
 class AddPersonUseCase(
     private val repository: PersonRepository
 ) {
@@ -20,7 +21,7 @@ class AddPersonUseCase(
         val finalDays = if (reminderWindowDays > 0) {
             val minDays = maxOf(1, frequencyDays - reminderWindowDays)
             val maxDays = frequencyDays + reminderWindowDays
-            kotlin.random.Random.nextInt(minDays, maxDays + 1)
+            Random.nextInt(minDays, maxDays + 1)
         } else {
             frequencyDays
         }

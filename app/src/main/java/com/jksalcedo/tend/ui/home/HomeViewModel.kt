@@ -21,7 +21,9 @@ import kotlinx.coroutines.launch
 
 import com.jksalcedo.tend.domain.usecase.ExportDataUseCase
 import com.jksalcedo.tend.domain.usecase.ImportDataUseCase
-import kotlinx.coroutines.launch
+import com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase
+import java.io.InputStream
+import java.io.OutputStream
 
 class HomeViewModel(
     getUpcomingCheckInsUseCase: GetUpcomingCheckInsUseCase,
@@ -31,7 +33,7 @@ class HomeViewModel(
     private val resolveContactImportPromptUseCase: ResolveContactImportPromptUseCase,
     private val exportDataUseCase: ExportDataUseCase,
     private val importDataUseCase: ImportDataUseCase,
-    private val getNerdStatsUseCase: com.jksalcedo.tend.domain.usecase.GetNerdStatsUseCase,
+    private val getNerdStatsUseCase: GetNerdStatsUseCase,
     private val archivePersonUseCase: ArchivePersonUseCase,
     private val deletePersonUseCase: DeletePersonUseCase,
     private val addTagToPersonUseCase: AddTagToPersonUseCase
@@ -152,7 +154,7 @@ class HomeViewModel(
     }
 
     fun exportData(
-        outputStream: java.io.OutputStream,
+        outputStream: OutputStream,
         onComplete: () -> Unit,
         onError: (Exception) -> Unit
     ) {
@@ -167,7 +169,7 @@ class HomeViewModel(
     }
 
     fun importData(
-        inputStream: java.io.InputStream,
+        inputStream: InputStream,
         onComplete: () -> Unit,
         onError: (Exception) -> Unit
     ) {

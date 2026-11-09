@@ -3,7 +3,12 @@ package com.jksalcedo.tend.ui.home
 import android.graphics.BitmapFactory
 import android.widget.Toast
 import androidx.activity.compose.rememberLauncherForActivityResult
+import androidx.activity.result.contract.ActivityResultContracts
 import androidx.compose.foundation.Image
+import androidx.compose.foundation.layout.FlowRow
+import java.io.InputStream
+import java.io.OutputStream
+import java.net.URLEncoder
 import androidx.compose.foundation.background
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.combinedClickable
@@ -26,8 +31,8 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.shape.CircleShape
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
+import androidx.compose.material.icons.automirrored.filled.ArrowBack
 import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.ArrowBack
 import androidx.compose.material.icons.filled.Check
 import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material.icons.filled.DateRange
@@ -172,8 +177,8 @@ private fun HomeScreenContent(
     onArchivedClick: () -> Unit = {},
     onImportContactsClick: () -> Unit = {},
     onUpcomingEventsClick: () -> Unit = {},
-    onExportData: (java.io.OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
-    onImportData: (java.io.InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onExportData: (OutputStream, () -> Unit, (Exception) -> Unit) -> Unit,
+    onImportData: (InputStream, () -> Unit, (Exception) -> Unit) -> Unit,
     onLoadNerdStats: () -> Unit = {},
     onClearNerdStats: () -> Unit = {},
     selectedPersonIds: Set<Long> = emptySet(),
@@ -204,7 +209,7 @@ private fun HomeScreenContent(
                     try {
                         val shared = Gson().fromJson(rawValue, SharedPerson::class.java)
                         if (shared != null && shared.name.isNotBlank()) {
-                            val encodedData = java.net.URLEncoder.encode(rawValue, "UTF-8")
+                            val encodedData = URLEncoder.encode(rawValue, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
                             Toast.makeText(
@@ -216,7 +221,7 @@ private fun HomeScreenContent(
                     } catch (_: Exception) {
                         if (rawValue.length < 100) {
                             val fallbackJson = Gson().toJson(SharedPerson(name = rawValue))
-                            val encodedData = java.net.URLEncoder.encode(fallbackJson, "UTF-8")
+                            val encodedData = URLEncoder.encode(fallbackJson, "UTF-8")
                             onAddPersonClick(encodedData)
                         } else {
                             Toast.makeText(
@@ -306,7 +311,7 @@ private fun HomeScreenContent(
                             isSearching = false
                             onSearchQueryChange("")
                         }) {
-                            Icon(Icons.Default.ArrowBack, contentDescription = "Back")
+                            Icon(Icons.AutoMirrored.Filled.ArrowBack, contentDescription = "Back")
                         }
                     },
                     trailingIcon = {
@@ -377,7 +382,7 @@ private fun HomeScreenContent(
                         var expandDataManagement by remember { mutableStateOf(false) }
 
                         val exportLauncher = rememberLauncherForActivityResult(
-                            androidx.activity.result.contract.ActivityResultContracts.CreateDocument(
+                            ActivityResultContracts.CreateDocument(
                                 "application/json"
                             )
                         ) { uri ->
@@ -405,7 +410,7 @@ private fun HomeScreenContent(
                         }
 
                         val importLauncher =
-                            rememberLauncherForActivityResult(androidx.activity.result.contract.ActivityResultContracts.OpenDocument()) { uri ->
+                            rememberLauncherForActivityResult(ActivityResultContracts.OpenDocument()) { uri ->
                                 if (uri != null) {
                                     context.contentResolver.openInputStream(uri)
                                         ?.let { inputStream ->
@@ -817,7 +822,6 @@ private fun EmptyStateCard(
     }
 }
 
-@OptIn(androidx.compose.foundation.ExperimentalFoundationApi::class)
 @Composable
 fun PersonCard(
     person: Person,
@@ -869,7 +873,7 @@ fun PersonCard(
 
     val isOverdue = displayDays < 0
     val isDueSoon = if (showEvent) {
-        displayDays in 0..maxOf(3, nextEvent!!.first.leadTimeDays)
+        displayDays in 0..maxOf(3, nextEvent.first.leadTimeDays)
     } else {
         displayDays in 0..3
     }
@@ -1122,64 +1126,63 @@ private fun HomeScreenWithPeoplePreviewDark() {
     }
 }
 
-@OptIn(androidx.compose.material3.ExperimentalMaterial3Api::class, androidx.compose.foundation.layout.ExperimentalLayoutApi::class)
 @Composable
 private fun BulkTagPickerDialog(
     allTags: List<String>,
     onTagSelected: (String) -> Unit,
     onDismiss: () -> Unit
 ) {
-    var newTag by androidx.compose.runtime.remember { androidx.compose.runtime.mutableStateOf("") }
-    androidx.compose.material3.AlertDialog(
+    var newTag by remember { mutableStateOf("") }
+    AlertDialog(
         onDismissRequest = onDismiss,
-        title = { androidx.compose.material3.Text("Tag selected connections") },
+        title = { Text("Tag selected connections") },
         text = {
-            androidx.compose.foundation.layout.Column {
+            Column {
                 if (allTags.isNotEmpty()) {
-                    androidx.compose.foundation.layout.FlowRow(
-                        horizontalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp),
-                        verticalArrangement = androidx.compose.foundation.layout.Arrangement.spacedBy(8.dp)
+                    FlowRow(
+                        horizontalArrangement = Arrangement.spacedBy(8.dp),
+                        verticalArrangement = Arrangement.spacedBy(8.dp)
                     ) {
                         allTags.forEach { tag ->
-                            androidx.compose.material3.Surface(
-                                modifier = androidx.compose.ui.Modifier.clickable { onTagSelected(tag) },
-                                shape = androidx.compose.foundation.shape.RoundedCornerShape(8.dp),
-                                color = androidx.compose.material3.MaterialTheme.colorScheme.surfaceVariant
+                            Surface(
+                                modifier = Modifier.clickable { onTagSelected(tag) },
+                                shape = RoundedCornerShape(8.dp),
+                                color = MaterialTheme.colorScheme.surfaceVariant
                             ) {
-                                androidx.compose.foundation.layout.Row(
-                                    modifier = androidx.compose.ui.Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
-                                    verticalAlignment = androidx.compose.ui.Alignment.CenterVertically
+                                Row(
+                                    modifier = Modifier.padding(horizontal = 12.dp, vertical = 8.dp),
+                                    verticalAlignment = Alignment.CenterVertically
                                 ) {
-                                    androidx.compose.material3.Text(
+                                    Text(
                                         text = tag,
-                                        style = androidx.compose.material3.MaterialTheme.typography.labelLarge,
-                                        color = androidx.compose.material3.MaterialTheme.colorScheme.onSurfaceVariant
+                                        style = MaterialTheme.typography.labelLarge,
+                                        color = MaterialTheme.colorScheme.onSurfaceVariant
                                     )
                                 }
                             }
                         }
                     }
-                    androidx.compose.foundation.layout.Spacer(modifier = androidx.compose.ui.Modifier.height(16.dp))
+                    Spacer(modifier = Modifier.height(16.dp))
                 }
-                androidx.compose.material3.OutlinedTextField(
+                OutlinedTextField(
                     value = newTag,
                     onValueChange = { newTag = it },
-                    label = { androidx.compose.material3.Text("New tag") },
+                    label = { Text("New tag") },
                     singleLine = true,
-                    modifier = androidx.compose.ui.Modifier.fillMaxWidth()
+                    modifier = Modifier.fillMaxWidth()
                 )
             }
         },
         confirmButton = {
-            androidx.compose.material3.TextButton(
+            TextButton(
                 onClick = { onTagSelected(newTag) },
                 enabled = newTag.isNotBlank()
             ) {
-                androidx.compose.material3.Text("Create")
+                Text("Create")
             }
         },
         dismissButton = {
-            androidx.compose.material3.TextButton(onClick = onDismiss) { androidx.compose.material3.Text("Cancel") }
+            TextButton(onClick = onDismiss) { Text("Cancel") }
         }
     )
 }

@@ -3,6 +3,7 @@ package com.jksalcedo.tend.domain.usecase
 import com.jksalcedo.tend.domain.model.InteractionType
 import com.jksalcedo.tend.domain.repository.CheckInHistoryRepository
 import com.jksalcedo.tend.domain.repository.PersonRepository
+import kotlin.random.Random
 
 class CheckInUseCase(
     private val repository: PersonRepository,
@@ -19,7 +20,7 @@ class CheckInUseCase(
         val finalDays = if (floatDays > 0) {
             val minDays = maxOf(1, person.frequencyDays - floatDays)
             val maxDays = person.frequencyDays + floatDays
-            kotlin.random.Random.nextInt(minDays, maxDays + 1)
+            Random.nextInt(minDays, maxDays + 1)
         } else {
             person.frequencyDays
         }

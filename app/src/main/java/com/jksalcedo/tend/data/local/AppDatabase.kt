@@ -3,6 +3,8 @@ package com.jksalcedo.tend.data.local
 import androidx.room.Database
 import androidx.room.RoomDatabase
 import androidx.room.TypeConverters
+import androidx.room.migration.Migration
+import androidx.sqlite.db.SupportSQLiteDatabase
 import com.jksalcedo.tend.data.local.entity.PersonEntity
 import com.jksalcedo.tend.data.local.entity.TagEntity
 
@@ -20,8 +22,8 @@ abstract class AppDatabase : RoomDatabase() {
     abstract fun checkInHistoryDao(): CheckInHistoryDao
 }
 
-val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
-    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+val MIGRATION_6_7 = object : Migration(6, 7) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("""
             CREATE TABLE IF NOT EXISTS `check_in_history` (
                 `id` INTEGER PRIMARY KEY AUTOINCREMENT NOT NULL,
@@ -35,14 +37,14 @@ val MIGRATION_6_7 = object : androidx.room.migration.Migration(6, 7) {
     }
 }
 
-val MIGRATION_7_8 = object : androidx.room.migration.Migration(7, 8) {
-    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+val MIGRATION_7_8 = object : Migration(7, 8) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE people ADD COLUMN reminderWindowDays INTEGER NOT NULL DEFAULT 0")
     }
 }
 
-val MIGRATION_8_9 = object : androidx.room.migration.Migration(8, 9) {
-    override fun migrate(db: androidx.sqlite.db.SupportSQLiteDatabase) {
+val MIGRATION_8_9 = object : Migration(8, 9) {
+    override fun migrate(db: SupportSQLiteDatabase) {
         db.execSQL("ALTER TABLE check_in_history ADD COLUMN interactionType TEXT")
         db.execSQL("ALTER TABLE check_in_history ADD COLUMN note TEXT")
     }

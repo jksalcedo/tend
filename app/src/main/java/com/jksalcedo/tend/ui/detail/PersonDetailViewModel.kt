@@ -22,6 +22,7 @@ import com.jksalcedo.tend.domain.usecase.SyncToDeviceUseCase
 import com.jksalcedo.tend.domain.usecase.UnarchivePersonUseCase
 import com.jksalcedo.tend.domain.usecase.UnlinkPersonUseCase
 import com.jksalcedo.tend.domain.usecase.UpdateNoteUseCase
+import kotlinx.coroutines.ExperimentalCoroutinesApi
 import kotlinx.coroutines.flow.MutableStateFlow
 import kotlinx.coroutines.flow.SharingStarted
 import kotlinx.coroutines.flow.StateFlow
@@ -64,6 +65,7 @@ class PersonDetailViewModel(
     // the current person's own lookup key (re-subscribing whenever it changes) rather than
     // a one-shot fetch off a stored pointer, so it can never go stale and naturally covers
     // groups of any size.
+    @OptIn(ExperimentalCoroutinesApi::class)
     val duplicates: StateFlow<List<Person>> = person
         .flatMapLatest { p ->
             val lookupKey = p?.nativeLookupKey

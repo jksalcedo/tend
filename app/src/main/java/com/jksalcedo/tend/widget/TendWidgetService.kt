@@ -2,9 +2,9 @@ package com.jksalcedo.tend.widget
 
 import android.content.Context
 import android.content.Intent
-import android.net.Uri
 import android.widget.RemoteViews
 import android.widget.RemoteViewsService
+import androidx.core.net.toUri
 import com.jksalcedo.tend.R
 import com.jksalcedo.tend.domain.model.Person
 import com.jksalcedo.tend.domain.repository.PersonRepository
@@ -72,7 +72,7 @@ class TendWidgetFactory(private val context: Context) : RemoteViewsService.Remot
         )
 
         val (displayDays, displayMessage) = if (showEvent) {
-            val eventLabel = nextEvent!!.first.label
+            val eventLabel = nextEvent.first.label
             val days = nextEvent.second
             val message = when (days) {
                 0L -> "$eventLabel today!"
@@ -94,7 +94,7 @@ class TendWidgetFactory(private val context: Context) : RemoteViewsService.Remot
 
         val isOverdue = displayDays < 0
         val isDueSoon = if (showEvent) {
-            displayDays in 0..maxOf(3L, nextEvent!!.first.leadTimeDays.toLong())
+            displayDays in 0..maxOf(3L, nextEvent.first.leadTimeDays.toLong())
         } else {
             displayDays in 0..3L
         }
@@ -109,7 +109,7 @@ class TendWidgetFactory(private val context: Context) : RemoteViewsService.Remot
 
         // Set up fill-in intent for item click (opens details)
         val fillInIntent = Intent().apply {
-            data = Uri.parse("tend://detail/${person.id}")
+            data = "tend://detail/${person.id}".toUri()
         }
         rv.setOnClickFillInIntent(R.id.widget_item_container, fillInIntent)
 

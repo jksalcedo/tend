@@ -91,6 +91,16 @@ class FakePersonRepository : PersonRepository {
 
     override suspend fun getEveryPerson(): List<Person> = people.value
 
+    override suspend fun getAllPeopleList(): List<Person> = people.value
+
+    override suspend fun insertAll(people: List<Person>) {
+        this.people.value = this.people.value + people
+    }
+
+    override suspend fun deleteAllPeople() {
+        people.value = emptyList()
+    }
+
     fun seed(person: Person): Person {
         val assignedId = (people.value.maxOfOrNull { it.id } ?: 0L) + 1
         val seeded = person.copy(id = assignedId)

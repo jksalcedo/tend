@@ -85,6 +85,10 @@ import androidx.compose.ui.res.stringResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.material3.Surface
+import androidx.compose.ui.graphics.Color
+import androidx.lifecycle.compose.LocalLifecycleOwner
+import java.util.concurrent.TimeUnit
 import androidx.core.app.ActivityCompat
 import androidx.core.content.ContextCompat
 import androidx.core.net.toUri
@@ -223,7 +227,7 @@ fun PersonDetailScreen(
         }
     }
 
-    val lifecycleOwner = androidx.lifecycle.compose.LocalLifecycleOwner.current
+    val lifecycleOwner = LocalLifecycleOwner.current
     DisposableEffect(lifecycleOwner) {
         val observer = LifecycleEventObserver { _, event ->
             if (event == Lifecycle.Event.ON_RESUME) {
@@ -583,7 +587,7 @@ fun PersonDetailScreen(
                         color = MaterialTheme.colorScheme.onSurfaceVariant
                     )
                     if (p.lastContactedAt > 0) {
-                        val daysAgo = java.util.concurrent.TimeUnit.MILLISECONDS
+                        val daysAgo = TimeUnit.MILLISECONDS
                             .toDays(System.currentTimeMillis() - p.lastContactedAt)
                         Spacer(modifier = Modifier.height(4.dp))
                         Text(
@@ -768,7 +772,7 @@ fun PersonDetailScreen(
                         onValueChange = { noteInput = it },
                         placeholder = { Text(stringResource(R.string.person_detail_add_note_placeholder)) },
                         modifier = Modifier.weight(1f),
-                        shape = androidx.compose.foundation.shape.RoundedCornerShape(12.dp),
+                        shape = RoundedCornerShape(12.dp),
                         colors = OutlinedTextFieldDefaults.colors(
                             focusedBorderColor = MaterialTheme.colorScheme.primary,
                             unfocusedBorderColor = MaterialTheme.colorScheme.onSurfaceVariant.copy(
@@ -978,8 +982,8 @@ private fun DeviceSyncStatusSection(
 @Composable
 private fun StatusCard(
     text: String,
-    containerColor: androidx.compose.ui.graphics.Color,
-    contentColor: androidx.compose.ui.graphics.Color
+    containerColor: Color,
+    contentColor: Color
 ) {
     Card(
         modifier = Modifier.fillMaxWidth(),
@@ -1121,7 +1125,7 @@ private fun TagPickerDialog(
                             // A single combinedClickable rather than FilterChip's own onClick
                             // plus a modifier on top — stacking two separate click handlers
                             // on one component risks double-registered gestures.
-                            androidx.compose.material3.Surface(
+                            Surface(
                                 modifier = Modifier.combinedClickable(
                                     onClick = { onToggle(tag) },
                                     onLongClick = { onLongPressTag(tag) }

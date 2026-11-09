@@ -39,9 +39,13 @@ class ImportDataUseCaseTest {
             override fun getAllPeople(): Flow<List<Person>> = flowOf(emptyList())
             override fun getArchivedPeople(): Flow<List<Person>> = flowOf(emptyList())
             override suspend fun getPersonById(id: Long): Person? = null
+            override fun observePersonById(id: Long): Flow<Person?> = flowOf(null)
             override suspend fun insertPerson(person: Person) {}
             override suspend fun updatePerson(person: Person) {}
             override suspend fun deletePerson(id: Long) {}
+            override suspend fun getLinkedPeople(): List<Person> = emptyList()
+            override fun observeDuplicatesOf(lookupKey: String, excludeId: Long): Flow<List<Person>> = flowOf(emptyList())
+            override suspend fun getEveryPerson(): List<Person> = emptyList()
             override suspend fun getAllPeopleList(): List<Person> = emptyList()
             override suspend fun insertAll(people: List<Person>) {
                 insertedPeople = people
