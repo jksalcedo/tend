@@ -10,13 +10,16 @@ import com.jksalcedo.tend.notification.NotificationHelper
 import kotlinx.coroutines.flow.first
 import org.koin.core.component.KoinComponent
 import org.koin.core.component.inject
-import java.util.Calendar
-import java.util.concurrent.TimeUnit
 
 class ReminderWorker(
     context: Context,
     params: WorkerParameters
 ) : CoroutineWorker(context, params), KoinComponent {
+
+    private companion object {
+        /** Always give a few days of notice, even when no lead time is configured. */
+        const val MIN_EVENT_NOTICE_DAYS = 3
+    }
 
     private val db: AppDatabase by inject()
 
@@ -36,7 +39,8 @@ class ReminderWorker(
             person.events.forEach { event ->
                 val nextOccurrence = com.jksalcedo.tend.utils.DateUtils.getNextOccurrence(event.date)
                 val daysUntil = com.jksalcedo.tend.utils.DateUtils.daysUntil(nextOccurrence).toInt()
-                if (daysUntil in 0..7) {
+                val noticeDays = maxOf(MIN_EVENT_NOTICE_DAYS, event.leadTimeDays.coerceAtLeast(0))
+                if (daysUntil in 0..noticeDays) {
                     // Stable unique ID: base + low bits of (personId XOR eventId hash)
                     val notifId = 2000 + ((person.id xor event.id.hashCode().toLong()) and 0xFFF).toInt()
                     
