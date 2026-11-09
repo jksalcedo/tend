@@ -12,6 +12,7 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.height
 import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.foundation.text.KeyboardOptions
@@ -55,6 +56,7 @@ import com.jksalcedo.tend.domain.model.PersonEvent
 import com.jksalcedo.tend.domain.model.SocialLink
 import com.jksalcedo.tend.ui.theme.TendPastels
 import com.jksalcedo.tend.ui.theme.TendTheme
+import com.jksalcedo.tend.utils.SocialIconUtils
 import org.koin.androidx.compose.koinViewModel
 import java.net.URLDecoder
 import java.text.SimpleDateFormat
@@ -153,7 +155,11 @@ fun AddPersonScreen(
         AddSocialLinkDialog(
             onDismiss = { showSocialDialog = false },
             onConfirm = { link ->
-                socialLinks = socialLinks + link
+                val isDuplicate = socialLinks.any {
+                    it.platform.equals(link.platform, ignoreCase = true) &&
+                        it.handle.equals(link.handle, ignoreCase = true)
+                }
+                if (!isDuplicate) socialLinks = socialLinks + link
                 showSocialDialog = false
             }
         )
@@ -163,7 +169,10 @@ fun AddPersonScreen(
         AddEventDialog(
             onDismiss = { showEventDialog = false },
             onConfirm = { event ->
-                events = events + event
+                val isDuplicate = events.any {
+                    it.label.equals(event.label, ignoreCase = true) && it.date == event.date
+                }
+                if (!isDuplicate) events = events + event
                 showEventDialog = false
             }
         )
@@ -405,6 +414,14 @@ private fun AddPersonScreenContent(
                             horizontalArrangement = Arrangement.SpaceBetween,
                             verticalAlignment = Alignment.CenterVertically
                         ) {
+                            Icon(
+                                imageVector = SocialIconUtils.getIcon(link.platform),
+                                contentDescription = null,
+                                tint = MaterialTheme.colorScheme.onSurfaceVariant,
+                                modifier = Modifier
+                                    .padding(end = 8.dp)
+                                    .size(20.dp)
+                            )
                             Text(
                                 text = stringResource(
                                     R.string.add_person_social_link_display_format,
@@ -576,14 +593,14 @@ private fun AddPersonScreenContent(
             ) {
                 Column(modifier = Modifier.padding(16.dp)) {
                     Text(
-                        text = "Floating reminder window",
+                        text = stringResource(R.string.add_person_reminder_window_header),
                         style = MaterialTheme.typography.titleSmall,
                         fontWeight = FontWeight.SemiBold,
                         color = blueAccent
                     )
                     Spacer(modifier = Modifier.height(8.dp))
                     Text(
-                        text = "Adds a random offset (up to ±X days) when scheduling your next reminder so it feels more natural and less predictable.",
+                        text = stringResource(R.string.add_person_reminder_window_description),
                         style = MaterialTheme.typography.bodySmall,
                         color = blueAccent.copy(alpha = 0.7f)
                     )
@@ -592,7 +609,7 @@ private fun AddPersonScreenContent(
                     OutlinedTextField(
                         value = reminderWindowDays,
                         onValueChange = onReminderWindowDaysChange,
-                        label = { Text("Float range in days (e.g. 3)") },
+                        label = { Text(stringResource(R.string.add_person_reminder_window_label)) },
                         keyboardOptions = KeyboardOptions(keyboardType = KeyboardType.Number),
                         modifier = Modifier.fillMaxWidth(),
                         shape = RoundedCornerShape(12.dp),

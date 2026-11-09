@@ -93,6 +93,9 @@
     <string name="add_person_frequency_monthly">Monthly</string>
     <string name="add_person_frequency_days_suffix">%1$s days</string>
     <string name="add_person_custom_days_label">Custom (days)</string>
+    <string name="add_person_reminder_window_header">Flexible reminder timing</string>
+    <string name="add_person_reminder_window_description">Reminders can arrive up to this many days early or late. Set to 0 for exact timing.</string>
+    <string name="add_person_reminder_window_label">Days early or late (e.g. 3)</string>
     <string name="add_person_notes_header">Notes</string>
     <string name="add_person_notes_placeholder">How did you meet? What do they like?</string>
     <string name="add_person_save_changes_button">Save Changes</string>
@@ -109,6 +112,7 @@
     <string name="add_person_event_dialog_title">Add Event</string>
     <string name="add_person_event_label_field">Label (e.g. Birthday)</string>
     <string name="add_person_event_quick_pick">Quick pick</string>
+    <string name="add_person_event_lead_time_label">Reminder lead time (days)</string>
     <string name="add_person_date_selected">Date Selected</string>
     <string name="add_person_select_date">Select Date</string>
 

@@ -210,7 +210,7 @@ fun AddEventDialog(
                             leadTimeDaysText = newValue
                         }
                     },
-                    label = { Text("Reminder lead time (days)") },
+                    label = { Text(stringResource(R.string.add_person_event_lead_time_label)) },
                     singleLine = true,
                     keyboardOptions = KeyboardOptions(
                         keyboardType = KeyboardType.Number
