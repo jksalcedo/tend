@@ -100,12 +100,41 @@
 
     <!-- Add-person sub-dialogs (social link / event) -->
     <string name="add_person_social_dialog_title">Add Social Link</string>
-    <string name="add_person_platform_label">Platform (e.g. Discord)</string>
+    <string name="add_person_platform_label">Platform</string>
+    <string name="add_person_platform_quick_pick">Quick pick</string>
     <string name="add_person_handle_label">Handle/Username</string>
+    <string name="add_person_handle_username">username</string>
+    <string name="add_person_handle_mastodon">user@instance.social</string>
+    <string name="add_person_handle_website">example.com</string>
     <string name="add_person_event_dialog_title">Add Event</string>
     <string name="add_person_event_label_field">Label (e.g. Birthday)</string>
+    <string name="add_person_event_quick_pick">Quick pick</string>
     <string name="add_person_date_selected">Date Selected</string>
     <string name="add_person_select_date">Select Date</string>
+
+    <!-- Pre-made social platforms -->
+    <string name="social_platform_github">GitHub</string>
+    <string name="social_platform_x">X (Twitter)</string>
+    <string name="social_platform_instagram">Instagram</string>
+    <string name="social_platform_facebook">Facebook</string>
+    <string name="social_platform_linkedin">LinkedIn</string>
+    <string name="social_platform_youtube">YouTube</string>
+    <string name="social_platform_tiktok">TikTok</string>
+    <string name="social_platform_mastodon">Mastodon</string>
+    <string name="social_platform_reddit">Reddit</string>
+    <string name="social_platform_threads">Threads</string>
+    <string name="social_platform_telegram">Telegram</string>
+    <string name="social_platform_discord">Discord</string>
+    <string name="social_platform_website">Website</string>
+
+    <!-- Pre-made important dates -->
+    <string name="event_preset_birthday">Birthday</string>
+    <string name="event_preset_anniversary">Anniversary</string>
+    <string name="event_preset_wedding">Wedding</string>
+    <string name="event_preset_work_anniversary">Work Anniversary</string>
+    <string name="event_preset_graduation">Graduation</string>
+    <string name="event_preset_first_met">First Met</string>
+    <string name="event_preset_memorial">Memorial</string>
 
     <!-- Share / QR sheet -->
     <string name="share_connection_title">Share Connection</string>

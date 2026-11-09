@@ -25,6 +25,12 @@ object SocialLinkUtils {
             "threads" -> "https://threads.net/@$encodedHandle"
             "telegram" -> "https://t.me/$encodedHandle"
             "discord" -> "https://discord.com/users/$encodedHandle"
+            "website", "web", "portfolio", "blog" ->
+                if (handle.startsWith("http://") || handle.startsWith("https://")) {
+                    handle
+                } else {
+                    "https://$encodedHandle"
+                }
             else -> "https://duckduckgo.com/?q=${Uri.encode("$platform $handle")}"
         }
     }
